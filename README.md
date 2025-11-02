@@ -461,9 +461,9 @@ Apache License 2.0 - see [LICENSE](LICENSE) file for details.
 
 ### Further Documentation
 
-- **[KNOWN-ISSUES.md](KNOWN-ISSUES.md)** - Common problems & solutions
-- **[QUICKSTART-ANSIBLE.md](QUICKSTART-ANSIBLE.md)** - Detailed setup guide
-- **[DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md)** - Advanced deployment
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common problems & solutions
+- **[GLOBAL_SETUP_GUIDE.md](docs/GLOBAL_SETUP_GUIDE.md)** - Detailed setup guide
+- **[SECURITY.md](SECURITY.md)** - Security policies & practices
 
 ### Run Verification
 

@@ -335,4 +335,4 @@ Planned improvements:
 
 ---
 
-**Need more performance?** Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md) or open an [issue](https://github.com/vietcgi/devkit/issues).
+**Need more performance?** Check [TROUBLESHOOTING.md](../TROUBLESHOOTING.md) or open an [issue](https://github.com/vietcgi/devkit/issues).

@@ -265,4 +265,4 @@ Planned release schedule:
 
 **Need to release?** Follow the checklist above and the CI/CD pipeline handles the rest!
 
-For questions: See [SECURITY.md](SECURITY.md) for security releases or file an [issue](https://github.com/vietcgi/devkit/issues).
+For questions: See [SECURITY.md](../SECURITY.md) for security releases or file an [issue](https://github.com/vietcgi/devkit/issues).

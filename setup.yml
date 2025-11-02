@@ -7,8 +7,9 @@
     is_linux: '{{ ansible_os_family != ''Darwin'' }}'
     homebrew_prefix: |
       {{ '/opt/homebrew' if is_macos else '/home/linuxbrew/.linuxbrew' }}
+    brewfile_name: '{{ brewfile_name | default("Brewfile") }}'
     brewfile_path: |
-      {{ playbook_dir }}/{{ brewfile_name | default('Brewfile') }}
+      {{ playbook_dir }}/{{ brewfile_name }}
   tasks:
   - name: Set user and home variables from environment
     ansible.builtin.set_fact:
@@ -47,7 +48,7 @@
     tags:
     - homebrew
     - packages
-  - name: Install packages from Brewfile
+  - name: Install packages from Brewfile (if it exists)
     ansible.builtin.shell: |
       {{ homebrew_prefix }}/bin/brew bundle install \
       --file={{ brewfile_path }} || true
@@ -63,6 +64,24 @@
     changed_when: |
       'Installing' in brew_bundle_result.stdout or
       'Upgrading' in brew_bundle_result.stdout
+    failed_when: false
+    tags:
+    - homebrew
+    - packages
+
+  - name: Install essential packages with Homebrew (macOS fallback)
+    ansible.builtin.command: '{{ homebrew_prefix }}/bin/brew install {{ item }}'
+    loop:
+      - tmux
+      - neovim
+      - fzf
+      - ripgrep
+      - bat
+    when:
+    - ansible_os_family == "Darwin"
+    - install_dev_tools | default(true)
+    register: brew_install_result
+    changed_when: 'not "is already installed" in brew_install_result.stdout'
     failed_when: false
     tags:
     - homebrew

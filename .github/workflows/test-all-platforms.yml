@@ -116,18 +116,8 @@ jobs:
 
     - name: Verify installations
       run: |
-        eval "$(/opt/homebrew/bin/brew shellenv)"
-        echo "PATH=$PATH"
-
-        echo "=== Verifying Core Tools ==="
-        git --version || echo "git not found"
-        zsh --version || echo "zsh not found"
-        tmux -V || echo "tmux not found"
-        nvim --version 2>&1 | head -1 || echo "nvim not found"
-
-        echo -e "\n=== Verifying Config Files ==="
-        ls -la ~/.zshrc || echo ".zshrc not found"
-        ls -la ~/.tmux.conf || echo ".tmux.conf not found"
+        chmod +x verify-installation.sh
+        ./verify-installation.sh
 
     - name: Upload logs on failure
       if: failure()

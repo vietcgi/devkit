@@ -41,7 +41,7 @@
     src: "{{ dotfiles_source_dir }}/{{ item.src }}"
     dest: "{{ item.dest }}"
     mode: "{{ item.mode | default('0644') }}"
-    owner: "{{ user | default(omit) }}"
+    owner: "{{ ansible_user_id | default(omit) }}"
     group: "{{ ansible_user_gid | default(omit) }}"
     backup: "{{ dotfiles_create_backups }}"
   register: _dotfiles_copy_result
@@ -71,7 +71,7 @@
     dest: "{{ item.dest }}/"
     mode: preserve
     directory_mode: '0755'
-    owner: "{{ user | default(omit) }}"
+    owner: "{{ ansible_user_id | default(omit) }}"
     group: "{{ ansible_user_gid | default(omit) }}"
     backup: "{{ dotfiles_create_backups }}"
   register: _dotfiles_dir_copy_result

@@ -80,7 +80,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.os }}-py${{ matrix.python-version }}
           path: report.html
@@ -123,7 +123,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: htmlcov
@@ -172,7 +172,7 @@ jobs:
 
       - name: Upload quality reports
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: quality-reports
           path: |
@@ -233,7 +233,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Run pre-commit
-        uses: pre-commit/action@v3
+        uses: pre-commit/action@v3.0.0
 
   # =========================================================================
   # STAGE 7: MUTATION TESTING (nightly only)

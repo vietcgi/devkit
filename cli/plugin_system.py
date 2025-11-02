@@ -461,7 +461,7 @@ def _display_plugin_info(loader: "PluginLoader") -> None:  # pylint: disable=unu
 def _display_plugin_validation(loader: "PluginLoader") -> None:  # pylint: disable=unused-argument
     """Display plugin validation status."""
     plugins = loader.list_plugins()
-    print(f"\n{"Plugin Validation":^50}")  # noqa: T201
+    print(f'\n{"Plugin Validation":^50}')  # noqa: T201
     print("=" * 50)  # noqa: T201
     if plugins:
         print(f"✓ {len(plugins)} plugin(s) validated successfully")  # noqa: T201
@@ -475,7 +475,7 @@ def _display_plugin_validation(loader: "PluginLoader") -> None:  # pylint: disab
 def _display_plugin_summary(loader: "PluginLoader") -> None:  # pylint: disable=unused-argument
     """Display plugin system summary."""
     plugins = loader.list_plugins()
-    print(f"\n{"Plugin System Status":^50}")  # noqa: T201
+    print(f'\n{"Plugin System Status":^50}')  # noqa: T201
     print("=" * 50)  # noqa: T201
     print(f"Plugins loaded: {len(plugins)}")  # noqa: T201
     if plugins:

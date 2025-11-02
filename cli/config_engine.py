@@ -813,8 +813,8 @@ class ConfigDiff:
             for key, change in diff["modified"].items():
                 lines.extend((
                     f"  ~ {key}:",
-                    f"      Old: {change["old"]}",
-                    f"      New: {change["new"]}",
+                    f'      Old: {change["old"]}',
+                    f'      New: {change["new"]}',
                 ))
 
         return "\n".join(lines)

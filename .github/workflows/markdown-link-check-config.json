@@ -7,45 +7,6 @@
       "pattern": "^https://localhost"
     },
     {
-      "pattern": "^QUICKSTART\\.md$"
-    },
-    {
-      "pattern": "^QUICKSTART-ANSIBLE\\.md$"
-    },
-    {
-      "pattern": "^KNOWN-ISSUES\\.md$"
-    },
-    {
-      "pattern": "^DEPLOYMENT-GUIDE\\.md$"
-    },
-    {
-      "pattern": "^ANSIBLE-MIGRATION\\.md$"
-    },
-    {
-      "pattern": "^BOOTSTRAP_SECURITY\\.md$"
-    },
-    {
-      "pattern": "^SECURITY_FIXES_PHASE1\\.md$"
-    },
-    {
-      "pattern": "^docs/TROUBLESHOOTING\\.md$"
-    },
-    {
-      "pattern": "^docs/PLUGINS\\.md$"
-    },
-    {
-      "pattern": "^docs/FLEET_MANAGEMENT\\.md$"
-    },
-    {
-      "pattern": "^docs/MODULAR_ARCHITECTURE\\.md$"
-    },
-    {
-      "pattern": "^MODULAR_README\\.md$"
-    },
-    {
-      "pattern": "^\\.\\.?/MODULAR_README\\.md$"
-    },
-    {
       "pattern": "github\\.com/vietcgi/devkit/(compare|releases/tag)/(v|master|develop)"
     }
   ],

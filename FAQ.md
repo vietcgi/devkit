@@ -133,7 +133,7 @@ Try:
 
 **A:** Warnings are usually non-fatal. Check:
 
-- [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for specific warnings
+- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for specific warnings
 - `~/.devkit/logs/setup.log` for details
 - Run verification: `./verify-setup.sh`
 
@@ -261,7 +261,7 @@ This adds SHA256 signatures to all audit entries.
 
 ### Q: Can I create custom plugins?
 
-**A:** Yes! See [docs/PLUGINS.md](docs/PLUGINS.md) for:
+**A:** Yes! See [PLUGIN_DEVELOPMENT_GUIDE.md](docs/PLUGIN_DEVELOPMENT_GUIDE.md) for:
 
 - Plugin structure
 - Development guide
@@ -302,7 +302,7 @@ global:
 - Health check aggregation
 - Audit log streaming
 
-See [FLEET_MANAGEMENT.md](docs/FLEET_MANAGEMENT.md) for details.
+See [docs/GLOBAL_SETUP_GUIDE.md](docs/GLOBAL_SETUP_GUIDE.md) for details.
 
 ### Q: How do I monitor health across machines?
 
@@ -322,7 +322,7 @@ devkit health --json
 
 **A:** Multiple support options:
 
-1. **Documentation**: Check [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+1. **Documentation**: Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 2. **GitHub Issues**: Report bugs and request features
 3. **Discussions**: Ask questions and share knowledge
 4. **Email**: Contact maintainers (see [SUPPORT.md](SUPPORT.md))
@@ -401,7 +401,7 @@ RUN ./bootstrap.sh
 
 **Can't find your question?** Check:
 
-- [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) - Common issues
+- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues
 - [SUPPORT.md](SUPPORT.md) - Support options
 - [GitHub Issues](https://github.com/vietcgi/devkit/issues) - Search existing questions
 

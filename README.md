@@ -53,7 +53,7 @@ If you have the script locally:
 ./verify-setup.sh
 ```
 
-**For detailed guide:** See [QUICKSTART.md](QUICKSTART.md)
+**For detailed guide:** See [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ---
 
@@ -149,15 +149,15 @@ See [SECURITY.md](SECURITY.md) for more details.
 
 ### Essential Guides (Start Here)
 
-- **[QUICKSTART-ANSIBLE.md](QUICKSTART-ANSIBLE.md)** - Complete setup guide
-- **[KNOWN-ISSUES.md](KNOWN-ISSUES.md)** - Troubleshooting & common problems
+- **[docs/GLOBAL_SETUP_GUIDE.md](docs/GLOBAL_SETUP_GUIDE.md)** - Complete setup guide
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Troubleshooting & common problems
 - **[verify-setup.sh](verify-setup.sh)** - Verify your installation
 
-### Production & Migration
+### Production & Deployment
 
-- **[DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md)** - Production deployment &
-  fleet management for 20+ machines
-- **[ANSIBLE-MIGRATION.md](ANSIBLE-MIGRATION.md)** - Migrate from old Ansible setup
+- **[docs/GLOBAL_SETUP_GUIDE.md](docs/GLOBAL_SETUP_GUIDE.md)** - Setup guide for
+  single or fleet management
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture and design
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history & breaking changes
 
 ### Community & Support
@@ -312,7 +312,7 @@ Perfect for:
 - DevOps workstations
 - Extended monitoring & IaC tools
 
-See [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md) for SRE setup instructions.
+See [docs/GLOBAL_SETUP_GUIDE.md](docs/GLOBAL_SETUP_GUIDE.md) for setup instructions.
 
 ### Option 4: Verification Only
 

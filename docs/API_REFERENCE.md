@@ -875,6 +875,6 @@ def test_logging():
 
 ## See Also
 
-- [MODULAR_ARCHITECTURE.md](MODULAR_ARCHITECTURE.md) - System design
+- [ARCHITECTURE.md](../ARCHITECTURE.md) - System design
 - [PLUGIN_DEVELOPMENT_GUIDE.md](PLUGIN_DEVELOPMENT_GUIDE.md) - Plugin creation
-- [MODULAR_README.md](../MODULAR_README.md) - Quick start guide
+- [README.md](../README.md) - Quick start guide

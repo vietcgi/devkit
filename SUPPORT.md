@@ -9,9 +9,9 @@ how to get help.
 
 1. **Read the Documentation**
     - [README.md](README.md) - Overview and quick start
-    - [QUICKSTART-ANSIBLE.md](QUICKSTART-ANSIBLE.md) - Detailed setup guide
-    - [KNOWN-ISSUES.md](KNOWN-ISSUES.md) - Common problems and solutions
-    - [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md) - Advanced deployment
+    - [docs/GLOBAL_SETUP_GUIDE.md](docs/GLOBAL_SETUP_GUIDE.md) - Detailed setup guide
+    - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common problems and solutions
+    - [docs/GLOBAL_SETUP_GUIDE.md](docs/GLOBAL_SETUP_GUIDE.md) - Advanced deployment
 
 2. **Run Verification Script**
 
@@ -22,7 +22,7 @@ how to get help.
     This checks your system and identifies common issues.
 
 3. **Check for Known Issues**
-    See [KNOWN-ISSUES.md](KNOWN-ISSUES.md) for solutions to common problems:
+    See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for solutions to common problems:
     - Node.js version manager conflicts (nvm vs mise)
     - Homebrew installation issues
     - Permission problems
@@ -138,10 +138,10 @@ discussions help everyone faster!
 
 ### Documentation
 
-- **Setup Guide**: [QUICKSTART-ANSIBLE.md](QUICKSTART-ANSIBLE.md)
-- **Troubleshooting**: [KNOWN-ISSUES.md](KNOWN-ISSUES.md)
-- **Deployment**: [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md)
-- **Migration**: [ANSIBLE-MIGRATION.md](ANSIBLE-MIGRATION.md)
+- **Setup Guide**: [docs/GLOBAL_SETUP_GUIDE.md](docs/GLOBAL_SETUP_GUIDE.md)
+- **Troubleshooting**: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- **Deployment**: [docs/GLOBAL_SETUP_GUIDE.md](docs/GLOBAL_SETUP_GUIDE.md)
+- **Migration**: [ARCHITECTURE.md](ARCHITECTURE.md)
 - **Changelog**: [CHANGELOG.md](CHANGELOG.md)
 
 ### Verification Tools

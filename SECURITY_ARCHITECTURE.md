@@ -68,7 +68,7 @@ curl -fsSL https://raw.githubusercontent.com/vietcgi/devkit/main/bootstrap.sh | 
 dbc6106138b9c9c1b349d8e047465e33e4ec0bd175363131ed97423458a0ec1c
 ```
 
-See: [BOOTSTRAP_SECURITY.md](BOOTSTRAP_SECURITY.md)
+See: [SECURITY.md](SECURITY.md)
 
 ---
 
@@ -765,8 +765,8 @@ def load_file(self, file_path: str | Path) -> Dict[str, Any]:
 **Questions:**
 
 - Review this document first
-- Check [BOOTSTRAP_SECURITY.md](BOOTSTRAP_SECURITY.md) for bootstrap details
-- Check [SECURITY_FIXES_PHASE1.md](SECURITY_FIXES_PHASE1.md) for implementation details
+- Check [SECURITY.md](SECURITY.md) for security policy and reporting
+- Check [SECURITY.md](SECURITY.md) for implementation details
 
 ---
 

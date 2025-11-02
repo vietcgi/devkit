@@ -5,11 +5,9 @@
     os_family: '{{ ansible_os_family }}'
     is_macos: '{{ ansible_os_family == ''Darwin'' }}'
     is_linux: '{{ ansible_os_family != ''Darwin'' }}'
-    homebrew_prefix: |
-      {{ '/opt/homebrew' if is_macos else '/home/linuxbrew/.linuxbrew' }}
-    brewfile_name: '{{ brewfile_name | default("Brewfile") }}'
-    brewfile_path: |
-      {{ playbook_dir }}/{{ brewfile_name }}
+    homebrew_prefix: "{{ '/opt/homebrew' if is_macos else '/home/linuxbrew/.linuxbrew' }}"
+    brewfile_name: "{{ brewfile_name | default('Brewfile') }}"
+    brewfile_path: "{{ playbook_dir }}/{{ brewfile_name }}"
   tasks:
   - name: Set user and home variables from environment
     ansible.builtin.set_fact:

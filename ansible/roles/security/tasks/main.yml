@@ -130,11 +130,19 @@
 
 - name: Audit Logging
   block:
-    - name: Create audit log directory
+    - name: Create .devkit directory with secure permissions
+      ansible.builtin.file:
+        path: "{{ home_dir }}/.devkit"
+        state: directory
+        mode: '0700'
+      tags: [security, audit]
+
+    - name: Create audit log directory with secure permissions
       ansible.builtin.file:
         path: "{{ home_dir }}/.devkit/logs/audit"
         state: directory
-        mode: '0755'
+        mode: '0700'
+        recurse: yes
       tags: [security, audit]
 
     - name: Initialize audit log

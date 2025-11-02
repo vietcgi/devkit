@@ -32,6 +32,11 @@
         repo: https://github.com/romkatv/powerlevel10k.git
         dest: "{{ home_dir }}/.oh-my-zsh/custom/themes/powerlevel10k"
         update: yes
+        timeout: 120
+      retries: 3
+      delay: 5
+      until: p10k_install is succeeded
+      register: p10k_install
       tags: [shell, zsh, theme]
 
     - name: Install Nerd Font (MesloLGS)

@@ -68,41 +68,6 @@ suggest_fix() {
     echo -e "${YELLOW}💡 Suggestion:${NC} $suggestion" >&2
 }
 
-show_help() {
-    local topic="$1"
-    case "$topic" in
-    "brew")
-        log_info "Homebrew installation help:"
-        log_info "  1. Check: /opt/homebrew/bin/brew --version"
-        log_info "  2. Add to PATH: echo 'eval \"\$(/opt/homebrew/bin/brew shellenv)\"' >> ~/.zshrc"
-        log_info "  3. Apply: eval \"\$(/opt/homebrew/bin/brew shellenv)\""
-        ;;
-    "python")
-        log_info "Python installation help:"
-        log_info "  1. Install: brew install python@3.13"
-        log_info "  2. Verify: python3 --version"
-        log_info "  3. Link: brew link python@3.13"
-        ;;
-    "ansible")
-        log_info "Ansible installation help:"
-        log_info "  1. Check Homebrew: brew --version"
-        log_info "  2. Install: brew install ansible"
-        log_info "  3. Verify: ansible --version"
-        ;;
-    "space")
-        log_info "Disk space solutions:"
-        log_info "  1. Check usage: df -h"
-        log_info "  2. Clean brew: brew cleanup --all"
-        log_info "  3. Clear cache: rm -rf ~/Library/Caches/*"
-        log_info "  4. Remove downloads: rm -rf ~/Downloads/*"
-        log_info "  5. Check large dirs: du -sh ~/"
-        ;;
-    *)
-        log_warning "Unknown help topic: $topic"
-        ;;
-    esac
-}
-
 print_header() {
     echo ""
     echo -e "${BOLD}${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -547,55 +512,63 @@ install_ansible() {
                 log_info "Attempting to install ansible via apt-get..."
                 if [[ $EUID -ne 0 ]]; then
                     if command -v sudo &>/dev/null; then
-                        sudo apt-get update && sudo apt-get install -y ansible || {
+                        if ! sudo apt-get update -qq; then
+                            log_error "Failed to update package lists via apt-get"
+                            return 1
+                        fi
+                        if ! sudo apt-get install -y ansible; then
                             log_error "Failed to install Ansible via apt-get"
                             return 1
-                        }
+                        fi
                     else
                         log_error "sudo not found, but required for apt-get"
                         return 1
                     fi
                 else
-                    apt-get update && apt-get install -y ansible || {
+                    if ! apt-get update -qq; then
+                        log_error "Failed to update package lists via apt-get (running as root)"
+                        return 1
+                    fi
+                    if ! apt-get install -y ansible; then
                         log_error "Failed to install Ansible via apt-get (running as root)"
                         return 1
-                    }
+                    fi
                 fi
             elif command -v dnf &>/dev/null; then
                 log_info "Attempting to install ansible via dnf..."
                 if [[ $EUID -ne 0 ]]; then
                     if command -v sudo &>/dev/null; then
-                        sudo dnf install -y ansible || {
+                        if ! sudo dnf install -y ansible; then
                             log_error "Failed to install Ansible via dnf"
                             return 1
-                        }
+                        fi
                     else
                         log_error "sudo not found, but required for dnf"
                         return 1
                     fi
                 else
-                    dnf install -y ansible || {
+                    if ! dnf install -y ansible; then
                         log_error "Failed to install Ansible via dnf (running as root)"
                         return 1
-                    }
+                    fi
                 fi
             elif command -v pacman &>/dev/null; then
                 log_info "Attempting to install ansible via pacman..."
                 if [[ $EUID -ne 0 ]]; then
                     if command -v sudo &>/dev/null; then
-                        sudo pacman -S --noconfirm ansible || {
+                        if ! sudo pacman -S --noconfirm ansible; then
                             log_error "Failed to install Ansible via pacman"
                             return 1
-                        }
+                        fi
                     else
                         log_error "sudo not found, but required for pacman"
                         return 1
                     fi
                 else
-                    pacman -S --noconfirm ansible || {
+                    if ! pacman -S --noconfirm ansible; then
                         log_error "Failed to install Ansible via pacman (running as root)"
                         return 1
-                    }
+                    fi
                 fi
             else
                 log_error "No supported package manager found (apt-get, dnf, pacman)"
@@ -640,7 +613,10 @@ create_default_config() {
     CONFIG_FILE="$CONFIG_DIR/config.yaml"
     LOG_DIR="$CONFIG_DIR/logs"
 
-    mkdir -p "$CONFIG_DIR" "$LOG_DIR"
+    if ! mkdir -p "$CONFIG_DIR" "$LOG_DIR"; then
+        log_error "Failed to create configuration directories: $CONFIG_DIR, $LOG_DIR"
+        return 1
+    fi
 
     if [[ -f "$CONFIG_FILE" ]]; then
         log_warning "Configuration already exists at $CONFIG_FILE"
@@ -768,15 +744,17 @@ run_ansible_setup() {
     log_info "Starting Ansible playbook..."
     log_info "This may take 2-5 minutes depending on your system..."
 
-    cd "$SCRIPT_DIR"
+    if ! cd "$SCRIPT_DIR"; then
+        log_error "Failed to change to script directory: $SCRIPT_DIR"
+        return 1
+    fi
 
-    ansible-playbook -i inventory.yml setup.yml \
+    if ! ansible-playbook -i inventory.yml setup.yml \
         --extra-vars="setup_environment=${ENVIRONMENT:-development}" \
-        --extra-vars="enabled_roles=${SELECTED_ROLES:-core,shell,editors,languages,development}" ||
-        {
-            log_error "Ansible setup failed"
-            return 1
-        }
+        --extra-vars="enabled_roles=${SELECTED_ROLES:-core,shell,editors,languages,development}"; then
+        log_error "Ansible setup failed"
+        return 1
+    fi
 
     log_success "Ansible setup completed"
 }
@@ -993,8 +971,8 @@ main() {
         if ! install_ansible; then
             log_error "Ansible installation failed"
             log_error "Debug info:"
-            log_error "  OS: ${os_family:-unknown}"
-            log_error "  Architecture: ${ARCH:-unknown}"
+            log_error "  OS: ${OS:-unknown}"
+            log_error "  Architecture: ${ARCH_TYPE:-unknown}"
             if command -v ansible-playbook >/dev/null 2>&1; then
                 log_error "  Ansible found in PATH"
             else
@@ -1042,8 +1020,11 @@ main() {
     log_info "Your development environment is ready!"
 
     # Create success marker for CI/CD verification
-    mkdir -p ~/.devkit
-    touch ~/.devkit/.bootstrap_success
+    if ! mkdir -p ~/.devkit; then
+        log_warning "Failed to create ~/.devkit directory for success marker"
+    elif ! touch ~/.devkit/.bootstrap_success; then
+        log_warning "Failed to create success marker file"
+    fi
 }
 
 # Run main function

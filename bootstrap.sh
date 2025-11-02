@@ -618,25 +618,44 @@ install_ansible() {
             # Use pip3 to install ansible (user or system-wide)
             log_info "Using pip3 to install Ansible..."
 
-            # Try user installation first (preferred, doesn't need sudo)
-            if retry pip3 install --user ansible; then
-                log_success "Ansible installed via pip3 (user)"
-            # If user installation fails, try system-wide without externally-managed-environment restrictions
-            elif retry pip3 install --break-system-packages ansible; then
-                log_success "Ansible installed via pip3 (system with --break-system-packages)"
-            # Fallback: try without the flag for older systems
-            elif retry pip3 install ansible; then
-                log_success "Ansible installed via pip3 (system)"
+            # Debian 11 has PEP 668 restrictions, so try --break-system-packages first
+            # Other systems: try user install first (preferred, doesn't need sudo)
+            if [[ "${DISTRO:-}" == "debian" ]] && [[ "${DISTRO_VERSION:-}" == "11" ]]; then
+                log_info "Debian 11 detected: using --break-system-packages for pip3"
+                # Try with --break-system-packages first (required for Debian 11 PEP 668)
+                if retry pip3 install --break-system-packages ansible; then
+                    log_success "Ansible installed via pip3 (system with --break-system-packages)"
+                # Fallback: try user install
+                elif retry pip3 install --user ansible; then
+                    log_success "Ansible installed via pip3 (user)"
+                # Final fallback
+                elif retry pip3 install ansible; then
+                    log_success "Ansible installed via pip3 (system)"
+                else
+                    log_error "Failed to install Ansible via pip3 after 3 attempts"
+                    return 1
+                fi
             else
-                log_error "Failed to install Ansible via pip3 after 3 attempts"
-                log_error ""
-                log_error "Troubleshooting steps:"
-                log_error "  1. Verify pip3 is installed: pip3 --version"
-                log_error "  2. Upgrade pip: pip3 install --upgrade pip"
-                log_error "  3. Check disk space: df -h /tmp"
-                log_error "  4. Try manual install: pip3 install ansible"
-                suggest_fix "ansible" "Ensure pip3 is functional and has sufficient disk space"
-                return 1
+                # Non-Debian-11 systems: try user installation first (preferred, doesn't need sudo)
+                if retry pip3 install --user ansible; then
+                    log_success "Ansible installed via pip3 (user)"
+                # If user installation fails, try system-wide without externally-managed-environment restrictions
+                elif retry pip3 install --break-system-packages ansible; then
+                    log_success "Ansible installed via pip3 (system with --break-system-packages)"
+                # Fallback: try without the flag for older systems
+                elif retry pip3 install ansible; then
+                    log_success "Ansible installed via pip3 (system)"
+                else
+                    log_error "Failed to install Ansible via pip3 after 3 attempts"
+                    log_error ""
+                    log_error "Troubleshooting steps:"
+                    log_error "  1. Verify pip3 is installed: pip3 --version"
+                    log_error "  2. Upgrade pip: pip3 install --upgrade pip"
+                    log_error "  3. Check disk space: df -h /tmp"
+                    log_error "  4. Try manual install: pip3 install ansible"
+                    suggest_fix "ansible" "Ensure pip3 is functional and has sufficient disk space"
+                    return 1
+                fi
             fi
         fi
     fi

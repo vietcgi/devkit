@@ -7,12 +7,13 @@ Validates:
 - Error handling in refactored classes
 """
 
+import os
 import sys
 import unittest
 import tempfile
 import json
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -23,6 +24,7 @@ from cli.audit import (  # noqa: E402
     AuditLogger,
     AuditReporter,
     AuditAction,
+    HMACKeyError,
 )
 
 
@@ -487,6 +489,561 @@ class TestAuditReporterAdvanced(unittest.TestCase):
 
         self.assertIsInstance(report, str)
         self.assertIn("Security & Integrity Report", report)
+
+
+class TestAuditSigningServiceErrors(unittest.TestCase):
+    """Test error handling in AuditSigningService."""
+
+    def setUp(self):
+        """Set up test signing service."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.log_dir = Path(self.temp_dir) / "audit"
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_sign_entry_without_hmac_key(self):
+        """Test that signing without HMAC key raises HMACKeyError."""
+        service = AuditSigningService(self.log_dir, hmac_key=b"")
+        # Set hmac_key to None to simulate missing key
+        service.hmac_key = None
+
+        entry = {"action": "test"}
+        with self.assertRaises(HMACKeyError):
+            service.sign_entry(entry)
+
+    def test_verify_signature_without_hmac_key(self):
+        """Test signature verification when HMAC key is not available."""
+        service = AuditSigningService(self.log_dir, hmac_key=b"x" * 32)
+        service.hmac_key = None
+
+        entry = {"action": "test", "signature": "0" * 64}
+        result = service.verify_signature(entry)
+
+        self.assertFalse(result)
+
+    def test_verify_signature_with_invalid_entry_data(self):
+        """Test signature verification with non-serializable entry data."""
+        service = AuditSigningService(self.log_dir)
+
+        entry = {"action": "test", "signature": "0" * 64, "data": object()}
+        result = service.verify_signature(entry)
+
+        self.assertFalse(result)
+
+    def test_load_or_create_hmac_key_invalid_length(self):
+        """Test handling of HMAC key with invalid length."""
+        service = AuditSigningService(self.log_dir, hmac_key=b"x" * 32)
+        key_file = self.log_dir / ".hmac_key"
+
+        # Write invalid key (wrong length)
+        key_file.write_bytes(b"short_key")
+
+        # Create new service - should generate new key
+        service2 = AuditSigningService(self.log_dir)
+        self.assertEqual(len(service2.hmac_key), 32)
+
+    def test_load_or_create_hmac_key_oserror_on_read(self):
+        """Test handling of OSError when reading HMAC key."""
+        service = AuditSigningService(self.log_dir)
+        key_file = self.log_dir / ".hmac_key"
+
+        # Write valid key
+        valid_key = os.urandom(32)
+        key_file.write_bytes(valid_key)
+
+        # Make key file unreadable
+        key_file.chmod(0o000)
+
+        try:
+            # Create new service - should generate new key due to read error
+            service2 = AuditSigningService(self.log_dir)
+            self.assertEqual(len(service2.hmac_key), 32)
+        finally:
+            # Restore permissions for cleanup
+            key_file.chmod(0o600)
+
+    def test_load_or_create_hmac_key_oserror_on_write(self):
+        """Test handling of OSError when writing HMAC key."""
+        log_dir = Path(self.temp_dir) / "readonly" / "audit"
+        log_dir.mkdir(parents=True, exist_ok=True)
+
+        # Make parent directory read-only
+        parent = log_dir.parent
+        original_mode = parent.stat().st_mode
+        parent.chmod(0o555)
+
+        try:
+            # Should still generate key even if write fails
+            service = AuditSigningService(log_dir)
+            self.assertEqual(len(service.hmac_key), 32)
+        finally:
+            # Restore permissions
+            parent.chmod(original_mode)
+
+
+class TestAuditStorageErrors(unittest.TestCase):
+    """Test error handling in AuditLogStorage."""
+
+    def setUp(self):
+        """Set up test storage."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.log_dir = Path(self.temp_dir) / "audit"
+
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_write_entry_with_non_serializable_data(self):
+        """Test writing entry with non-serializable data."""
+        storage = AuditLogStorage(self.log_dir)
+
+        entry = {"action": "test", "data": object()}
+        # Should not raise, but log warning
+        storage.write_entry(entry)
+
+        # Log file should still exist
+        self.assertTrue(storage.log_file.exists())
+
+    def test_ensure_secure_permissions_oserror(self):
+        """Test handling of permission errors."""
+        storage = AuditLogStorage(self.log_dir)
+
+        # Create a file in the log directory
+        storage.write_entry({"action": "test"})
+
+        # Make log file read-only to trigger error
+        storage.log_file.chmod(0o444)
+
+        try:
+            # Should handle the error gracefully
+            storage._ensure_secure_permissions()
+        finally:
+            # Restore permissions for cleanup
+            storage.log_file.chmod(0o600)
+
+    def test_read_entries_with_invalid_json_lines(self):
+        """Test reading log file with corrupted JSON lines."""
+        storage = AuditLogStorage(self.log_dir)
+
+        # Write mixed valid and invalid JSON
+        with open(storage.log_file, "w") as f:
+            f.write('{"action": "valid1"}\n')
+            f.write("{ invalid json }\n")
+            f.write('{"action": "valid2"}\n')
+
+        entries = storage.read_entries()
+
+        # Should read the 2 valid entries and skip invalid
+        self.assertEqual(len(entries), 2)
+        self.assertEqual(entries[0]["action"], "valid1")
+        self.assertEqual(entries[1]["action"], "valid2")
+
+    def test_read_entries_oserror(self):
+        """Test handling of OSError when reading log file."""
+        storage = AuditLogStorage(self.log_dir)
+
+        # Write an entry first
+        storage.write_entry({"action": "test"})
+
+        # Make log file unreadable
+        storage.log_file.chmod(0o000)
+
+        try:
+            # Should return empty list due to read error
+            entries = storage.read_entries()
+            # With OSError handling, should return empty
+            self.assertEqual(entries, [])
+        finally:
+            # Restore permissions
+            storage.log_file.chmod(0o600)
+
+    def test_rotate_logs_with_shutil_error(self):
+        """Test handling of shutil.Error during log rotation."""
+        storage = AuditLogStorage(self.log_dir)
+
+        # Create old log file
+        old_log = self.log_dir / "audit-20200101.jsonl"
+        old_log.write_text('{"action": "old"}\n')
+
+        # Make archive directory read-only to trigger error
+        archive_dir = self.log_dir / "archive"
+        archive_dir.mkdir(exist_ok=True)
+        parent = archive_dir.parent
+        original_mode = parent.stat().st_mode
+        parent.chmod(0o555)
+
+        try:
+            # Should handle error gracefully
+            storage.rotate_logs()
+        finally:
+            parent.chmod(original_mode)
+
+
+class TestAuditLoggerAdditionalMethods(unittest.TestCase):
+    """Test additional AuditLogger methods and error paths."""
+
+    def setUp(self):
+        """Set up test logger."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.log_dir = Path(self.temp_dir) / "audit"
+
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_log_config_changed(self):
+        """Test logging configuration change."""
+        logger = AuditLogger(self.log_dir)
+        entry = logger.log_config_changed("key", "old_value", "new_value")
+
+        self.assertEqual(entry["action"], "config_changed")
+        self.assertEqual(entry["details"]["key"], "key")
+        self.assertEqual(entry["details"]["old_value"], "old_value")
+        self.assertEqual(entry["details"]["new_value"], "new_value")
+
+    def test_log_config_changed_with_none_values(self):
+        """Test logging configuration change with None values."""
+        logger = AuditLogger(self.log_dir)
+        entry = logger.log_config_changed("key", None, 42)
+
+        self.assertEqual(entry["details"]["old_value"], "None")
+        self.assertEqual(entry["details"]["new_value"], "42")
+
+    def test_log_verification_passed(self):
+        """Test logging successful verification."""
+        logger = AuditLogger(self.log_dir)
+        entry = logger.log_verification(passed=True, details={"checks": 5})
+
+        self.assertEqual(entry["action"], "verification_passed")
+        self.assertEqual(entry["status"], "success")
+
+    def test_log_verification_failed(self):
+        """Test logging failed verification."""
+        logger = AuditLogger(self.log_dir)
+        entry = logger.log_verification(passed=False, details={"reason": "check failed"})
+
+        self.assertEqual(entry["action"], "verification_failed")
+        self.assertEqual(entry["status"], "failure")
+
+    def test_log_health_check(self):
+        """Test logging health check result."""
+        logger = AuditLogger(self.log_dir)
+        entry = logger.log_health_check("healthy", details={"services": 3})
+
+        self.assertEqual(entry["action"], "health_check")
+        self.assertEqual(entry["status"], "healthy")
+        self.assertEqual(entry["details"]["services"], 3)
+
+    def test_log_health_check_with_warning(self):
+        """Test logging health check with warning status."""
+        logger = AuditLogger(self.log_dir)
+        entry = logger.log_health_check("warning", details={"issue": "high memory"})
+
+        self.assertEqual(entry["action"], "health_check")
+        self.assertEqual(entry["status"], "warning")
+
+    def test_get_audit_logs_with_signature_verification(self):
+        """Test retrieving logs with signature verification."""
+        logger = AuditLogger(self.log_dir, enable_signing=True)
+
+        logger.log_install_started()
+        logger.log_install_completed(duration_seconds=30)
+
+        # Get with verification
+        entries = logger.get_audit_logs(verify_signatures=True)
+
+        # Both should verify successfully
+        self.assertEqual(len(entries), 2)
+
+    def test_get_audit_logs_filter_invalid_signatures(self):
+        """Test that logs with invalid signatures are filtered out."""
+        logger = AuditLogger(self.log_dir, enable_signing=True)
+
+        entry1 = logger.log_install_started()
+        entry2 = logger.log_install_completed(duration_seconds=30)
+
+        # Manually tamper with second entry
+        storage = logger.storage
+        lines = storage.log_file.read_text().strip().split("\n")
+        lines[1] = lines[1].replace("install_completed", "tampered_action")
+        storage.log_file.write_text("\n".join(lines) + "\n")
+
+        # Get with verification - should only get first entry
+        entries = logger.get_audit_logs(verify_signatures=True)
+
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0]["action"], "install_started")
+
+    def test_rotate_logs_proxy(self):
+        """Test rotate_logs proxy method."""
+        logger = AuditLogger(self.log_dir)
+
+        # Create old log
+        old_log = self.log_dir / "audit-20200101.jsonl"
+        old_log.write_text('{"action": "old"}\n')
+
+        # Should call storage.rotate_logs()
+        logger.rotate_logs()
+
+        # Archive directory should be created
+        archive_dir = self.log_dir / "archive"
+        self.assertTrue(archive_dir.exists())
+
+    def test_validate_log_integrity_all_valid(self):
+        """Test log integrity validation with all valid entries."""
+        logger = AuditLogger(self.log_dir, enable_signing=True)
+
+        logger.log_install_started()
+        logger.log_install_completed(duration_seconds=30)
+
+        result = logger.validate_log_integrity()
+
+        self.assertEqual(result["total_entries"], 2)
+        self.assertEqual(result["valid_entries"], 2)
+        self.assertEqual(result["invalid_entries"], 0)
+        self.assertEqual(result["unsigned_entries"], 0)
+        self.assertFalse(result["tampering_detected"])
+
+    def test_validate_log_integrity_with_tampering(self):
+        """Test log integrity validation detects tampering."""
+        logger = AuditLogger(self.log_dir, enable_signing=True)
+
+        logger.log_install_started()
+        logger.log_install_completed(duration_seconds=30)
+
+        # Tamper with entry in file
+        storage = logger.storage
+        lines = storage.log_file.read_text().strip().split("\n")
+        lines[0] = lines[0].replace("install_started", "tampered")
+        storage.log_file.write_text("\n".join(lines) + "\n")
+
+        result = logger.validate_log_integrity()
+
+        self.assertEqual(result["total_entries"], 2)
+        self.assertEqual(result["invalid_entries"], 1)
+        self.assertTrue(result["tampering_detected"])
+        self.assertEqual(len(result["invalid_entry_timestamps"]), 1)
+
+    def test_validate_log_integrity_unsigned_entries(self):
+        """Test log integrity validation with unsigned entries."""
+        logger = AuditLogger(self.log_dir)
+
+        logger.log_install_started()
+        logger.log_install_completed(duration_seconds=30)
+
+        result = logger.validate_log_integrity()
+
+        self.assertEqual(result["total_entries"], 2)
+        self.assertEqual(result["unsigned_entries"], 2)
+        self.assertFalse(result["tampering_detected"])
+
+    def test_get_audit_summary_basic(self):
+        """Test getting basic audit summary."""
+        logger = AuditLogger(self.log_dir)
+
+        logger.log_install_started()
+        logger.log_install_completed(duration_seconds=30)
+        logger.log_install_started()
+
+        summary = logger.get_audit_summary(hours=24)
+
+        self.assertEqual(summary["total_actions"], 3)
+        self.assertIn("install_started", summary["actions_by_type"])
+        self.assertIn("install_completed", summary["actions_by_type"])
+        self.assertEqual(summary["actions_by_type"]["install_started"], 2)
+        self.assertEqual(summary["actions_by_type"]["install_completed"], 1)
+
+    def test_get_audit_summary_with_status(self):
+        """Test audit summary includes status tracking."""
+        logger = AuditLogger(self.log_dir)
+
+        logger.log_install_completed(duration_seconds=30)
+        logger.log_install_failed(error="Test error")
+
+        summary = logger.get_audit_summary(hours=24)
+
+        self.assertIn("success", summary["actions_by_status"])
+        self.assertIn("failure", summary["actions_by_status"])
+
+    def test_get_audit_summary_with_users(self):
+        """Test audit summary tracks different users."""
+        logger = AuditLogger(self.log_dir)
+
+        # Log with implicit user (from os.getenv)
+        logger.log_install_started()
+
+        summary = logger.get_audit_summary(hours=24)
+
+        self.assertIsInstance(summary["users"], list)
+        self.assertGreater(len(summary["users"]), 0)
+
+    def test_get_audit_summary_old_entries_excluded(self):
+        """Test that old entries are excluded from summary."""
+        logger = AuditLogger(self.log_dir)
+
+        # Write old entry directly
+        old_time = (datetime.now(tz=UTC) - timedelta(days=2)).isoformat()
+        logger.storage.write_entry({
+            "timestamp": old_time,
+            "action": "old_action",
+            "status": "success",
+            "details": {},
+        })
+
+        # Write recent entry
+        logger.log_install_started()
+
+        summary = logger.get_audit_summary(hours=24)
+
+        # Should only count the recent entry
+        self.assertEqual(summary["total_actions"], 1)
+
+    def test_get_audit_summary_invalid_timestamp(self):
+        """Test audit summary handling of invalid timestamps."""
+        logger = AuditLogger(self.log_dir)
+
+        logger.log_install_started()
+
+        # Write entry with invalid timestamp
+        logger.storage.write_entry({
+            "timestamp": "invalid-timestamp",
+            "action": "test",
+            "status": "success",
+            "details": {},
+        })
+
+        # Should not raise, just skip invalid entries
+        summary = logger.get_audit_summary(hours=24)
+        self.assertIsInstance(summary, dict)
+
+
+class TestAuditReporterErrors(unittest.TestCase):
+    """Test error handling in AuditReporter."""
+
+    def setUp(self):
+        """Set up test reporter."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.log_dir = Path(self.temp_dir) / "audit"
+
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_generate_activity_report_with_invalid_timestamp(self):
+        """Test activity report handles invalid timestamps."""
+        logger = AuditLogger(self.log_dir)
+        reporter = AuditReporter(logger)
+
+        logger.log_install_started()
+
+        # Write entry with invalid timestamp
+        logger.storage.write_entry({
+            "timestamp": "invalid",
+            "action": "test",
+            "status": "success",
+            "details": {},
+        })
+
+        # Should not raise
+        report = reporter.generate_activity_report(days=30)
+        self.assertIsInstance(report, str)
+        self.assertIn("Activity Report", report)
+
+    def test_generate_activity_report_empty_logs(self):
+        """Test activity report with no entries."""
+        logger = AuditLogger(self.log_dir)
+        reporter = AuditReporter(logger)
+
+        report = reporter.generate_activity_report(days=30)
+
+        self.assertIsInstance(report, str)
+        self.assertIn("Activity Report", report)
+
+    def test_generate_activity_report_old_entries_excluded(self):
+        """Test that old entries are excluded from activity report."""
+        logger = AuditLogger(self.log_dir)
+        reporter = AuditReporter(logger)
+
+        # Write old entry
+        old_time = (datetime.now(tz=UTC) - timedelta(days=60)).isoformat()
+        logger.storage.write_entry({
+            "timestamp": old_time,
+            "action": "old_action",
+            "status": "success",
+            "user": "user1",
+            "details": {},
+        })
+
+        # Write recent entry
+        logger.log_install_started()
+
+        report = reporter.generate_activity_report(days=30)
+
+        # Old action should not appear
+        self.assertNotIn("old_action", report)
+
+    def test_generate_activity_report_sorted_by_count(self):
+        """Test that activity report sorts actions by count."""
+        logger = AuditLogger(self.log_dir)
+        reporter = AuditReporter(logger)
+
+        # Create multiple entries of same type
+        for _ in range(3):
+            logger.log_install_started()
+
+        for _ in range(2):
+            logger.log_install_completed(duration_seconds=30)
+
+        report = reporter.generate_activity_report(days=30)
+
+        # install_started should appear before install_completed (more counts)
+        install_started_pos = report.find("install_started")
+        install_completed_pos = report.find("install_completed")
+        self.assertLess(install_started_pos, install_completed_pos)
+
+    def test_generate_security_report_with_tampering(self):
+        """Test security report shows tampering."""
+        logger = AuditLogger(self.log_dir, enable_signing=True)
+        reporter = AuditReporter(logger)
+
+        logger.log_install_started()
+
+        # Tamper with entry
+        storage = logger.storage
+        lines = storage.log_file.read_text().strip().split("\n")
+        lines[0] = lines[0].replace("install_started", "tampered")
+        storage.log_file.write_text("\n".join(lines) + "\n")
+
+        report = reporter.generate_security_report()
+
+        self.assertIsInstance(report, str)
+        self.assertIn("Security & Integrity Report", report)
+        self.assertIn("Tampering Detected: True", report)
+
+    def test_generate_security_report_invalid_entries_listed(self):
+        """Test security report lists invalid entry timestamps."""
+        logger = AuditLogger(self.log_dir, enable_signing=True)
+        reporter = AuditReporter(logger)
+
+        entry = logger.log_install_started()
+        timestamp = entry["timestamp"]
+
+        # Tamper with entry
+        storage = logger.storage
+        lines = storage.log_file.read_text().strip().split("\n")
+        lines[0] = lines[0].replace("install_started", "tampered")
+        storage.log_file.write_text("\n".join(lines) + "\n")
+
+        report = reporter.generate_security_report()
+
+        self.assertIn("Invalid Entries at:", report)
 
 
 if __name__ == "__main__":

@@ -234,15 +234,33 @@
     - linux
     - packages
   - name: Install essential Linux packages (Arch Linux)
-    ansible.builtin.shell: |
-      pacman -Syu --noconfirm git curl wget vim neovim tmux zsh \
-        fzf ripgrep bat tree htop jq base-devel python-pip python-pipx nodejs \
-        npm go postgresql sqlite direnv shellcheck
-    args:
-      executable: /bin/bash
-    changed_when: false
-    register: pacman_result
-    failed_when: false
+    community.general.pacman:
+      name:
+      - git
+      - curl
+      - wget
+      - vim
+      - neovim
+      - tmux
+      - zsh
+      - fzf
+      - ripgrep
+      - bat
+      - tree
+      - htop
+      - jq
+      - base-devel
+      - python-pip
+      - python-pipx
+      - nodejs
+      - npm
+      - go
+      - postgresql
+      - sqlite
+      - direnv
+      - shellcheck
+      state: present
+      update_cache: yes
     become: "{{ not (ansible_user_id == 'root') }}"
     when:
     - ansible_os_family == "Archlinux"

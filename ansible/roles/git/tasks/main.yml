@@ -321,19 +321,20 @@
 
     - name: Initialize pre-commit hooks in repository
       ansible.builtin.shell: >
-        set -e;
         repo_dir="{{ git_repo_root | default(lookup('env', 'PWD')) }}";
         if [ -d "$repo_dir/.git" ]; then
           cd "$repo_dir" && pre-commit install;
+          exit 0;
         else
           echo "Not in a git repository, skipping pre-commit install";
+          exit 0;
         fi
       environment:
         PATH: "{{ git_home_dir }}/.local/bin:{{ homebrew_prefix | default('/usr/local') }}/bin:/usr/local/bin:/usr/bin:/bin:/sbin:/usr/sbin:{{ ansible_env.PATH }}" # yamllint disable-line rule:line-length
         HOME: "{{ git_home_dir }}"
       register: git_precommit_init
-      changed_when: false
-      failed_when: false
+      changed_when: "'installed' in git_precommit_init.stdout or 'updated' in git_precommit_init.stdout"
+      failed_when: git_precommit_init.rc != 0 and 'Not in a git repository' not in git_precommit_init.stdout
       when: git_enable_precommit | default(true)
       tags: [git, precommit, init]
 

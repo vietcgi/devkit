@@ -67,25 +67,6 @@
     tags:
     - homebrew
     - packages
-  - name: Include dotfiles role
-    ansible.builtin.include_role:
-      name: dotfiles
-    tags:
-    - dotfiles
-    - configuration
-    - always
-  - name: Include git role
-    ansible.builtin.include_role:
-      name: git
-    vars:
-      git_current_user: "{{ user }}"
-      git_home_dir: "{{ home }}"
-      git_repo_root: "{{ playbook_dir }}"
-      git_enable_precommit: true
-    tags:
-    - git
-    - configuration
-    - always
   - name: Install essential Linux packages (Debian/Ubuntu)
     ansible.builtin.apt:
       name:
@@ -170,6 +151,25 @@
     tags:
     - linux
     - packages
+  - name: Include dotfiles role
+    ansible.builtin.include_role:
+      name: dotfiles
+    tags:
+    - dotfiles
+    - configuration
+    - always
+  - name: Include git role
+    ansible.builtin.include_role:
+      name: git
+    vars:
+      git_current_user: "{{ user }}"
+      git_home_dir: "{{ home }}"
+      git_repo_root: "{{ playbook_dir }}"
+      git_enable_precommit: true
+    tags:
+    - git
+    - configuration
+    - always
   - name: Download mise installer
     ansible.builtin.get_url:
       url: https://mise.run

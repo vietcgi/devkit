@@ -2,7 +2,7 @@
 
 - name: Set variables
   ansible.builtin.set_fact:
-    home_dir: "{{ lookup('env', 'HOME') or '/root' }}"
+    home_dir: "{{ (lookup('env', 'HOME') or '/root') | strip }}"
 
 - name: SSH Key Setup
   block:

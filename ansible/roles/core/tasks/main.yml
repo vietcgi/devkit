@@ -40,8 +40,8 @@
 
 - name: Set user and home from environment
   ansible.builtin.set_fact:
-    current_user: "{{ lookup('env', 'USER') or lookup('env', 'LOGNAME') or 'root' }}"
-    home_dir: "{{ lookup('env', 'HOME') or '/root' }}"
+    current_user: "{{ (lookup('env', 'USER') or lookup('env', 'LOGNAME') or 'root') | strip }}"
+    home_dir: "{{ (lookup('env', 'HOME') or '/root') | strip }}"
   tags: [always]
 
 - name: Create devkit directories

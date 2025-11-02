@@ -12,10 +12,8 @@
   tasks:
   - name: Set user and home variables from environment
     ansible.builtin.set_fact:
-      user: |
-        {{ lookup('env', 'USER') or lookup('env', 'LOGNAME') or 'root' }}
-      home: |
-        {{ lookup('env', 'HOME') or '/root' }}
+      user: "{{ (lookup('env', 'USER') or lookup('env', 'LOGNAME') or 'root') | strip }}"
+      home: "{{ (lookup('env', 'HOME') or '/root') | strip }}"
     tags:
     - always
   - name: Check if Homebrew is installed

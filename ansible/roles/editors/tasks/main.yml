@@ -2,7 +2,7 @@
 
 - name: Set variables
   ansible.builtin.set_fact:
-    home_dir: "{{ lookup('env', 'HOME') or '/root' }}"
+    home_dir: "{{ (lookup('env', 'HOME') or '/root') | strip }}"
     homebrew_prefix: "{{ '/opt/homebrew' if is_macos else '/home/linuxbrew/.linuxbrew' }}"
 
 - name: Install Neovim

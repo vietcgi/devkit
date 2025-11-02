@@ -3,7 +3,7 @@
 - name: Determine shell environment variables
   ansible.builtin.set_fact:
     shell_choice: "{{ config_shell | default('zsh') }}"
-    home_dir: "{{ lookup('env', 'HOME') or '/root' }}"
+    home_dir: "{{ (lookup('env', 'HOME') or '/root') | strip }}"
 
 - name: Install Zsh and plugins
   block:

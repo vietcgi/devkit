@@ -2,8 +2,8 @@
 # Override these in group_vars/{{ group }}.yml or host_vars/{{ hostname }}.yml
 
 # User settings
-user: "{{ lookup('env', 'USER') }}"
-home: "{{ lookup('env', 'HOME') }}"
+user: "{{ lookup('env', 'USER') | strip }}"
+home: "{{ lookup('env', 'HOME') | strip }}"
 
 # Feature flags (enable/disable features)
 install_shell_tools: true

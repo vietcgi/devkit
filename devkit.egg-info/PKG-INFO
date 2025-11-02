@@ -1,24 +1,39 @@
 Metadata-Version: 2.4
 Name: devkit
-Version: 1.0.0
-Summary: Enterprise-grade system configuration management
-Home-page: https://github.com/vietcgi/devkit
-Author: Devkit Contributors
-Author-email: Kevin <kevin@example.com>
+Version: 3.1.0
+Summary: Development Environment Automation - Enterprise-grade system configuration management
+Author-email: Devkit Contributors <maintainer@example.com>
 License: Apache-2.0
 Project-URL: Homepage, https://github.com/vietcgi/devkit
 Project-URL: Repository, https://github.com/vietcgi/devkit
-Project-URL: Issues, https://github.com/vietcgi/devkit/issues
-Requires-Python: >=3.13
+Project-URL: Bug Tracker, https://github.com/vietcgi/devkit/issues
+Project-URL: Documentation, https://github.com/vietcgi/devkit
+Project-URL: Source Code, https://github.com/vietcgi/devkit
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: MacOS
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Topic :: System :: Systems Administration
+Classifier: Topic :: Utilities
+Requires-Python: >=3.11
 Description-Content-Type: text/markdown
 License-File: LICENSE
 Requires-Dist: PyYAML>=6.0
 Requires-Dist: requests>=2.28
 Requires-Dist: setuptools>=75.0
+Requires-Dist: click>=8.0
 Provides-Extra: dev
 Requires-Dist: pytest>=7.4.0; extra == "dev"
 Requires-Dist: pytest-cov>=4.1.0; extra == "dev"
+Requires-Dist: pytest-html>=4.0.0; extra == "dev"
+Requires-Dist: pytest-timeout>=2.1.0; extra == "dev"
 Requires-Dist: pytest-xdist>=3.3.0; extra == "dev"
+Requires-Dist: pytest-benchmark>=4.0.0; extra == "dev"
 Requires-Dist: mypy>=1.11.1; extra == "dev"
 Requires-Dist: ruff>=0.6.9; extra == "dev"
 Requires-Dist: pre-commit>=3.3.0; extra == "dev"
@@ -89,7 +104,7 @@ If you have the script locally:
 ./verify-setup.sh
 ```
 
-**For detailed guide:** See [QUICKSTART.md](QUICKSTART.md)
+**For detailed guide:** See [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ---
 
@@ -185,15 +200,15 @@ See [SECURITY.md](SECURITY.md) for more details.
 
 ### Essential Guides (Start Here)
 
-- **[QUICKSTART-ANSIBLE.md](QUICKSTART-ANSIBLE.md)** - Complete setup guide
-- **[KNOWN-ISSUES.md](KNOWN-ISSUES.md)** - Troubleshooting & common problems
+- **[docs/GLOBAL_SETUP_GUIDE.md](docs/GLOBAL_SETUP_GUIDE.md)** - Complete setup guide
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Troubleshooting & common problems
 - **[verify-setup.sh](verify-setup.sh)** - Verify your installation
 
-### Production & Migration
+### Production & Deployment
 
-- **[DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md)** - Production deployment &
-  fleet management for 20+ machines
-- **[ANSIBLE-MIGRATION.md](ANSIBLE-MIGRATION.md)** - Migrate from old Ansible setup
+- **[docs/GLOBAL_SETUP_GUIDE.md](docs/GLOBAL_SETUP_GUIDE.md)** - Setup guide for
+  single or fleet management
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture and design
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history & breaking changes
 
 ### Community & Support
@@ -348,7 +363,7 @@ Perfect for:
 - DevOps workstations
 - Extended monitoring & IaC tools
 
-See [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md) for SRE setup instructions.
+See [docs/GLOBAL_SETUP_GUIDE.md](docs/GLOBAL_SETUP_GUIDE.md) for setup instructions.
 
 ### Option 4: Verification Only
 
@@ -497,9 +512,9 @@ Apache License 2.0 - see [LICENSE](LICENSE) file for details.
 
 ### Further Documentation
 
-- **[KNOWN-ISSUES.md](KNOWN-ISSUES.md)** - Common problems & solutions
-- **[QUICKSTART-ANSIBLE.md](QUICKSTART-ANSIBLE.md)** - Detailed setup guide
-- **[DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md)** - Advanced deployment
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common problems & solutions
+- **[GLOBAL_SETUP_GUIDE.md](docs/GLOBAL_SETUP_GUIDE.md)** - Detailed setup guide
+- **[SECURITY.md](SECURITY.md)** - Security policies & practices
 
 ### Run Verification
 

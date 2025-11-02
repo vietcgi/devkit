@@ -24,6 +24,7 @@ jobs:
     - name: Install dependencies and quality tools
       run: |
         pip install --upgrade pip setuptools wheel
+        pip install PyYAML requests
         pip install -e ".[dev]"
 
     - name: Check code formatting with black

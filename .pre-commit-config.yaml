@@ -186,11 +186,9 @@ repos:
         language: python
         additional_dependencies: [radon]
         pass_filenames: false
-        stages: [commit]
       - id: radon-mi
         name: "Check maintainability index (Radon)"
         entry: radon mi -n B cli/
         language: python
         additional_dependencies: [radon]
         pass_filenames: false
-        stages: [commit]

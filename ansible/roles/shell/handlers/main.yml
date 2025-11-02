@@ -1,0 +1,62 @@
+---
+# Shell role handlers
+# Handles shell configuration updates and environment reloading
+
+- name: reload zsh configuration
+  ansible.builtin.shell: |
+    # Source the zsh configuration to apply changes
+    if [ -f {{ home_dir }}/.zshrc ]; then
+      exec zsh -l
+    fi
+  environment:
+    HOME: "{{ home_dir }}"
+  listen: zsh configuration updated
+  changed_when: false
+  tags: [shell, zsh, reload]
+
+- name: verify oh-my-zsh installation
+  ansible.builtin.stat:
+    path: "{{ home_dir }}/.oh-my-zsh"
+  register: ohmyzsh_check
+  listen: oh-my-zsh installed
+  tags: [shell, zsh]
+
+- name: update oh-my-zsh
+  ansible.builtin.shell: |
+    {{ home_dir }}/.oh-my-zsh/tools/upgrade.sh
+  environment:
+    HOME: "{{ home_dir }}"
+  listen: update oh-my-zsh
+  changed_when: false
+  tags: [shell, zsh, update]
+
+- name: install zsh plugins
+  ansible.builtin.shell: |
+    # Verify plugin installations
+    {{ homebrew_prefix }}/bin/brew list zsh-completions &>/dev/null && \
+    {{ homebrew_prefix }}/bin/brew list zsh-syntax-highlighting &>/dev/null && \
+    {{ homebrew_prefix }}/bin/brew list zsh-autosuggestions &>/dev/null
+  listen: zsh plugins installed
+  changed_when: false
+  tags: [shell, zsh, plugins]
+
+- name: reload powerlevel10k theme
+  ansible.builtin.shell: |
+    # Refresh Powerlevel10k theme
+    if command -v git &>/dev/null; then
+      if [ -d "{{ home_dir }}/.oh-my-zsh/custom/themes/powerlevel10k" ]; then
+        cd "{{ home_dir }}/.oh-my-zsh/custom/themes/powerlevel10k" && \
+        git pull --ff-only
+      fi
+    fi
+  environment:
+    HOME: "{{ home_dir }}"
+  listen: update powerlevel10k
+  changed_when: false
+  tags: [shell, theme]
+
+- name: notify shell configuration complete
+  ansible.builtin.debug:
+    msg: "Shell configuration completed. You may need to restart your terminal for all changes to take effect."
+  listen: shell configuration complete
+  tags: [shell, setup]

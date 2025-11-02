@@ -1,0 +1,37 @@
+---
+# Core role handlers
+# Handles Homebrew installation verification and PATH updates
+
+- name: verify homebrew installation
+  ansible.builtin.stat:
+    path: "{{ homebrew_prefix }}/bin/brew"
+  register: homebrew_verify
+  listen: homebrew installed
+  tags: [homebrew, verify]
+
+- name: update homebrew packages
+  ansible.builtin.shell: |
+    {{ homebrew_prefix }}/bin/brew update
+  listen: update homebrew
+  environment:
+    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.PATH }}"
+  changed_when: false
+  tags: [homebrew, update]
+
+- name: notify installation complete
+  ansible.builtin.debug:
+    msg: "Core system setup completed. Homebrew is ready for use."
+  listen: core setup complete
+  tags: [core, setup]
+
+- name: reload environment variables
+  ansible.builtin.shell: |
+    # Ensure Homebrew PATH is available for subsequent tasks
+    export PATH="{{ homebrew_prefix }}/bin:{{ homebrew_prefix }}/sbin:$PATH"
+    echo "PATH=$PATH" >> ~/.bashrc
+    echo "PATH=$PATH" >> ~/.zshrc
+  args:
+    executable: /bin/bash
+  listen: environment updated
+  changed_when: false
+  tags: [environment, path]

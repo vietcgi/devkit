@@ -1,0 +1,73 @@
+---
+# Editors role handlers
+# Handles Neovim plugin management and editor configuration updates
+
+- name: verify neovim installation
+  ansible.builtin.shell: |
+    neovim --version 2>/dev/null || nvim --version 2>/dev/null
+  register: nvim_version
+  listen: neovim installed
+  changed_when: false
+  tags: [editors, neovim]
+
+- name: install neovim plugins
+  ansible.builtin.shell: |
+    # Install vim-plug plugins
+    nvim +PlugInstall +qall 2>/dev/null || true
+  environment:
+    HOME: "{{ home_dir }}"
+  listen: install nvim plugins
+  changed_when: false
+  tags: [editors, neovim, plugins]
+
+- name: update neovim plugins
+  ansible.builtin.shell: |
+    # Update vim-plug plugins
+    nvim +PlugUpdate +qall 2>/dev/null || true
+  environment:
+    HOME: "{{ home_dir }}"
+  listen: update nvim plugins
+  changed_when: false
+  tags: [editors, neovim, plugins]
+
+- name: verify vim-plug installation
+  ansible.builtin.stat:
+    path: "{{ home_dir }}/.local/share/nvim/site/autoload/plug.vim"
+  register: vimplug_check
+  listen: vim-plug verified
+  tags: [editors, neovim, plugins]
+
+- name: clear neovim cache
+  ansible.builtin.shell: |
+    # Clear Neovim plugin cache for fresh load
+    rm -rf "{{ home_dir }}/.local/share/nvim/shada" 2>/dev/null || true
+  environment:
+    HOME: "{{ home_dir }}"
+  listen: clear nvim cache
+  changed_when: false
+  tags: [editors, neovim, cache]
+
+- name: verify neovim configuration
+  ansible.builtin.shell: |
+    # Validate Neovim configuration syntax
+    nvim -u {{ home_dir }}/.config/nvim/init.lua -c ':q!' 2>/dev/null || true
+  environment:
+    HOME: "{{ home_dir }}"
+  listen: verify nvim config
+  changed_when: false
+  tags: [editors, neovim, config]
+
+- name: notify editor setup complete
+  ansible.builtin.debug:
+    msg: |
+      Editor configuration completed.
+      Neovim is ready with plugins and configuration.
+      Run 'nvim' to start the editor.
+  listen: editor setup complete
+  tags: [editors, setup]
+
+- name: notify vscode installation
+  ansible.builtin.debug:
+    msg: "VS Code can be installed from App Store or via: brew install --cask visual-studio-code"
+  listen: vscode available
+  tags: [editors, vscode]

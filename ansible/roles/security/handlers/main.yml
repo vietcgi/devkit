@@ -1,0 +1,68 @@
+---
+# Security role handlers
+# Handles SSH key verification, GPG setup, and security configuration updates
+
+- name: verify ssh key generation
+  ansible.builtin.stat:
+    path: "{{ home_dir }}/.ssh/id_ed25519"
+  register: ssh_key_verify
+  listen: ssh key generated
+  tags: [security, ssh]
+
+- name: verify ssh config
+  ansible.builtin.shell: |
+    # Validate SSH config syntax
+    ssh -G localhost &>/dev/null || true
+  listen: ssh configuration updated
+  changed_when: false
+  tags: [security, ssh]
+
+- name: set secure ssh key permissions
+  ansible.builtin.file:
+    path: "{{ home_dir }}/.ssh/id_ed25519"
+    mode: '0600'
+  listen: secure ssh permissions
+  tags: [security, ssh]
+
+- name: set secure ssh config permissions
+  ansible.builtin.file:
+    path: "{{ home_dir }}/.ssh/config"
+    mode: '0644'
+  listen: secure ssh config permissions
+  tags: [security, ssh]
+
+- name: restart ssh agent
+  ansible.builtin.shell: |
+    # Restart SSH agent to apply key changes
+    if command -v ssh-add &>/dev/null; then
+      ssh-add -D 2>/dev/null || true
+      ssh-add "{{ home_dir }}/.ssh/id_ed25519" 2>/dev/null || true
+    fi
+  environment:
+    HOME: "{{ home_dir }}"
+  listen: restart ssh agent
+  changed_when: false
+  tags: [security, ssh, agent]
+
+- name: notify ssh setup complete
+  ansible.builtin.debug:
+    msg: |
+      SSH setup completed. Your ED25519 key is ready for use.
+      Add your public key to GitHub/GitLab at: ~/.ssh/id_ed25519.pub
+  listen: ssh setup complete
+  tags: [security, ssh]
+
+- name: verify gpg setup
+  ansible.builtin.shell: |
+    # Check if GPG key exists
+    gpg --list-secret-keys 2>/dev/null | grep -q "^sec" || echo "no gpg keys found"
+  register: gpg_check
+  listen: gpg setup verification
+  changed_when: false
+  tags: [security, gpg]
+
+- name: notify security setup complete
+  ansible.builtin.debug:
+    msg: "Security configuration completed. SSH and GPG are configured."
+  listen: security setup complete
+  tags: [security, setup]

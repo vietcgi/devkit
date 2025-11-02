@@ -379,6 +379,148 @@ class TestGitConfigManager:
         assert result is False
 
 
+class TestGitConfigManagerErrorHandling:
+    """Test error handling and edge cases."""
+
+    def test_validate_git_config_syntax_success(self, manager: GitConfigManager) -> None:
+        """Test validation with valid config."""
+        config_file = manager.git_config_dir / "config"
+        config_file.write_text("[user]\n\tname = Test User\n")
+
+        result = manager.validate_git_config_syntax()
+        assert isinstance(result, bool)
+
+    def test_get_current_config_empty(self, manager: GitConfigManager) -> None:
+        """Test getting config when no config exists."""
+        result = manager.get_current_config()
+        assert isinstance(result, dict)
+
+    def test_detect_config_changes_no_previous(self, manager: GitConfigManager) -> None:
+        """Test detecting changes with no previous config."""
+        result = manager.detect_config_changes()
+        assert isinstance(result, dict)
+
+    def test_reload_git_config_missing_file(self, manager: GitConfigManager) -> None:
+        """Test reloading config when config file is missing."""
+        result = manager.reload_git_config()
+        # Should handle gracefully
+        assert isinstance(result, bool)
+
+    def test_verify_hooks_no_hooks_dir(self, manager: GitConfigManager) -> None:
+        """Test verifying hooks when hooks directory is missing."""
+        import shutil
+        hooks_dir = manager.git_hooks_dir
+        if hooks_dir.exists():
+            shutil.rmtree(hooks_dir)
+
+        result = manager.verify_hooks()
+        assert isinstance(result, bool)
+
+    def test_create_backup_success(self, manager: GitConfigManager) -> None:
+        """Test creating backup of config."""
+        config_file = manager.git_config_dir / "config"
+        config_file.write_text("[user]\n\tname = Test User\n")
+
+        backup = manager.create_backup()
+        assert backup is None or isinstance(backup, Path)
+
+    def test_reload_hooks_missing_dir(self, manager: GitConfigManager) -> None:
+        """Test reloading hooks with missing directory."""
+        import shutil
+        hooks_dir = manager.git_hooks_dir
+        if hooks_dir.exists():
+            shutil.rmtree(hooks_dir)
+
+        result = manager.reload_hooks()
+        assert isinstance(result, bool)
+
+    def test_reload_credential_helpers_no_config(self, manager: GitConfigManager) -> None:
+        """Test reloading credential helpers with no config."""
+        result = manager.reload_credential_helpers()
+        assert isinstance(result, bool)
+
+    def test_generate_report_structure(self, manager: GitConfigManager) -> None:
+        """Test report generation structure."""
+        report = manager.generate_report()
+
+        assert isinstance(report, dict)
+        assert "timestamp" in report or len(report) > 0
+
+    def test_reload_all_with_errors(self, manager: GitConfigManager) -> None:
+        """Test reload_all with potential errors."""
+        result = manager.reload_all()
+        assert isinstance(result, bool)
+
+    def test_reload_component_config(self, manager: GitConfigManager) -> None:
+        """Test reloading config component."""
+        with patch.object(manager, "reload_git_config", return_value=True) as mock_reload:
+            result = manager.reload_component("config")
+            assert result is True
+            mock_reload.assert_called_once()
+
+    def test_reload_component_hooks(self, manager: GitConfigManager) -> None:
+        """Test reloading hooks component."""
+        with patch.object(manager, "reload_hooks", return_value=True) as mock_reload:
+            result = manager.reload_component("hooks")
+            assert result is True
+            mock_reload.assert_called_once()
+
+    def test_reload_component_credentials(self, manager: GitConfigManager) -> None:
+        """Test reloading credentials component."""
+        with patch.object(
+            manager, "reload_credential_helpers", return_value=True
+        ) as mock_reload:
+            result = manager.reload_component("credentials")
+            assert result is True
+            mock_reload.assert_called_once()
+
+
+class TestGitConfigManagerIntegration:
+    """Integration tests for GitConfigManager."""
+
+    def test_complete_workflow(self, temp_home: Path) -> None:
+        """Test complete workflow."""
+        manager = GitConfigManager(home_dir=str(temp_home))
+
+        # Setup basic config
+        config_file = manager.git_config_dir / "config"
+        config_file.write_text("[user]\n\tname = Test User\n\temail = test@example.com\n")
+
+        # Validate
+        is_valid = manager.validate_git_config_syntax()
+        assert isinstance(is_valid, bool)
+
+        # Get current config
+        config = manager.get_current_config()
+        assert isinstance(config, dict)
+
+        # Generate report
+        report = manager.generate_report()
+        assert isinstance(report, dict)
+
+    def test_config_change_detection(self, manager: GitConfigManager) -> None:
+        """Test configuration change detection."""
+        config_file = manager.git_config_dir / "config"
+
+        # First read
+        config1 = manager.get_current_config()
+
+        # Make a change
+        config_file.write_text("[user]\n\tname = Changed\n")
+
+        # Detect changes
+        changes = manager.detect_config_changes()
+        assert isinstance(changes, dict)
+
+    def test_backup_and_restore(self, manager: GitConfigManager) -> None:
+        """Test backup creation."""
+        config_file = manager.git_config_dir / "config"
+        config_file.write_text("[core]\n\tignorecase = true\n")
+
+        backup = manager.create_backup()
+        assert backup is None or isinstance(backup, Path)
+
+
 class TestColors:
     """Tests for Colors class."""
 

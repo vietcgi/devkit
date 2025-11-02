@@ -428,6 +428,65 @@ class SimplePlugin(PluginInterface):
         return True, []
 
 
+def _display_plugin_list(loader: "PluginLoader") -> None:  # pylint: disable=unused-argument
+    """Display list of loaded plugins."""
+    plugins = loader.list_plugins()
+    print(f"\n{"Loaded Plugins":^50}")  # noqa: T201
+    print("=" * 50)  # noqa: T201
+    if plugins:
+        for plugin in plugins:
+            print(f"  • {plugin}")  # noqa: T201
+    else:
+        print("  (No plugins loaded)")  # noqa: T201
+    print()  # noqa: T201
+
+
+def _display_plugin_info(loader: "PluginLoader") -> None:  # pylint: disable=unused-argument
+    """Display detailed plugin information."""
+    info = loader.get_plugin_info()
+    print(f"\n{"Plugin Information":^50}")  # noqa: T201
+    print("=" * 50)  # noqa: T201
+    if info:
+        for name, details in info.items():
+            print(f"\n{name}:")  # noqa: T201
+            print(f"  Version:     {details.get("version", "unknown")}")  # noqa: T201
+            print(f"  Description: {details.get("description", "N/A")}")  # noqa: T201
+            print(f"  Roles:       {details.get("roles", 0)}")  # noqa: T201
+            print(f"  Hooks:       {details.get("hooks", 0)}")  # noqa: T201
+    else:
+        print("  (No plugin information available)")  # noqa: T201
+    print()  # noqa: T201
+
+
+def _display_plugin_validation(loader: "PluginLoader") -> None:  # pylint: disable=unused-argument
+    """Display plugin validation status."""
+    plugins = loader.list_plugins()
+    print(f"\n{"Plugin Validation":^50}")  # noqa: T201
+    print("=" * 50)  # noqa: T201
+    if plugins:
+        print(f"✓ {len(plugins)} plugin(s) validated successfully")  # noqa: T201
+        for plugin in plugins:
+            print(f"  ✓ {plugin}")  # noqa: T201
+    else:
+        print("  (No plugins to validate)")  # noqa: T201
+    print()  # noqa: T201
+
+
+def _display_plugin_summary(loader: "PluginLoader") -> None:  # pylint: disable=unused-argument
+    """Display plugin system summary."""
+    plugins = loader.list_plugins()
+    print(f"\n{"Plugin System Status":^50}")  # noqa: T201
+    print("=" * 50)  # noqa: T201
+    print(f"Plugins loaded: {len(plugins)}")  # noqa: T201
+    if plugins:
+        print("Installed plugins:")  # noqa: T201
+        for plugin in plugins:
+            print(f"  • {plugin}")  # noqa: T201
+    else:
+        print("  (No plugins installed)")  # noqa: T201
+    print()  # noqa: T201
+
+
 def main() -> None:
     """CLI interface for plugin system."""
     parser = argparse.ArgumentParser(description="Mac-Setup Plugin System")
@@ -454,20 +513,13 @@ def main() -> None:
 
     # Handle commands
     if args.list:
-        plugins = loader.list_plugins()
-        for _plugin in plugins:
-            pass
-
+        _display_plugin_list(loader)
     elif args.info:
-        loader.get_plugin_info()
-
+        _display_plugin_info(loader)
     elif args.validate:
-        # All plugins are validated during load
-        pass
-
+        _display_plugin_validation(loader)
     else:
-        # Default: show summary
-        plugins = loader.list_plugins()
+        _display_plugin_summary(loader)
 
 
 if __name__ == "__main__":

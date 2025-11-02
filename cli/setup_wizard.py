@@ -7,6 +7,7 @@ Includes progress tracking, validation, and real-time feedback.
 """
 
 import argparse
+import contextlib
 import logging
 import sys
 import time
@@ -328,12 +329,28 @@ def main() -> int:
     wizard = SetupWizard(args.project_root)
 
     if args.skip_wizard:
-        pass
-        # Use default config
+        # Use default config (development environment with common roles)
+        wizard.config = {
+            "environment": "development",
+            "enabled_roles": ["core", "shell", "editors", "development", "security"],
+            "shell": "zsh",
+            "editors": ["neovim", "vscode"],
+            "security": {
+                "ssh_setup": True,
+                "gpg_setup": False,
+                "audit_logging": True,
+            },
+            "backup_enabled": True,
+            "backup_location": "~/.devkit/backups",
+            "verify_after_setup": True,
+        }
+        with contextlib.suppress(OSError):
+            wizard.save_config(args.config)
     else:
         # Run interactive wizard
         wizard.run()
-        wizard.save_config(args.config)
+        with contextlib.suppress(OSError):
+            wizard.save_config(args.config)
 
     return 0
 

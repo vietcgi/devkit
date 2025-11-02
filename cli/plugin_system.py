@@ -364,7 +364,14 @@ class PluginLoader:
                     self.logger.warning("Hook failed for stage %s", stage)
                     context.status = "failed"
                     return False
-            except (OSError, RuntimeError, ValueError) as e:
+            except OSError as e:
+                # File I/O or system errors during hook execution
+                self.logger.exception("Hook execution file/system error")
+                context.error = str(e)
+                context.status = "failed"
+                return False
+            except (RuntimeError, ValueError) as e:
+                # Application-level errors during hook execution
                 self.logger.exception("Hook execution error")
                 context.error = str(e)
                 context.status = "failed"

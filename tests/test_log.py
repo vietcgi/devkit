@@ -277,6 +277,20 @@ class TestSetupLogging:
         assert len(stream_handlers) > 0
         assert isinstance(stream_handlers[0].formatter, JSONFormatter)
 
+    def test_setup_logging_json_output_default_is_false(self) -> None:
+        """Test that json_output defaults to False (ColoredFormatter)."""
+        logger = setup_logging(
+            "test_default_json_false",
+            file_output=False,
+            # Note: json_output not specified, should default to False
+        )
+
+        # Check console handler uses ColoredFormatter by default
+        stream_handlers = [h for h in logger.handlers if isinstance(h, log.StreamHandler)]
+        assert len(stream_handlers) > 0
+        assert isinstance(stream_handlers[0].formatter, ColoredFormatter)
+        assert not isinstance(stream_handlers[0].formatter, JSONFormatter)
+
     def test_setup_logging_with_file_handler(self) -> None:
         """Test that file handler is created when file_output=True."""
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -354,10 +354,19 @@ class SystemCheck(HealthCheck):
 
     @staticmethod
     def get_load_average() -> tuple[float, float, float] | None:
-        """Get system load averages."""
+        """Get system load averages.
+
+        Returns None if os.getloadavg() is not available (e.g., on Windows)
+        or if it fails due to OS-level issues.
+        """
         try:
             return os.getloadavg()
-        except (OSError, AttributeError):
+        except AttributeError:
+            # getloadavg not available on this platform (e.g., Windows)
+            return None
+        except OSError as e:
+            # OS-level error getting load average
+            logging.getLogger(__name__).debug("Failed to get load average: %s", e)
             return None
 
     @staticmethod

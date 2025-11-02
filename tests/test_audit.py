@@ -1084,5 +1084,120 @@ class TestAuditReporterErrors(unittest.TestCase):
         self.assertIn("Invalid Entries at:", report)
 
 
+@pytest.mark.security
+@pytest.mark.unit
+class TestAuditSigningServiceErrorPaths(unittest.TestCase):
+    """Test error handling in AuditSigningService."""
+
+    def setUp(self):
+        """Set up test signing service."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.log_dir = Path(self.temp_dir) / "audit"
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_hmac_key_generation_permission_error(self):
+        """Test HMAC key generation when file permissions cannot be set."""
+        from unittest.mock import patch
+
+        # Create service with permission error on chmod
+        with patch('pathlib.Path.chmod', side_effect=PermissionError("Permission denied")):
+            service = AuditSigningService(self.log_dir)
+            # Should still generate key even if chmod fails
+            assert service.hmac_key is not None
+            assert len(service.hmac_key) == 32
+
+    def test_hmac_key_recovery_from_corrupted_file(self):
+        """Test HMAC key recovery when file is corrupted (wrong size)."""
+        # Create corrupted key file with wrong size
+        key_file = self.log_dir / ".hmac_key"
+        key_file.write_bytes(b"short_key")  # Less than 32 bytes
+
+        # Should generate new key since old one is invalid
+        service = AuditSigningService(self.log_dir)
+        assert service.hmac_key is not None
+        assert len(service.hmac_key) == 32
+        assert service.hmac_key != b"short_key"
+
+    def test_hmac_key_persistence(self):
+        """Test that HMAC key persists across service instances."""
+        # First service creates key
+        service1 = AuditSigningService(self.log_dir)
+        key1 = service1.hmac_key
+
+        # Second service loads same key
+        service2 = AuditSigningService(self.log_dir)
+        key2 = service2.hmac_key
+
+        assert key1 == key2
+        assert key1 is not None
+        assert len(key1) == 32
+
+
+@pytest.mark.unit
+class TestAuditLogStorageErrorPaths(unittest.TestCase):
+    """Test error handling in AuditLogStorage."""
+
+    def setUp(self):
+        """Set up test storage."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.log_dir = Path(self.temp_dir) / "audit"
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_write_entry_creates_directory_if_missing(self):
+        """Test that write_entry creates log directory if missing."""
+        new_dir = Path(self.temp_dir) / "nonexistent" / "audit"
+        storage = AuditLogStorage(new_dir)
+
+        entry = {
+            "action": "TEST_ACTION",
+            "user": "test_user",
+            "timestamp": datetime.now(tz=timezone.utc).isoformat(),
+        }
+
+        # Should not raise, should create directory
+        storage.write_entry(entry)
+        assert storage.log_file.exists()
+        assert storage.log_dir.exists()
+
+    def test_permission_denied_on_file_write(self):
+        """Test handling when log file cannot be written due to permissions."""
+        from unittest.mock import patch, MagicMock
+
+        storage = AuditLogStorage(self.log_dir)
+
+        # Mock the open function to raise PermissionError
+        with patch("pathlib.Path.open", side_effect=PermissionError("Permission denied")):
+            entry = {
+                "action": "TEST_ACTION",
+                "user": "test_user",
+                "timestamp": datetime.now(tz=timezone.utc).isoformat(),
+            }
+
+            # Should raise OSError (as documented)
+            with pytest.raises(OSError):
+                storage.write_entry(entry)
+
+    def test_ensure_secure_permissions_handles_permission_error(self):
+        """Test that _ensure_secure_permissions handles permission errors gracefully."""
+        from unittest.mock import patch
+
+        storage = AuditLogStorage(self.log_dir)
+
+        # Mock chmod to raise PermissionError
+        with patch('pathlib.Path.chmod', side_effect=PermissionError("Operation not permitted")):
+            # Should not raise, should log warning
+            storage._ensure_secure_permissions()
+
+
 if __name__ == "__main__":
     unittest.main()

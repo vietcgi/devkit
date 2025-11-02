@@ -425,6 +425,20 @@ class TestCodeQualityValidatorErrorPaths:
         assert passed is True
         assert coverage == 85.0
 
+    def test_check_test_coverage_skipped_when_coverage_not_installed(
+        self, validator: CodeQualityValidator, mock_run_command
+    ) -> None:
+        """Test coverage check gracefully skips when coverage is not installed."""
+        # Simulate coverage not being installed by raising OSError with "Command not found"
+        mock_run_command.side_effect = OSError("Command not found: coverage")
+
+        passed, issues, coverage = validator.check_test_coverage(["test.py"])
+
+        # When coverage is not installed, it should return True (skip, not fail)
+        assert passed is True
+        # Coverage should be 100 when skipped (meaning test requirement is met)
+        assert coverage == 100
+
     def test_check_security_no_python_files(self, validator: CodeQualityValidator) -> None:
         """Test security check skips when no Python files."""
         passed, issues, score = validator.check_security(["test.txt", "readme.md"])

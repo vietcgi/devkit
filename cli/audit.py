@@ -181,7 +181,8 @@ class AuditLogStorage:
             self.log_dir.chmod(0o700)
             if self.log_file.exists():
                 self.log_file.chmod(0o600)
-        except (OSError, PermissionError) as e:
+        except OSError as e:
+            # OSError includes PermissionError and FileNotFoundError
             self.logger.warning("Could not set audit log permissions: %s", e)
 
     def write_entry(self, entry: dict[str, Any]) -> None:

@@ -129,12 +129,14 @@ detect_arch() {
 
 retry() {
     local max_attempts=3
-    local timeout=2
+    local initial_timeout=2
+    local timeout=$initial_timeout
     local attempt=1
 
     # Check if first argument is a timeout value
     if [[ "$1" =~ ^[0-9]+$ ]]; then
-        timeout=$1
+        initial_timeout=$1
+        timeout=$initial_timeout
         shift
     fi
 
@@ -146,7 +148,7 @@ retry() {
         if ((attempt < max_attempts)); then
             log_warning "Attempt $attempt failed, retrying in ${timeout}s... (attempt $((attempt + 1))/$max_attempts)"
             sleep "$timeout"
-            timeout=$((timeout + 1)) # Exponential backoff: 2s, 3s, 4s
+            timeout=$((timeout * 2)) # True exponential backoff: 2s, 4s, 8s
         fi
 
         attempt=$((attempt + 1))

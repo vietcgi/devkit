@@ -613,13 +613,14 @@ create_default_config() {
     CONFIG_FILE="$CONFIG_DIR/config.yaml"
     LOG_DIR="$CONFIG_DIR/logs"
 
-    if ! mkdir -p "$CONFIG_DIR" "$LOG_DIR"; then
+    # Create directories (idempotent operation - safe to run multiple times)
+    mkdir -p "$CONFIG_DIR" "$LOG_DIR" || {
         log_error "Failed to create configuration directories: $CONFIG_DIR, $LOG_DIR"
         return 1
-    fi
+    }
 
     if [[ -f "$CONFIG_FILE" ]]; then
-        log_warning "Configuration already exists at $CONFIG_FILE"
+        log_info "Configuration already exists at $CONFIG_FILE (unchanged)"
         return 0
     fi
 
@@ -839,6 +840,7 @@ OPTIONS:
     --skip-ansible      Skip Ansible setup
     --skip-python       Skip Python installation
     --verify-only       Only verify prerequisites
+    --force             Force re-run even if already completed
 
 EXAMPLES:
     # Standard setup (recommended)
@@ -905,7 +907,11 @@ main() {
 
     print_header "Devkit Bootstrap - Development Environment Setup"
 
-    # Parse arguments
+    # Check for idempotency marker
+    BOOTSTRAP_SUCCESS_MARKER="$HOME/.devkit/.bootstrap_success"
+    FORCE_RERUN=false
+
+    # Parse arguments (check for --force before processing other args)
     while [[ $# -gt 0 ]]; do
         case $1 in
         --help)
@@ -932,6 +938,10 @@ main() {
             VERIFY_ONLY=true
             shift
             ;;
+        --force)
+            FORCE_RERUN=true
+            shift
+            ;;
         *)
             log_error "Unknown option: $1"
             show_help
@@ -939,6 +949,13 @@ main() {
             ;;
         esac
     done
+
+    # Check for previous successful run (idempotency)
+    if [[ -f "$BOOTSTRAP_SUCCESS_MARKER" ]] && [[ "$FORCE_RERUN" != "true" ]]; then
+        log_success "Bootstrap already completed successfully"
+        log_info "To re-run setup, use: ./bootstrap.sh --force"
+        return 0
+    fi
 
     # Step 1: Detect system
     print_section "Step 1: System Detection"
@@ -1019,11 +1036,13 @@ main() {
     echo ""
     log_info "Your development environment is ready!"
 
-    # Create success marker for CI/CD verification
-    if ! mkdir -p ~/.devkit; then
-        log_warning "Failed to create ~/.devkit directory for success marker"
-    elif ! touch ~/.devkit/.bootstrap_success; then
+    # Create success marker for CI/CD verification (idempotent)
+    if ! mkdir -p "$(dirname "$BOOTSTRAP_SUCCESS_MARKER")"; then
+        log_warning "Failed to create directory for success marker"
+    elif ! touch "$BOOTSTRAP_SUCCESS_MARKER"; then
         log_warning "Failed to create success marker file"
+    else
+        log_success "Bootstrap success marker created"
     fi
 }
 

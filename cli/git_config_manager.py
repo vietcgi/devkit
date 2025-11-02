@@ -17,7 +17,7 @@ import argparse
 import logging
 import subprocess
 import sys
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -230,7 +230,7 @@ class GitConfigManager(ValidatorBase):
 
         try:
             self.devkit_git_dir.mkdir(parents=True, exist_ok=True)
-            timestamp = datetime.now(tz=UTC).strftime("%Y%m%d_%H%M%S")
+            timestamp = datetime.now(tz=timezone.utc).strftime("%Y%m%d_%H%M%S")
             backup_path = self.devkit_git_dir / f"gitconfig.backup.{timestamp}"
 
             # SECURITY FIX: Enforce 0600 permissions on backup file
@@ -315,7 +315,7 @@ class GitConfigManager(ValidatorBase):
         config = self.get_current_config()
 
         return {
-            "timestamp": datetime.now(tz=UTC).isoformat(),
+            "timestamp": datetime.now(tz=timezone.utc).isoformat(),
             "config_status": {
                 "user_name": config.get("user.name", "NOT SET"),
                 "user_email": config.get("user.email", "NOT SET"),

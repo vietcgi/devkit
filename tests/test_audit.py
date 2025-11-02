@@ -12,7 +12,7 @@ import os
 import sys
 import tempfile
 import unittest
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import pytest
 
@@ -915,7 +915,7 @@ class TestAuditLoggerAdditionalMethods(unittest.TestCase):
         logger = AuditLogger(self.log_dir)
 
         # Write old entry directly
-        old_time = (datetime.now(tz=UTC) - timedelta(days=2)).isoformat()
+        old_time = (datetime.now(tz=timezone.utc) - timedelta(days=2)).isoformat()
         logger.storage.write_entry(
             {
                 "timestamp": old_time,
@@ -1008,7 +1008,7 @@ class TestAuditReporterErrors(unittest.TestCase):
         reporter = AuditReporter(logger)
 
         # Write old entry
-        old_time = (datetime.now(tz=UTC) - timedelta(days=60)).isoformat()
+        old_time = (datetime.now(tz=timezone.utc) - timedelta(days=60)).isoformat()
         logger.storage.write_entry(
             {
                 "timestamp": old_time,

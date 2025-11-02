@@ -880,7 +880,7 @@ class TestRateLimiterExtended:
     def test_cleanup_preserves_non_empty(self) -> None:
         """Test cleanup preserves identifiers with operations."""
         from collections import deque
-        from datetime import UTC, datetime
+        from datetime import datetime, timezone
 
         from cli.config_engine import RateLimiter
 
@@ -888,7 +888,7 @@ class TestRateLimiterExtended:
 
         # Add empty and non-empty identifiers
         limiter.operations["empty"] = deque()
-        limiter.operations["full"] = deque([datetime.now(tz=UTC)])
+        limiter.operations["full"] = deque([datetime.now(tz=timezone.utc)])
 
         limiter.cleanup_old_identifiers()
 
@@ -1086,15 +1086,15 @@ class TestRateLimiterWindowCleanup:
     def test_rate_limiter_mixed_operations(self) -> None:
         """Test rate limiter with mix of expired and valid operations."""
         from collections import deque
-        from datetime import UTC, datetime, timedelta
+        from datetime import datetime, timedelta, timezone
 
         from cli.config_engine import RateLimiter
 
         limiter = RateLimiter(max_operations=3, window_seconds=10)
 
         # Add old and new operations
-        old_time = datetime.now(tz=UTC) - timedelta(seconds=15)
-        new_time = datetime.now(tz=UTC)
+        old_time = datetime.now(tz=timezone.utc) - timedelta(seconds=15)
+        new_time = datetime.now(tz=timezone.utc)
 
         limiter.operations["mixed"] = deque([old_time, new_time, new_time])
 

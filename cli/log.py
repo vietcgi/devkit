@@ -15,7 +15,7 @@ import json
 import logging as log
 import logging.handlers
 import sys
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, ClassVar, Optional
 
@@ -29,7 +29,7 @@ class JSONFormatter(log.Formatter):
             "timestamp": (
                 datetime.fromtimestamp(
                     record.created,
-                    tz=UTC,
+                    tz=timezone.utc,
                 ).isoformat()
             ),
             "level": record.levelname,
@@ -62,7 +62,7 @@ class ColoredFormatter(log.Formatter):
     def format(self, record: log.LogRecord) -> str:
         """Format a log record with colors."""
         color = self.COLORS.get(record.levelname, self.RESET)
-        timestamp = datetime.fromtimestamp(record.created, tz=UTC).strftime(
+        timestamp = datetime.fromtimestamp(record.created, tz=timezone.utc).strftime(
             "%H:%M:%S",
         )
 

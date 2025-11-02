@@ -28,7 +28,7 @@ import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -90,7 +90,7 @@ class MutationReport:
     survived_mutations: int = 0
     mutation_score: float = 0.0
     results: list[MutationResult] = field(default_factory=list)
-    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
+    timestamp: str = field(default_factory=lambda: datetime.now(tz=timezone.utc).isoformat())
 
     def update(self) -> None:
         """Calculate metrics from results."""

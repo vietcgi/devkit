@@ -24,7 +24,7 @@ import logging
 import operator
 import os
 import shutil
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -171,7 +171,7 @@ class AuditLogStorage:
         """
         self.log_dir = log_dir
         self.log_dir.mkdir(parents=True, exist_ok=True)
-        self.log_file = log_dir / f"audit-{datetime.now(tz=UTC).strftime("%Y%m%d")}.jsonl"
+        self.log_file = log_dir / f"audit-{datetime.now(tz=timezone.utc).strftime("%Y%m%d")}.jsonl"
         self.logger = logging.getLogger(__name__)
         self._ensure_secure_permissions()
 
@@ -257,7 +257,7 @@ class AuditLogStorage:
             days: Archive logs older than this many days (default 90)
         """
         try:
-            cutoff_date = (datetime.now(tz=UTC) - timedelta(days=days)).strftime("%Y%m%d")
+            cutoff_date = (datetime.now(tz=timezone.utc) - timedelta(days=days)).strftime("%Y%m%d")
             archive_dir = self.log_dir / "archive"
             archive_dir.mkdir(exist_ok=True)
 
@@ -317,7 +317,7 @@ class AuditLogger:
             Audit log entry
         """
         entry = {
-            "timestamp": datetime.now(tz=UTC).isoformat(),
+            "timestamp": datetime.now(tz=timezone.utc).isoformat(),
             "action": action.value,
             "status": status,
             "user": str(user or os.getenv("USER", "unknown")),
@@ -545,7 +545,7 @@ class AuditLogger:
         Returns:
             Summary statistics
         """
-        cutoff = datetime.now(tz=UTC) - timedelta(hours=hours)
+        cutoff = datetime.now(tz=timezone.utc) - timedelta(hours=hours)
         entries = self.storage.read_entries()
 
         summary: dict[str, Any] = {
@@ -604,7 +604,7 @@ class AuditReporter:
         Returns:
             Formatted activity report
         """
-        cutoff = datetime.now(tz=UTC) - timedelta(days=days)
+        cutoff = datetime.now(tz=timezone.utc) - timedelta(days=days)
         entries = self.audit_logger.get_audit_logs()
 
         report_lines = [

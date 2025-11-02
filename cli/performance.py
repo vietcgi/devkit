@@ -13,7 +13,7 @@ import hashlib
 import json
 import logging
 import time
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -45,12 +45,12 @@ class CacheManager:
             ttl_hours: Time-to-live in hours (default 24)
         """
         cache_file = self.get_cache_file(key)
-        expires_at = datetime.now(tz=UTC) + timedelta(hours=ttl_hours)
+        expires_at = datetime.now(tz=timezone.utc) + timedelta(hours=ttl_hours)
 
         cache_data = {
             "key": key,
             "value": value,
-            "created": datetime.now(tz=UTC).isoformat(),
+            "created": datetime.now(tz=timezone.utc).isoformat(),
             "expires": expires_at.isoformat(),
             "ttl_hours": ttl_hours,
         }
@@ -81,7 +81,7 @@ class CacheManager:
                 cache_data: dict[str, Any] = json.load(f)
 
             expires = datetime.fromisoformat(cache_data["expires"])
-            if datetime.now(tz=UTC) > expires:
+            if datetime.now(tz=timezone.utc) > expires:
                 cache_file.unlink()  # Delete expired cache
                 self.logger.debug("Cache expired for %s", key)
                 return None
@@ -249,7 +249,7 @@ class InstallationOptimizer:
                 "package": package,
                 "version": version,
                 "success": success,
-                "timestamp": datetime.now(tz=UTC).isoformat(),
+                "timestamp": datetime.now(tz=timezone.utc).isoformat(),
             },
         )
 

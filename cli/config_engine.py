@@ -14,7 +14,7 @@ import os
 import sys
 from collections import deque
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -70,7 +70,7 @@ class RateLimiter:
         Returns:
             Tuple of (is_allowed, message)
         """
-        now = datetime.now(tz=UTC)
+        now = datetime.now(tz=timezone.utc)
 
         # Initialize operation list if needed
         if identifier not in self.operations:
@@ -657,7 +657,7 @@ class ConfigurationEngine:
     @staticmethod
     def _get_timestamp() -> str:
         """Get current timestamp in ISO format."""
-        return datetime.now(tz=UTC).isoformat()
+        return datetime.now(tz=timezone.utc).isoformat()
 
     def list_loaded_files(self) -> list[str]:
         """Get list of loaded configuration files."""

@@ -11,7 +11,7 @@ import json
 import logging
 import re
 import subprocess
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -297,7 +297,7 @@ class CodeQualityValidator(ValidatorBase):
     def generate_quality_report(checks: dict[str, Any]) -> dict[str, Any]:
         """Generate comprehensive quality report."""
         report = {
-            "timestamp": datetime.now(tz=UTC).isoformat(),
+            "timestamp": datetime.now(tz=timezone.utc).isoformat(),
             "checks": checks,
             "overall_quality_score": 0,
             "pass_all": True,

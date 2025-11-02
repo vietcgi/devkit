@@ -9,7 +9,7 @@ description = "Development Environment Automation - Enterprise-grade system conf
 authors = [
     {name = "Devkit Contributors", email = "maintainer@example.com"}
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 license = {text = "Apache-2.0"}
 readme = "README.md"
 classifiers = [
@@ -19,8 +19,6 @@ classifiers = [
     "Operating System :: MacOS",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -80,7 +78,7 @@ dev = [
 # =========================================================================
 [tool.ruff]
 line-length = 100
-target-version = "py313"
+target-version = "py311"
 preview = true
 
 [tool.ruff.lint]
@@ -154,6 +152,7 @@ ignore = [
     "PLR6301", # Method could be a function (design choice for OOP)
     "TRY300",  # Conflicts with pylint R1705 (no-else-return)
     "UP007",  # Use `X | Y` instead of `Union` (older Python compatibility)
+    "UP017",  # Use `datetime.UTC` (Python 3.13+), but need `timezone.utc` for 3.11+ support
 ]
 
 [tool.ruff.lint.pydocstyle]
@@ -329,7 +328,7 @@ ignore_patterns = ["^\\s*(#|$)"]
 # =========================================================================
 [tool.black]
 line-length = 100
-target-version = ['py313']
+target-version = ['py311', 'py312', 'py313']
 include = '\.pyi?$'
 extend-exclude = '''
 /(

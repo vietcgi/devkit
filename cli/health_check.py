@@ -14,7 +14,7 @@ import json
 import logging
 import os
 import subprocess
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -492,7 +492,7 @@ class HealthMonitor:
             }
 
         report: dict[str, Any] = {
-            "timestamp": datetime.now(tz=UTC).isoformat(),
+            "timestamp": datetime.now(tz=timezone.utc).isoformat(),
             "overall_status": self.get_overall_status(),
             "checks": checks_dict,
         }

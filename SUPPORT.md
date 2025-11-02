@@ -82,7 +82,7 @@ See [SECURITY.md](SECURITY.md) for how to report security issues responsibly.
 [Clear description of the bug]
 
 ### Steps to Reproduce
-1. Run `./bootstrap-ansible.sh`
+1. Run `./bootstrap.sh`
 2. Wait for completion
 3. Error appears: [paste error]
 

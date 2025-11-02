@@ -73,8 +73,8 @@ test_distribution() {
 
     if docker run --rm -v "$(pwd):/workspace" -w /workspace "$docker_image" bash -c "
         export DEBIAN_FRONTEND=noninteractive
-        chmod +x bootstrap-ansible.sh
-        ./bootstrap-ansible.sh 2>&1
+        chmod +x bootstrap.sh
+        ./bootstrap.sh 2>&1
     " >"$log_file" 2>&1; then
         local end_time
         end_time=$(date +%s)
@@ -165,12 +165,12 @@ main() {
     # Check prerequisites
     check_docker
 
-    if [ ! -f "bootstrap-ansible.sh" ]; then
-        print_error "bootstrap-ansible.sh not found. Run from mac-setup directory."
+    if [ ! -f "bootstrap.sh" ]; then
+        print_error "bootstrap.sh not found. Run from devkit directory."
         exit 1
     fi
 
-    print_success "Found bootstrap-ansible.sh"
+    print_success "Found bootstrap.sh"
     echo ""
 
     # Prompt for which tests to run

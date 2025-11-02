@@ -85,14 +85,13 @@ jobs:
           --severity=warning \
           --format=gcc \
           bootstrap.sh \
-          bootstrap-ansible.sh \
           verify-setup.sh \
           update.sh \
           cli/config.sh
 
     - name: Run shfmt (shell formatting check)
       run: |
-        shfmt -d bootstrap.sh bootstrap-ansible.sh verify-setup.sh \
+        shfmt -d bootstrap.sh verify-setup.sh \
           update.sh cli/config.sh
 
   # YAML quality

@@ -163,7 +163,6 @@ jobs:
       run: |
         mkdir -p dist/
         cp bootstrap.sh dist/
-        cp bootstrap-ansible.sh dist/
         cp verify-setup.sh dist/
         cp README.md dist/
         cp LICENSE dist/

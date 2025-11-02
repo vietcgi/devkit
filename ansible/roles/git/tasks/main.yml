@@ -162,7 +162,7 @@
     cd {{ git_repo_root }}
     git config --local url."git@github.com:".insteadOf https://github.com/
   when:
-    - repo_root is defined
+    - git_repo_root is defined
     - git_ssh_key_stat.results | selectattr('stat.exists', 'equalto', true) | list | length > 0
   changed_when: false
   notify: reload git config
@@ -173,7 +173,7 @@
     cd {{ git_repo_root }}
     git config --local --unset url."git@github.com:".insteadOf 2>/dev/null || true
   when:
-    - repo_root is defined
+    - git_repo_root is defined
     - git_ssh_key_stat.results | selectattr('stat.exists', 'equalto', true) | list | length == 0
   changed_when: false
   notify: reload git config
@@ -301,7 +301,7 @@
         group: "{{ ansible_user_gid | default(omit) }}"
       when:
         - git_enable_precommit | default(true)
-        - repo_root is defined
+        - git_repo_root is defined
       tags: [git, precommit, config]
 
     - name: Unset core.hooksPath if set (pre-commit requirement)
@@ -320,7 +320,7 @@
 
     - name: Initialize pre-commit hooks in repository
       ansible.builtin.shell: |
-        cd {{ repo_root | default(lookup('env', 'PWD')) }}
+        cd {{ git_repo_root | default(lookup('env', 'PWD')) }}
         pre-commit install
       environment:
         PATH: "{{ git_home_dir }}/.local/bin:/usr/local/bin:/usr/bin:/bin:{{ homebrew_prefix }}/bin:{{ ansible_env.PATH }}"

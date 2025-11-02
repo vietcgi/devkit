@@ -161,29 +161,6 @@ jobs:
         chmod +x verify-installation.sh
         ./verify-installation.sh
 
-        echo -e "\n=== Verifying Development Tools ==="
-        python3 --version || echo "python3 not found"
-        node --version || echo "Node not in PATH yet"
-        go version || echo "Go not in PATH yet"
-
-        echo -e "\n=== Verifying CLI Tools ==="
-        fzf --version || echo "fzf not found"
-        rg --version 2>&1 | head -1 || echo "ripgrep not found"
-        batcat --version || bat --version || echo "bat not found"
-
-        echo -e "\n=== Verifying Databases ==="
-        psql --version || echo "psql not found"
-        sqlite3 --version || echo "sqlite3 not found"
-
-        echo -e "\n=== Verifying Config Files ==="
-        ls -la ~/.zshrc || echo ".zshrc not found"
-        ls -la ~/.tmux.conf || echo ".tmux.conf not found"
-        ls -la ~/.config/nvim/ || echo "nvim config not found"
-
-        echo -e "\n=== Verifying Vim Symlinks ==="
-        ls -la /usr/local/bin/vim || echo "vim symlink not found"
-        ls -la /usr/local/bin/vi || echo "vi symlink not found"
-
     - name: Check for zero failures
       run: |
         if [ -f ~/.devkit/.bootstrap_success ]; then
@@ -233,21 +210,8 @@ jobs:
 
     - name: Verify installations
       run: |
-        if [ -f /home/linuxbrew/.linuxbrew/bin/brew ]; then
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-        fi
-        export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
-        echo "PATH=$PATH"
-
-        echo "=== Verifying Core Tools ==="
-        git --version || echo "git not found"
-        zsh --version || echo "zsh not found"
-        tmux -V || echo "tmux not found"
-        nvim --version 2>&1 | head -1 || echo "nvim not found"
-
-        echo -e "\n=== Verifying Config Files ==="
-        ls -la ~/.zshrc || echo ".zshrc not found"
-        ls -la ~/.tmux.conf || echo ".tmux.conf not found"
+        chmod +x verify-installation.sh
+        ./verify-installation.sh
 
     - name: Upload logs on failure
       if: failure()

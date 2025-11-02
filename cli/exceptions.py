@@ -9,6 +9,37 @@ This module provides custom exception types that include:
 - Suggestion for documentation references
 """
 
+from pathlib import Path
+
+
+def _sanitize_path(path: str | Path) -> str:
+    """Sanitize file path for error messages to prevent info disclosure.
+
+    Replaces absolute paths with user-relative paths (~/) for privacy.
+
+    Args:
+        path: File or directory path
+
+    Returns:
+        Sanitized path string (e.g., ~/.devkit/config.yaml)
+    """
+    path_str = str(path)
+
+    # If already using ~, return as-is
+    if path_str.startswith("~"):
+        return path_str
+
+    path_obj = Path(path_str).expanduser()
+    home = Path.home()
+
+    try:
+        # Try to get relative path from home directory
+        rel_path = path_obj.relative_to(home)
+        return f"~/{rel_path}"  # noqa: TRY300
+    except ValueError:
+        # If not under home directory, show basename only for privacy
+        return f".../{path_obj.name}"
+
 
 class DevkitError(Exception):
     """Base exception for all Devkit errors."""
@@ -153,13 +184,14 @@ class ConfigError(DevkitError):
     @staticmethod
     def permission_denied(path: str) -> "ConfigError":
         """Create config permission denied exception."""
+        safe_path = _sanitize_path(path)
         return ConfigError(
-            message=f"Configuration file has insecure permissions: {path}",
+            message=f"Configuration file has insecure permissions: {safe_path}",
             cause="File should only be readable/writable by owner (0600)",
             solutions=[
-                f"Fix permissions: chmod 600 {path}",
-                f"Verify owner: ls -la {path}",
-                "If wrong owner, copy to new file: cp config.yaml config.yaml.new",
+                f"Fix permissions: chmod 600 {safe_path}",
+                f"Verify owner: ls -la {safe_path}",
+                "Copy to new file: cp config.yaml config.yaml.new",
                 "Delete old: rm config.yaml && mv config.yaml.new config.yaml",
             ],
             documentation="See TROUBLESHOOTING.md > Configuration Issues",
@@ -168,12 +200,12 @@ class ConfigError(DevkitError):
     @staticmethod
     def invalid_ownership(path: str, owner: str) -> "ConfigError":
         """Create invalid ownership exception."""
+        safe_path = _sanitize_path(path)
         return ConfigError(
             message=f"Configuration file owned by wrong user: {owner}",
             cause="Config must be owned by current user for security",
             solutions=[
-                f"Fix ownership: chown $USER {path}",
-                f"Verify: ls -la {path}",
+                f"Fix ownership: chown $USER {safe_path}",
                 "Or create new config in your home directory",
             ],
             documentation="See TROUBLESHOOTING.md > Configuration Issues",

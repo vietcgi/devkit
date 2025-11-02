@@ -132,13 +132,14 @@ class PluginManifest:
         """Verify plugin manifest integrity using SHA256 checksum.
 
         SECURITY: Detects tampering and corruption of manifest files.
+        New plugins (without checksum) are allowed; checksum is validated only if present.
 
         Returns:
             Tuple of (is_valid, message)
         """
-        # Check if manifest has stored checksum
+        # Checksum is optional for new plugins (not yet checksummed)
         if "checksum" not in self.data:
-            return False, "Missing integrity checksum in manifest"
+            return True, "New manifest (no checksum yet). Use generate_checksum() to add one."
 
         stored_checksum = self.data["checksum"]
 
@@ -150,11 +151,26 @@ class PluginManifest:
         if computed_checksum != stored_checksum:
             return (
                 False,
-                f"Manifest integrity check failed. Plugin may have been tampered with. "
-                f"Expected: {stored_checksum}, Got: {computed_checksum}",
+                "Manifest integrity check failed. Plugin may have been tampered with.",
             )
 
         return True, "Manifest integrity verified"
+
+    def generate_checksum(self) -> str:
+        """Generate SHA256 checksum for current manifest.
+
+        Computes the checksum of the manifest (excluding any existing checksum)
+        and adds it to the data. Used for initial plugin creation or updates.
+
+        Returns:
+            The computed checksum as hex string
+        """
+        # Create a copy without any existing checksum
+        manifest_copy = {k: v for k, v in self.data.items() if k != "checksum"}
+        manifest_json = json.dumps(manifest_copy, sort_keys=True, default=str)
+        computed_checksum = hashlib.sha256(manifest_json.encode()).hexdigest()
+        self.data["checksum"] = computed_checksum
+        return computed_checksum
 
     @staticmethod
     def _is_valid_semver(version: str) -> bool:

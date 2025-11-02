@@ -15,7 +15,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from cli.utils import Colors, ValidatorBase
+from cli.utils import Colors, ValidatorBase, run_command
 
 
 class CodeQualityValidator(ValidatorBase):
@@ -54,18 +54,14 @@ class CodeQualityValidator(ValidatorBase):
 
             # Check with pylint
             try:
-                result = subprocess.run(
+                result = run_command(
                     ["pylint", "--disable=all", "--enable=C,E", filepath],
-                    capture_output=True,
-                    text=True,
                     timeout=10,
-                    check=False,
-                    shell=False,
                 )
-            except FileNotFoundError:
-                self.print_status("pylint not installed, skipping style check", "WARNING")
-                return True, [], 100
             except OSError as e:
+                if "Command not found" in str(e):
+                    self.print_status("pylint not installed, skipping style check", "WARNING")
+                    return True, [], 100
                 self.print_status(f"Style check error: {e}", "ERROR")
                 return False, [str(e)], 0
 
@@ -87,28 +83,20 @@ class CodeQualityValidator(ValidatorBase):
         self.print_status("Checking test coverage...", "INFO")
 
         try:
-            subprocess.run(
+            run_command(
                 ["coverage", "run", "-m", "pytest", "--tb=short"],
-                capture_output=True,
-                text=True,
                 timeout=30,
-                check=False,
-                shell=False,
             )
 
             # Get coverage report
-            cov_result = subprocess.run(
+            cov_result = run_command(
                 ["coverage", "report", "--fail-under=80"],
-                capture_output=True,
-                text=True,
                 timeout=10,
-                check=False,
-                shell=False,
             )
-        except FileNotFoundError:
-            self.print_status("coverage/pytest not installed, skipping", "WARNING")
-            return True, [], 100
         except OSError as e:
+            if "Command not found" in str(e):
+                self.print_status("coverage/pytest not installed, skipping", "WARNING")
+                return True, [], 100
             self.print_status(f"Coverage check error: {e}", "ERROR")
             return False, [str(e)], 0
 
@@ -136,18 +124,11 @@ class CodeQualityValidator(ValidatorBase):
             if not python_files:
                 return True, [], 100
 
-            result = subprocess.run(
-                ["bandit", "-r", "-ll", *python_files],
-                capture_output=True,
-                text=True,
-                timeout=30,
-                check=False,
-                shell=False,
-            )
-        except FileNotFoundError:
-            self.print_status("bandit not installed, skipping security check", "WARNING")
-            return True, [], 100
+            result = run_command(["bandit", "-r", "-ll", *python_files], timeout=30)
         except OSError as e:
+            if "Command not found" in str(e):
+                self.print_status("bandit not installed, skipping security check", "WARNING")
+                return True, [], 100
             self.print_status(f"Security check error: {e}", "ERROR")
             return False, [str(e)], 0
 
@@ -178,18 +159,11 @@ class CodeQualityValidator(ValidatorBase):
             if not python_files:
                 return True, [], 10  # Best complexity score
 
-            result = subprocess.run(
-                ["radon", "cc", "-a", *python_files],
-                capture_output=True,
-                text=True,
-                timeout=30,
-                check=False,
-                shell=False,
-            )
-        except FileNotFoundError:
-            self.print_status("radon not installed, skipping complexity check", "WARNING")
-            return True, [], 5
+            result = run_command(["radon", "cc", "-a", *python_files], timeout=30)
         except OSError as e:
+            if "Command not found" in str(e):
+                self.print_status("radon not installed, skipping complexity check", "WARNING")
+                return True, [], 5
             self.print_status(f"Complexity check error: {e}", "ERROR")
             return False, [str(e)], 10
 
@@ -224,21 +198,14 @@ class CodeQualityValidator(ValidatorBase):
         self.print_status("Running tests...", "INFO")
 
         try:
-            result = subprocess.run(
-                ["pytest", "-v", "--tb=short"],
-                capture_output=True,
-                text=True,
-                timeout=60,
-                check=False,
-                shell=False,
-            )
-        except FileNotFoundError:
-            self.print_status("pytest not installed, skipping tests", "WARNING")
-            return True, [], 0
+            result = run_command(["pytest", "-v", "--tb=short"], timeout=60)
         except subprocess.TimeoutExpired:
             self.print_status("Tests timeout (>60s)", "ERROR")
             return False, ["Test execution timeout"], 0
         except OSError as e:
+            if "Command not found" in str(e):
+                self.print_status("pytest not installed, skipping tests", "WARNING")
+                return True, [], 0
             self.print_status(f"Test error: {e}", "ERROR")
             return False, [str(e)], 0
 
@@ -298,18 +265,11 @@ class CodeQualityValidator(ValidatorBase):
             return True, [], 100
 
         try:
-            result = subprocess.run(
-                ["pip-audit"],
-                capture_output=True,
-                text=True,
-                timeout=30,
-                check=False,
-                shell=False,
-            )
-        except FileNotFoundError:
-            self.print_status("pip-audit not installed, skipping", "WARNING")
-            return True, [], 100
+            result = run_command(["pip-audit"], timeout=30)
         except OSError as e:
+            if "Command not found" in str(e):
+                self.print_status("pip-audit not installed, skipping", "WARNING")
+                return True, [], 100
             self.print_status(f"Dependency check error: {e}", "ERROR")
             return False, [str(e)], 0
 
@@ -327,16 +287,13 @@ class CodeQualityValidator(ValidatorBase):
     def get_staged_files() -> list[str]:
         """Get list of staged files."""
         try:
-            result = subprocess.run(
-                ["git", "diff", "--cached", "--name-only"],
-                capture_output=True,
-                text=True,
-                check=False,
-                shell=False,
-            )
-            return result.stdout.strip().split("\n")
+            result = run_command(["git", "diff", "--cached", "--name-only"])
         except OSError:
             return []
+        # result.stdout is str since text=True (run_command default)
+        if result.stdout:
+            return result.stdout.strip().split("\n")
+        return []
 
     @staticmethod
     def generate_quality_report(checks: dict[str, Any]) -> dict[str, Any]:

@@ -21,7 +21,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from cli.utils import Colors, ValidatorBase
+from cli.utils import Colors, ValidatorBase, run_command
 
 
 class GitConfigManager(ValidatorBase):
@@ -74,14 +74,7 @@ class GitConfigManager(ValidatorBase):
         try:
             # Check global config
             if self.git_global_config.exists():
-                result = subprocess.run(
-                    ["git", "config", "--list"],
-                    capture_output=True,
-                    text=True,
-                    timeout=5,
-                    check=False,
-                    shell=False,
-                )
+                result = run_command(["git", "config", "--list"], timeout=5)
         except subprocess.TimeoutExpired:
             self.print_status("Config validation timed out", "ERROR")
             return False
@@ -103,14 +96,7 @@ class GitConfigManager(ValidatorBase):
             Dictionary of git config key-value pairs
         """
         try:
-            result = subprocess.run(
-                ["git", "config", "--list", "--null"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-                check=False,
-                shell=False,
-            )
+            result = run_command(["git", "config", "--list", "--null"], timeout=5)
         except OSError as e:
             self.print_status(f"Error reading config: {e}", "ERROR")
             return {}
@@ -142,7 +128,7 @@ class GitConfigManager(ValidatorBase):
             return changed
 
         try:
-            result = subprocess.run(
+            result = run_command(
                 [
                     "git",
                     "config",
@@ -151,11 +137,7 @@ class GitConfigManager(ValidatorBase):
                     "--list",
                     "--null",
                 ],
-                capture_output=True,
-                text=True,
                 timeout=5,
-                check=False,
-                shell=False,
             )
         except OSError as e:
             self.print_status(f"Error detecting changes: {e}", "ERROR")
@@ -190,14 +172,7 @@ class GitConfigManager(ValidatorBase):
         try:
             # Git reads config from files on each invocation
             # We just need to verify it's readable
-            result = subprocess.run(
-                ["git", "config", "--list"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-                check=False,
-                shell=False,
-            )
+            result = run_command(["git", "config", "--list"], timeout=5)
         except OSError as e:
             self.print_status(f"Reload error: {e}", "ERROR")
             return False
@@ -302,13 +277,7 @@ class GitConfigManager(ValidatorBase):
             # Verify hooks can be executed
             test_hook = self.git_hooks_dir / "pre-commit"
             if test_hook.exists():
-                result = subprocess.run(
-                    ["bash", "-n", str(test_hook)],
-                    capture_output=True,
-                    timeout=5,
-                    check=False,
-                    shell=False,
-                )
+                result = run_command(["bash", "-n", str(test_hook)], timeout=5)
                 if result.returncode != 0:
                     self.print_status("Hook syntax error", "ERROR")
                     return False
@@ -331,14 +300,7 @@ class GitConfigManager(ValidatorBase):
 
         try:
             # Get configured credential helper
-            result = subprocess.run(
-                ["git", "config", "--get", "credential.helper"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-                check=False,
-                shell=False,
-            )
+            result = run_command(["git", "config", "--get", "credential.helper"], timeout=5)
         except OSError as e:
             self.print_status(f"Credential helper error: {e}", "ERROR")
             return False

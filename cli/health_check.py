@@ -18,6 +18,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, ClassVar
 
+from cli.utils import run_command
+
 
 class HealthStatus:
     """Health status enumeration."""
@@ -88,14 +90,8 @@ class DependencyCheck(HealthCheck):
     def check_tool(tool: str) -> bool:
         """Check if single tool is available."""
         try:
-            result = subprocess.run(
-                ["which", tool],
-                capture_output=True,
-                timeout=2,
-                check=False,
-                shell=False,
-            )
-        except (subprocess.TimeoutExpired, FileNotFoundError):
+            result = run_command(["which", tool], timeout=2)
+        except (subprocess.TimeoutExpired, OSError):
             return False
 
         return not result.returncode
@@ -107,14 +103,8 @@ class DependencyCheck(HealthCheck):
 
         for tool in self.tools:
             try:
-                result = subprocess.run(
-                    ["which", tool],
-                    capture_output=True,
-                    timeout=2,
-                    check=False,
-                    shell=False,
-                )
-            except (subprocess.TimeoutExpired, FileNotFoundError, OSError) as e:
+                result = run_command(["which", tool], timeout=2)
+            except (subprocess.TimeoutExpired, OSError) as e:
                 self.logger.debug("Failed to check %s: %s", tool, e)
                 missing.append(tool)
             else:
@@ -158,34 +148,20 @@ class DiskSpaceCheck(HealthCheck):
     def get_available_space() -> int | None:
         """Get available disk space in GB."""
         try:
-            result = subprocess.run(
-                ["df", "-B1G", "/"],
-                capture_output=True,
-                timeout=2,
-                text=True,
-                check=True,
-                shell=False,
-            )
+            result = run_command(["df", "-B1G", "/"], timeout=2, check=True)
             lines = result.stdout.strip().split("\n")
             if len(lines) >= 2:
                 parts = lines[1].split()
                 return int(parts[3].rstrip("G"))
-        except (subprocess.SubprocessError, ValueError, IndexError):
+        except (subprocess.SubprocessError, ValueError, IndexError, OSError):
             pass
         return None
 
     def run(self) -> tuple[str, str, dict[str, Any]]:
         """Check available disk space."""
         try:
-            result = subprocess.run(
-                ["df", "-B1G", "/"],
-                capture_output=True,
-                timeout=2,
-                text=True,
-                check=True,
-                shell=False,
-            )
-        except (subprocess.SubprocessError, ValueError, IndexError) as e:
+            result = run_command(["df", "-B1G", "/"], timeout=2, check=True)
+        except (subprocess.SubprocessError, ValueError, IndexError, OSError) as e:
             return (
                 HealthStatus.UNKNOWN,
                 f"Failed to check disk space: {e}",
@@ -389,14 +365,7 @@ class SystemCheck(HealthCheck):
         """Check system health."""
         try:
             # Check if system is responsive
-            result = subprocess.run(
-                ["uname", "-a"],
-                capture_output=True,
-                timeout=2,
-                text=True,
-                check=True,
-                shell=False,
-            )
+            result = run_command(["uname", "-a"], timeout=2, check=True)
         except (subprocess.SubprocessError, OSError) as e:
             return (
                 HealthStatus.UNKNOWN,

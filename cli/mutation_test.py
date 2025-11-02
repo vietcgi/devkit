@@ -33,6 +33,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from cli.utils import run_command
+
 # ============================================================================
 # MUTATION DEFINITIONS
 # ============================================================================
@@ -338,13 +340,7 @@ class MutationTester:
             mutation.file_path.write_text(mutated_code)
 
             # Run tests
-            result = subprocess.run(
-                ["pytest", str(self.tests_dir), "-q", "--tb=no"],
-                capture_output=True,
-                timeout=30,
-                check=False,
-                shell=False,
-            )
+            result = run_command(["pytest", str(self.tests_dir), "-q", "--tb=no"], timeout=30)
         except subprocess.TimeoutExpired:
             mutation.file_path.write_text(original_code)
             return MutationResult(

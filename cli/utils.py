@@ -9,6 +9,7 @@ Provides common functionality used across multiple modules:
 """
 
 import logging
+import subprocess
 from typing import ClassVar
 
 # ============================================================================
@@ -97,6 +98,56 @@ def setup_logger(
         logger.setLevel(level)
 
     return logger
+
+
+# ============================================================================
+# SUBPROCESS EXECUTION
+# ============================================================================
+
+
+def run_command(
+    cmd: list[str],
+    timeout: int = 10,
+    *,
+    text: bool = True,
+    check: bool = False,
+) -> subprocess.CompletedProcess[str]:
+    """Execute a command with unified error handling.
+
+    Executes a subprocess command with consistent configuration across the
+    codebase. Handles timeouts and OS errors consistently.
+
+    Args:
+        cmd: Command and arguments as list (e.g., ["git", "config", "--list"])
+        timeout: Command timeout in seconds (default: 10)
+        text: Return stdout/stderr as strings (default: True)
+        check: Raise CalledProcessError if returncode != 0 (default: False)
+
+    Returns:
+        CompletedProcess with returncode, stdout, stderr
+
+    Raises:
+        subprocess.TimeoutExpired: If command exceeds timeout
+        OSError: If command execution fails (e.g., command not found)
+
+    Examples:
+        >>> result = run_command(["git", "status"])
+        >>> if not result.returncode:
+        ...     print("Success:", result.stdout)
+        >>> result = run_command(["python3", "-m", "pytest"], timeout=60)
+    """
+    try:
+        return subprocess.run(
+            cmd,
+            capture_output=True,
+            text=text,
+            timeout=timeout,
+            check=check,
+            shell=False,
+        )
+    except FileNotFoundError as e:
+        msg = f"Command not found: {cmd[0]}"
+        raise OSError(msg) from e
 
 
 # ============================================================================
@@ -194,5 +245,6 @@ __all__ = [
     "LogLevels",
     "PluginPermissions",
     "ValidatorBase",
+    "run_command",
     "setup_logger",
 ]

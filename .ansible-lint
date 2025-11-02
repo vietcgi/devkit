@@ -23,6 +23,8 @@ exclude_paths:
   - .direnv
   - htmlcov
   - .ansible
+  - setup.yml  # Uses community.general modules not in pre-commit env
+  - ansible/roles/git/  # Uses community.general.git_config
 
 # Profiles: min, basic, moderate, safety, shared, production
 profile: min

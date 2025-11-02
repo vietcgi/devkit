@@ -193,7 +193,8 @@ repos:
         name: "Lint Ansible playbooks (ansible-lint)"
         files: ^(setup\.yml|ansible/)
         types: [yaml]
-        additional_dependencies: ["ansible-core>=2.12,<2.16"]
+        additional_dependencies:
+          - "ansible-core>=2.12,<2.16"
 
   # =========================================================================
   # TIER 12: COMPLEXITY ANALYSIS (radon)

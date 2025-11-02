@@ -5,15 +5,17 @@
     os_family: '{{ ansible_os_family }}'
     is_macos: '{{ ansible_os_family == ''Darwin'' }}'
     is_linux: '{{ ansible_os_family != ''Darwin'' }}'
-    homebrew_prefix: '{{ ''/opt/homebrew'' if is_macos else ''/home/linuxbrew/.linuxbrew''
-      }}'
-    brewfile_path: '{{ playbook_dir }}/{{ brewfile_name | default(''Brewfile'') }}'
+    homebrew_prefix: |
+      {{ '/opt/homebrew' if is_macos else '/home/linuxbrew/.linuxbrew' }}
+    brewfile_path: |
+      {{ playbook_dir }}/{{ brewfile_name | default('Brewfile') }}
   tasks:
   - name: Set user and home variables from environment
     ansible.builtin.set_fact:
-      user: '{{ lookup(''env'', ''USER'') or lookup(''env'', ''LOGNAME'') or ''root''
-        }}'
-      home: '{{ lookup(''env'', ''HOME'') or ''/root'' }}'
+      user: |
+        {{ lookup('env', 'USER') or lookup('env', 'LOGNAME') or 'root' }}
+      home: |
+        {{ lookup('env', 'HOME') or '/root' }}
     tags:
     - always
   - name: Check if Homebrew is installed
@@ -37,8 +39,9 @@
     - homebrew
   - name: Ensure Homebrew is in PATH
     ansible.builtin.set_fact:
-      ansible_env: '{{ ansible_env | combine({''PATH'': homebrew_prefix ~ ''/bin:''
-        ~ ansible_env.PATH}) }}'
+      ansible_env: |
+        {{ ansible_env | combine({'PATH': homebrew_prefix ~ '/bin:' ~
+        ansible_env.PATH}) }}
     when: not homebrew_check.stat.exists
     tags:
     - homebrew
@@ -67,14 +70,15 @@
     - terraform_check.rc == 0
     - brewfile_check.stat.exists
     failed_when: false
-    changed_when: terraform_unlink.rc == 0 and 'Unlinking' in terraform_unlink.stderr
+    changed_when: |
+      terraform_unlink.rc == 0 and 'Unlinking' in terraform_unlink.stderr
     tags:
     - homebrew
     - packages
   - name: Install packages from Brewfile
     ansible.builtin.shell: |
-      {{ homebrew_prefix }}/bin/brew bundle install --file={{ brewfile_path }} ||
-      true
+      {{ homebrew_prefix }}/bin/brew bundle install \
+      --file={{ brewfile_path }} || true
     args:
       chdir: '{{ playbook_dir }}'
     environment:
@@ -291,8 +295,9 @@
     - mise_binary_check.stat.exists
     - mise_toml_check.stat.exists
     - install_dev_tools | default(true)
-    changed_when: '''installed'' in mise_install_result.stdout or ''Installing'' in
-      mise_install_result.stdout'
+    changed_when: |
+      'installed' in mise_install_result.stdout or
+      'Installing' in mise_install_result.stdout
     failed_when: false
     retries: 3
     delay: 5
@@ -310,8 +315,8 @@
   - name: Install Oh My Zsh
     ansible.builtin.shell: >
       sh -c "$(curl -fsSL
-      https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-      "" --unattended
+      https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/
+      tools/install.sh)" "" --unattended
     register: ohmyzsh_install
     when:
     - not ohmyzsh_check.stat.exists
@@ -384,8 +389,8 @@
     until: dircolors_result is succeeded
     tags:
     - shell
-  # NOTE: .inputrc and .direnvrc are now deployed by the dotfiles role
-  # These duplicate tasks have been removed to avoid overwriting correct permissions
+  # NOTE: .inputrc and .direnvrc deployed by dotfiles role
+  # These duplicate tasks removed to avoid overwriting permissions
 
   - name: Enable direnv in zsh
     ansible.builtin.lineinfile:
@@ -439,6 +444,8 @@
     tags:
     - tmux
   # NOTE: .tmux.conf is now deployed by the dotfiles role
+  # These duplicate tasks have been removed to avoid overwriting
+  # correct permissions
 
   - name: Display tmux plugin installation instructions
     ansible.builtin.debug:
@@ -455,8 +462,9 @@
 
   - name: Create vim symlinks to neovim (override system vim)
     ansible.builtin.file:
-      src: '{{ ''/usr/bin/nvim'' if ansible_os_family == ''Debian'' else homebrew_prefix
-        ~ ''/bin/nvim'' }}'
+      src: |
+        {{ '/usr/bin/nvim' if ansible_os_family == 'Debian' else
+        homebrew_prefix ~ '/bin/nvim' }}
       dest: /usr/local/bin/{{ item }}
       state: link
       force: true
@@ -592,7 +600,8 @@
     tags:
     - dotfiles
   # NOTE: .zshrc is now deployed by the dotfiles role
-  # Chezmoi-specific tasks removed as they conflict with dotfiles role deployment
+  # Chezmoi-specific tasks removed as they conflict with dotfiles
+  # role deployment
   - name: macOS-specific tasks
     when: is_macos
     tags:
@@ -610,27 +619,40 @@
       failed_when: false
       when: configure_dock | default(true)
     - name: Configure Dock items
-      ansible.builtin.shell: "# Remove unwanted items (ignore errors if not present)\n\
-        {{ homebrew_prefix }}/bin/dockutil --remove 'Launchpad' --no-restart 2>/dev/null\
-        \ || true\n{{ homebrew_prefix }}/bin/dockutil --remove 'TV' --no-restart 2>/dev/null\
-        \ || true\n{{ homebrew_prefix }}/bin/dockutil --remove 'Podcasts' --no-restart\
-        \ 2>/dev/null || true\n{{ homebrew_prefix }}/bin/dockutil --remove 'App Store'\
-        \ --no-restart 2>/dev/null || true\n\n# Add apps if not already present\n\
-        {{ homebrew_prefix }}/bin/dockutil --find 'Messages' || \\\n  {{ homebrew_prefix\
-        \ }}/bin/dockutil --add '/System/Applications/Messages.app' --no-restart 2>/dev/null\
-        \ || true\n\n{{ homebrew_prefix }}/bin/dockutil --find 'Safari' || \\\n  {{\
-        \ homebrew_prefix }}/bin/dockutil --add '/Applications/Safari.app' --position\
-        \ 2 --no-restart 2>/dev/null || true\n\n{{ homebrew_prefix }}/bin/dockutil\
-        \ --find 'iTerm' || \\\n  {{ homebrew_prefix }}/bin/dockutil --add '/Applications/iTerm.app'\
-        \ --position 3 --no-restart 2>/dev/null || true\n\n{{ homebrew_prefix }}/bin/dockutil\
-        \ --find 'Google Chrome' || \\\n  {{ homebrew_prefix }}/bin/dockutil --add\
-        \ '/Applications/Google Chrome.app' --position 4 --no-restart 2>/dev/null\
-        \ || true\n\n{{ homebrew_prefix }}/bin/dockutil --find 'Visual Studio Code'\
-        \ || \\\n  {{ homebrew_prefix }}/bin/dockutil --add '/Applications/Visual\
-        \ Studio Code.app' --position 5 --no-restart 2>/dev/null || true\n\n{{ homebrew_prefix\
-        \ }}/bin/dockutil --find 'Slack' || \\\n  {{ homebrew_prefix }}/bin/dockutil\
-        \ --add '/Applications/Slack.app' --position 6 --no-restart 2>/dev/null ||\
-        \ true\n"
+      ansible.builtin.shell: >
+        {{ homebrew_prefix }}/bin/dockutil --remove 'Launchpad'
+        --no-restart 2>/dev/null || true &&
+        {{ homebrew_prefix }}/bin/dockutil --remove 'TV'
+        --no-restart 2>/dev/null || true &&
+        {{ homebrew_prefix }}/bin/dockutil --remove 'Podcasts'
+        --no-restart 2>/dev/null || true &&
+        {{ homebrew_prefix }}/bin/dockutil --remove 'App Store'
+        --no-restart 2>/dev/null || true &&
+        ({{ homebrew_prefix }}/bin/dockutil --find 'Messages' ||
+        {{ homebrew_prefix }}/bin/dockutil --add
+        '/System/Applications/Messages.app' --no-restart 2>/dev/null
+        || true) &&
+        ({{ homebrew_prefix }}/bin/dockutil --find 'Safari' ||
+        {{ homebrew_prefix }}/bin/dockutil --add
+        '/Applications/Safari.app' --position 2 --no-restart
+        2>/dev/null || true) &&
+        ({{ homebrew_prefix }}/bin/dockutil --find 'iTerm' ||
+        {{ homebrew_prefix }}/bin/dockutil --add
+        '/Applications/iTerm.app' --position 3 --no-restart
+        2>/dev/null || true) &&
+        ({{ homebrew_prefix }}/bin/dockutil --find 'Google Chrome' ||
+        {{ homebrew_prefix }}/bin/dockutil --add
+        '/Applications/Google Chrome.app' --position 4
+        --no-restart 2>/dev/null || true) &&
+        ({{ homebrew_prefix }}/bin/dockutil --find
+        'Visual Studio Code' ||
+        {{ homebrew_prefix }}/bin/dockutil --add
+        '/Applications/Visual Studio Code.app' --position 5
+        --no-restart 2>/dev/null || true) &&
+        ({{ homebrew_prefix }}/bin/dockutil --find 'Slack' ||
+        {{ homebrew_prefix }}/bin/dockutil --add
+        '/Applications/Slack.app' --position 6 --no-restart
+        2>/dev/null || true)
       register: dock_config
       when:
       - configure_dock | default(true)
@@ -731,17 +753,21 @@
     ansible.builtin.set_fact:
       setup_report:
         hostname: '{{ ansible_hostname }}'
-        os: '{{ ansible_distribution | default(''Unknown'') }} {{ ansible_distribution_version
-          | default('''') }}'
+        os: |
+          {{ ansible_distribution | default('Unknown') }}
+          {{ ansible_distribution_version | default('') }}
         homebrew_installed: '{{ homebrew_check.stat.exists }}'
-        packages_updated: '{{ brew_bundle_result is defined and brew_bundle_result
-          is changed }}'
-        mise_updated: '{{ mise_install_result is defined and mise_install_result is
-          changed }}'
+        packages_updated: |
+          {{ brew_bundle_result is defined and
+          brew_bundle_result is changed }}
+        mise_updated: |
+          {{ mise_install_result is defined and
+          mise_install_result is changed }}
         shell_configured: '{{ ohmyzsh_check.stat.exists }}'
         tmux_configured: '{{ tmux_check is defined and tmux_check.rc == 0 }}'
         neovim_configured: '{{ install_neovim | default(true) }}'
-        vscode_configured: '{{ vscode_check is defined and vscode_check.rc == 0 }}'
+        vscode_configured: |
+          {{ vscode_check is defined and vscode_check.rc == 0 }}
     tags:
     - always
   - name: Display setup report
@@ -751,18 +777,23 @@
       - Setup Report for {{ ansible_hostname }}
       - ==========================================
       - 'OS: {{ setup_report.os }}'
-      - 'Homebrew: {{ ''Installed'' if setup_report.homebrew_installed else ''Not
-        Installed'' }}'
-      - 'Packages Updated: {{ ''Yes'' if setup_report.packages_updated else ''No''
-        }}'
-      - 'mise Updated: {{ ''Yes'' if setup_report.mise_updated else ''No'' }}'
-      - 'Shell Configured: {{ ''Yes'' if setup_report.shell_configured else ''No''
-        }}'
-      - 'Tmux Configured: {{ ''Yes'' if setup_report.tmux_configured else ''No'' }}'
-      - 'Neovim Configured: {{ ''Yes'' if setup_report.neovim_configured else ''No''
-        }}'
-      - 'VS Code Configured: {{ ''Yes'' if setup_report.vscode_configured else ''No''
-        }}'
+      - |
+        Homebrew: {{ 'Installed' if setup_report.homebrew_installed else 'Not
+        Installed' }}
+      - |
+        Packages Updated: {{ 'Yes' if setup_report.packages_updated else 'No' }}
+      - |
+        mise Updated: {{ 'Yes' if setup_report.mise_updated else 'No' }}
+      - |
+        Shell Configured: {{ 'Yes' if setup_report.shell_configured else 'No' }}
+      - |
+        Tmux Configured: {{ 'Yes' if setup_report.tmux_configured else 'No' }}
+      - |
+        Neovim Configured: {{ 'Yes'
+        if setup_report.neovim_configured else 'No' }}
+      - |
+        VS Code Configured: {{ 'Yes'
+        if setup_report.vscode_configured else 'No' }}
       - ''
       - 'Next steps:'
       - '  1. Restart terminal: source ~/.zshrc'

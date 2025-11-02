@@ -243,6 +243,14 @@ install_system_dependencies() {
                         return 1
                     }
 
+                    # Debian 11 Docker containers need locales for Ansible to work
+                    # Install locales package and generate en_US.UTF-8
+                    if [[ "${DISTRO:-}" == "debian" ]] && [[ "${DISTRO_VERSION:-}" == "11" ]]; then
+                        log_info "Debian 11: Installing locales for UTF-8 support"
+                        sudo apt-get install -y -qq locales || log_warning "locales installation skipped"
+                        sudo locale-gen en_US.UTF-8 2>/dev/null || log_warning "locale-gen failed"
+                    fi
+
                     # Install pipx (optional - not critical to bootstrap success)
                     sudo apt-get install -y -qq pipx 2>/dev/null || log_warning "pipx installation skipped (not available)"
                 else
@@ -255,10 +263,20 @@ install_system_dependencies() {
                     return 1
                 }
 
-                apt-get install -y -qq build-essential curl git ca-certificates pipx || {
+                apt-get install -y -qq build-essential curl git ca-certificates || {
                     log_error "Failed to install build tools via apt-get (running as root)"
                     return 1
                 }
+
+                # Debian 11 Docker containers need locales for Ansible to work
+                # Install locales package and generate en_US.UTF-8
+                if [[ "${DISTRO:-}" == "debian" ]] && [[ "${DISTRO_VERSION:-}" == "11" ]]; then
+                    log_info "Debian 11: Installing locales for UTF-8 support"
+                    apt-get install -y -qq locales || log_warning "locales installation skipped"
+                    locale-gen en_US.UTF-8 2>/dev/null || log_warning "locale-gen failed"
+                fi
+
+                apt-get install -y -qq pipx 2>/dev/null || log_warning "pipx installation skipped"
             fi
 
             log_success "Build tools installed via apt-get"
@@ -774,14 +792,14 @@ run_ansible_setup() {
         return 1
     fi
 
-    # Debian 11 Docker containers don't have UTF-8 locale configured
-    # Set PYTHONIOENCODING to UTF-8 to tell Python/Ansible to use UTF-8 encoding
-    # This avoids locale unavailability issues while still providing UTF-8 support
+    # Debian 11 Docker containers need locale set for Ansible to work
+    # The locales package and en_US.UTF-8 should have been generated during dependency installation
     log_info "System detected: OS=$OS, DISTRO=${DISTRO:-unknown}, VERSION=${DISTRO_VERSION:-unknown}"
 
     if [[ "${DISTRO:-}" == "debian" ]] && [[ "${DISTRO_VERSION:-}" == "11" ]]; then
-        log_info "Debian 11 detected: setting Python encoding to UTF-8 for Ansible"
-        export PYTHONIOENCODING=utf-8
+        log_info "Debian 11 detected: setting locale to en_US.UTF-8 for Ansible"
+        export LC_ALL=en_US.UTF-8
+        export LANG=en_US.UTF-8
     fi
 
     if ! ansible-playbook -i inventory.yml setup.yml \

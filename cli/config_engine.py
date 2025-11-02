@@ -698,6 +698,128 @@ class ConfigurationEngine:
         self.rate_limiter.reset(user_id)
 
 
+class ConfigDiff:
+    """Compare and report differences between configurations.
+
+    Provides methods to compare two configuration dictionaries
+    and report added, removed, and modified keys in various formats.
+    """
+
+    def compare(
+        self,
+        config1: dict[str, Any],
+        config2: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Compare two configurations and report differences.
+
+        Args:
+            config1: First configuration (old/baseline)
+            config2: Second configuration (new/current)
+
+        Returns:
+            Dictionary with 'added', 'removed', 'modified', and 'summary'
+        """
+        added = {}
+        removed = {}
+        modified = {}
+        unchanged = {}
+
+        # Check for added and modified keys
+        for key, value2 in config2.items():
+            if key not in config1:
+                added[key] = value2
+            else:
+                value1 = config1[key]
+                if isinstance(value1, dict) and isinstance(value2, dict):
+                    # Recursively compare nested dicts
+                    nested_diff = self.compare(value1, value2)
+                    if nested_diff["added"] or nested_diff["removed"] or nested_diff["modified"]:
+                        modified[key] = {
+                            "old": value1,
+                            "new": value2,
+                            "diff": nested_diff,
+                        }
+                    else:
+                        unchanged[key] = value1
+                elif value1 != value2:
+                    modified[key] = {"old": value1, "new": value2}
+                else:
+                    unchanged[key] = value1
+
+        # Check for removed keys
+        removed = {key: value for key, value in config1.items() if key not in config2}
+
+        return {
+            "added": added,
+            "removed": removed,
+            "modified": modified,
+            "unchanged": unchanged,
+            "summary": {
+                "added": len(added),
+                "removed": len(removed),
+                "modified": len(modified),
+                "unchanged": len(unchanged),
+            },
+        }
+
+    def format_json(self, diff: dict[str, Any]) -> str:
+        """Format diff as JSON string.
+
+        Args:
+            diff: Diff dictionary from compare()
+
+        Returns:
+            JSON formatted string
+        """
+        return json.dumps(diff, indent=2, default=str)
+
+    def format_text(self, diff: dict[str, Any]) -> str:
+        """Format diff as human-readable text.
+
+        Args:
+            diff: Diff dictionary from compare()
+
+        Returns:
+            Text formatted diff
+        """
+        lines: list[str] = []
+        lines.extend(("Configuration Diff Report", "=" * 50))
+
+        # Summary
+        summary = diff["summary"]
+        lines.extend((
+            "\nSummary:",
+            f"  Added:     {summary["added"]}",
+            f"  Removed:   {summary["removed"]}",
+            f"  Modified:  {summary["modified"]}",
+            f"  Unchanged: {summary["unchanged"]}",
+        ))
+
+        # Added keys
+        if diff["added"]:
+            lines.append(f"\nAdded Keys ({len(diff["added"])}):")
+            for key, value in diff["added"].items():
+                lines.append(f"  + {key}: {value}")
+
+        # Removed keys
+        if diff["removed"]:
+            lines.append(f"\nRemoved Keys ({len(diff["removed"])}):")
+            for key, value in diff["removed"].items():
+                lines.append(f"  - {key}: {value}")
+
+        # Modified keys
+        if diff["modified"]:
+            lines.append(f"\nModified Keys ({len(diff["modified"])}):")
+            for key, change in diff["modified"].items():
+                lines.extend((
+                    f"  ~ {key}:",
+                    f"      Old: {change["old"]}",
+                    f"      New: {change["new"]}",
+                ))
+
+        return "\n".join(lines)
+
+
 def main() -> None:
     """CLI interface for configuration engine."""
     parser = argparse.ArgumentParser(description="Mac-Setup Configuration Engine")

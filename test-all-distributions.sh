@@ -156,9 +156,9 @@ print_summary() {
 ###############################################################################
 
 main() {
-    print_header "Mac-Setup Multi-Distribution Test Suite"
+    print_header "Devkit Multi-Distribution Test Suite"
 
-    print_info "This script tests the mac-setup repository on multiple Linux distributions"
+    print_info "This script tests the devkit repository on multiple Linux distributions"
     print_info "Expected to pass: Debian, Ubuntu, Fedora, Arch, openSUSE"
     echo ""
 

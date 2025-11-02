@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Mac-Setup Comprehensive Test Suite
+Devkit Comprehensive Test Suite
 
 Tests all components of devkit including:
 - Configuration validation
@@ -439,7 +439,7 @@ def main():
     """Run test suite."""
     import argparse
 
-    parser = argparse.ArgumentParser(description="Mac-Setup Test Suite")
+    parser = argparse.ArgumentParser(description="Devkit Test Suite")
     parser.add_argument("--project-root", default=str(Path(__file__).parent.parent))
     parser.add_argument("--verbose", "-v", action="store_true")
 

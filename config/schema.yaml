@@ -1,4 +1,4 @@
-# Mac-Setup Configuration Schema
+# Devkit Configuration Schema
 # This defines the structure and validation for all configuration files
 
 version: "1.0"

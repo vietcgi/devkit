@@ -1,4 +1,4 @@
-# Mac-Setup API Reference
+# Devkit API Reference
 
 Complete API documentation for devkit v2.0 components.
 

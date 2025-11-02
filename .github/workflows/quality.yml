@@ -182,11 +182,12 @@ jobs:
 
     - name: Install dependencies
       run: |
+        pip install -e .
         pip install pytest pytest-cov
 
     - name: Run mutation testing
       run: |
-        python cli/mutation_test.py
+        python -m cli.mutation_test
 
     - name: Check mutation score
       run: |

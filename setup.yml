@@ -5,9 +5,36 @@
     os_family: '{{ ansible_os_family }}'
     is_macos: '{{ ansible_os_family == ''Darwin'' }}'
     is_linux: '{{ ansible_os_family != ''Darwin'' }}'
-    homebrew_prefix: "{{ '/opt/homebrew' if is_macos else '/home/linuxbrew/.linuxbrew' }}"
     brewfile_path: "{{ playbook_dir }}/Brewfile"
   tasks:
+  - name: Detect Homebrew installation path
+    ansible.builtin.command: which brew
+    register: brew_which_result
+    failed_when: false
+    changed_when: false
+    tags:
+    - always
+    - homebrew
+  - name: Set homebrew_prefix from detected path
+    ansible.builtin.set_fact:
+      homebrew_prefix: "{{ brew_which_result.stdout | dirname | dirname }}"
+    when: brew_which_result.rc == 0
+    tags:
+    - always
+    - homebrew
+  - name: Set homebrew_prefix to default if not found
+    ansible.builtin.set_fact:
+      homebrew_prefix: "{{ '/opt/homebrew' if is_macos else '/home/linuxbrew/.linuxbrew' }}"
+    when: brew_which_result.rc != 0
+    tags:
+    - always
+    - homebrew
+  - name: Display homebrew_prefix being used
+    ansible.builtin.debug:
+      msg: "Using Homebrew at: {{ homebrew_prefix }}"
+    tags:
+    - always
+    - homebrew
   - name: Set user and home variables from environment
     ansible.builtin.set_fact:
       user: "{{ (lookup('env', 'USER') or lookup('env', 'LOGNAME') or 'root') | trim }}"

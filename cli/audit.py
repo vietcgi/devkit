@@ -123,7 +123,7 @@ class AuditSigningService:
         if not self.hmac_key:
             raise HMACKeyError
 
-        entry_json = json.dumps(entry, sort_keys=True, default=str)
+        entry_json = json.dumps(entry, sort_keys=False, default=str)
         return hmac.new(
             self.hmac_key,
             entry_json.encode(),

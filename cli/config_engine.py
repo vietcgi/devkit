@@ -329,6 +329,35 @@ class ConfigurationEngine:
             version="1.0",
         )
 
+    def _read_yaml_file(self, path: Path) -> dict[str, Any]:
+        """Read and parse YAML file.
+
+        Args:
+            path: Path to YAML file
+
+        Returns:
+            Parsed configuration dictionary
+
+        Raises:
+            ConfigError: If file cannot be read or parsed
+        """
+        try:
+            with path.open(encoding="utf-8") as f:
+                return yaml.safe_load(f) or {}
+        except yaml.YAMLError:
+            self.logger.exception("Invalid YAML in %s", path)
+            return {}
+        except PermissionError as e:
+            raise ConfigError(
+                message=f"Permission denied reading configuration: {path}",
+                cause="File permissions prevent reading",
+            ) from e
+        except OSError as e:
+            raise ConfigError(
+                message=f"Cannot read configuration file: {path}",
+                cause=str(e),
+            ) from e
+
     def load_file(self, file_path: str | Path, section: str | None = None) -> dict[str, Any]:
         """Load configuration from YAML file.
 
@@ -347,29 +376,12 @@ class ConfigurationEngine:
             self.logger.warning("Configuration file not found: %s", path)
             return {}
 
-        try:
-            with Path(path).open(encoding="utf-8") as f:
-                config = yaml.safe_load(f) or {}
-            self._loaded_files.append(path)
-            self.logger.debug("Loaded config from %s", path)
+        config = self._read_yaml_file(path)
+        self._loaded_files.append(path)
+        self.logger.debug("Loaded config from %s", path)
 
-            if section and section in config:
-                config = config[section]
-        except yaml.YAMLError:
-            self.logger.exception("Invalid YAML in %s", path)
-            return {}
-        except PermissionError as e:
-            self.logger.exception("Permission denied reading %s", path)
-            raise ConfigError(
-                message=f"Permission denied reading configuration: {path}",
-                cause="File permissions prevent reading",
-            ) from e
-        except OSError as e:
-            self.logger.exception("Error loading %s", path)
-            raise ConfigError(
-                message=f"Cannot read configuration file: {path}",
-                cause=str(e),
-            ) from e
+        if section and section in config:
+            config = config[section]
 
         return config
 

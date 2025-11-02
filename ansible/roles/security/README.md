@@ -201,8 +201,8 @@ After SSH key generation:
 
 ## See Also
 
-- [SSH Best Practices](https://www.ssh.com/ssh/best-practices)
-- [ED25519 vs RSA](https://security.stackexchange.com/questions/90077/ssh-key-ed25519-vs-rsa)
+- [SSH Configuration Manual](https://man.openbsd.org/ssh_config) - OpenBSD official SSH documentation
+- [SSH Keys Guide](https://wiki.archlinux.org/title/SSH_keys) - Comprehensive SSH key generation and usage
 - [GitHub SSH Setup](https://docs.github.com/en/authentication/connecting-to-github-with-ssh)
 - [GPG Key Generation](https://docs.github.com/en/authentication/managing-commit-signature-verification)
 - Related roles: `core`, `git`

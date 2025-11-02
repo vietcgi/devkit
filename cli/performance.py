@@ -267,7 +267,7 @@ class InstallationOptimizer:
         perf = self.performance.get_summary()
         for label, metrics in perf.items():
             if metrics["avg"] > 30:  # Operations taking over 30s
-                suggestions.append(f"Slow operation detected ({label}): avg {metrics["avg"]}s")
+                suggestions.append(f'Slow operation detected ({label}): avg {metrics["avg"]}s')
 
         return suggestions
 

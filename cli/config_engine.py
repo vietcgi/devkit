@@ -797,19 +797,19 @@ class ConfigDiff:
 
         # Added keys
         if diff["added"]:
-            lines.append(f"\nAdded Keys ({len(diff["added"])}):")
+            lines.append(f'\nAdded Keys ({len(diff["added"])}):')
             for key, value in diff["added"].items():
                 lines.append(f"  + {key}: {value}")
 
         # Removed keys
         if diff["removed"]:
-            lines.append(f"\nRemoved Keys ({len(diff["removed"])}):")
+            lines.append(f'\nRemoved Keys ({len(diff["removed"])}):')
             for key, value in diff["removed"].items():
                 lines.append(f"  - {key}: {value}")
 
         # Modified keys
         if diff["modified"]:
-            lines.append(f"\nModified Keys ({len(diff["modified"])}):")
+            lines.append(f'\nModified Keys ({len(diff["modified"])}):')
             for key, change in diff["modified"].items():
                 lines.extend((
                     f"  ~ {key}:",

@@ -362,7 +362,7 @@ class VerificationError(DevkitError):
         install_cmd = " ".join(missing_tools)
         return VerificationError(
             message=f"Setup verification failed: {len(missing_tools)} tool(s) missing",
-            cause=f"Missing tools: {", ".join(missing_tools)}",
+            cause=f'Missing tools: {", ".join(missing_tools)}',
             solutions=[
                 f"Install all missing: brew install {install_cmd}",
                 "Verify each installed: which <tool>",

@@ -656,11 +656,11 @@ class AuditReporter:
             "Security & Integrity Report",
             "=" * 50,
             "",
-            f"Total Entries: {integrity["total_entries"]}",
-            f"Valid Entries: {integrity["valid_entries"]}",
-            f"Invalid Entries: {integrity["invalid_entries"]}",
-            f"Unsigned Entries: {integrity["unsigned_entries"]}",
-            f"Tampering Detected: {integrity["tampering_detected"]}",
+            f'Total Entries: {integrity["total_entries"]}',
+            f'Valid Entries: {integrity["valid_entries"]}',
+            f'Invalid Entries: {integrity["invalid_entries"]}',
+            f'Unsigned Entries: {integrity["unsigned_entries"]}',
+            f'Tampering Detected: {integrity["tampering_detected"]}',
             "",
         ]
 

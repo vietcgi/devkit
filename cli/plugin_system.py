@@ -444,15 +444,15 @@ def _display_plugin_list(loader: "PluginLoader") -> None:  # pylint: disable=unu
 def _display_plugin_info(loader: "PluginLoader") -> None:  # pylint: disable=unused-argument
     """Display detailed plugin information."""
     info = loader.get_plugin_info()
-    print(f"\n{"Plugin Information":^50}")  # noqa: T201
+    print(f'\n{"Plugin Information":^50}')  # noqa: T201
     print("=" * 50)  # noqa: T201
     if info:
         for name, details in info.items():
             print(f"\n{name}:")  # noqa: T201
-            print(f"  Version:     {details.get("version", "unknown")}")  # noqa: T201
-            print(f"  Description: {details.get("description", "N/A")}")  # noqa: T201
-            print(f"  Roles:       {details.get("roles", 0)}")  # noqa: T201
-            print(f"  Hooks:       {details.get("hooks", 0)}")  # noqa: T201
+            print(f'  Version:     {details.get("version", "unknown")}')  # noqa: T201
+            print(f'  Description: {details.get("description", "N/A")}')  # noqa: T201
+            print(f'  Roles:       {details.get("roles", 0)}')  # noqa: T201
+            print(f'  Hooks:       {details.get("hooks", 0)}')  # noqa: T201
     else:
         print("  (No plugin information available)")  # noqa: T201
     print()  # noqa: T201

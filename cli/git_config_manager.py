@@ -380,7 +380,7 @@ class GitConfigManager(ValidatorBase):
             },
         }
 
-    @staticmethod  # type: ignore[misc]
+    @staticmethod
     def display_report(report: dict[str, Any]) -> None:
         """Display formatted reload report.
 

@@ -37,46 +37,8 @@ jobs:
 
     - name: Verify installations
       run: |
-        # Source Homebrew environment dynamically
-        if [ -f /opt/homebrew/bin/brew ]; then
-          eval "$(/opt/homebrew/bin/brew shellenv)"
-        elif [ -f /usr/local/bin/brew ]; then
-          eval "$(/usr/local/bin/brew shellenv)"
-        elif command -v brew &> /dev/null; then
-          eval "$(brew shellenv)"
-        fi
-        echo "PATH=$PATH"
-
-        echo "=== Verifying Core Tools ==="
-        git --version || echo "git not found"
-        zsh --version || echo "zsh not found"
-        tmux -V || echo "tmux not found"
-        nvim --version 2>&1 | head -1 || echo "nvim not found"
-
-        echo -e "\n=== Verifying Development Tools ==="
-        python3 --version || echo "python3 not found"
-        node --version || echo "Node not in PATH yet"
-        go version || echo "Go not in PATH yet"
-
-        echo -e "\n=== Verifying CLI Tools ==="
-        fzf --version || echo "fzf not found"
-        rg --version 2>&1 | head -1 || echo "ripgrep not found"
-        bat --version || echo "bat not found"
-
-        echo -e "\n=== Verifying Package Managers ==="
-        brew --version || echo "brew not found"
-        ~/.local/bin/mise --version || echo "mise not found"
-
-        echo -e "\n=== Verifying Config Files ==="
-        ls -la ~/.zshrc || echo ".zshrc not found"
-        ls -la ~/.tmux.conf || echo ".tmux.conf not found"
-        ls -la ~/.config/nvim/ || echo "nvim config not found"
-
-    - name: Check Ansible RECAP
-      run: |
-        echo "Checking for Ansible failures..."
-        # This will be in the bootstrap output
-        # We can't easily grep it here, but the step will fail if bootstrap failed
+        chmod +x verify-installation.sh
+        ./verify-installation.sh
 
     - name: Upload logs on failure
       if: failure()
@@ -112,40 +74,8 @@ jobs:
 
     - name: Verify installations
       run: |
-        # Source Homebrew environment dynamically
-        if [ -f /opt/homebrew/bin/brew ]; then
-          eval "$(/opt/homebrew/bin/brew shellenv)"
-        elif [ -f /usr/local/bin/brew ]; then
-          eval "$(/usr/local/bin/brew shellenv)"
-        elif command -v brew &> /dev/null; then
-          eval "$(brew shellenv)"
-        fi
-        echo "PATH=$PATH"
-
-        echo "=== Verifying Core Tools ==="
-        git --version || echo "git not found"
-        zsh --version || echo "zsh not found"
-        tmux -V || echo "tmux not found"
-        nvim --version 2>&1 | head -1 || echo "nvim not found"
-
-        echo -e "\n=== Verifying Development Tools ==="
-        python3 --version || echo "python3 not found"
-        node --version || echo "Node not in PATH yet"
-        go version || echo "Go not in PATH yet"
-
-        echo -e "\n=== Verifying CLI Tools ==="
-        fzf --version || echo "fzf not found"
-        rg --version 2>&1 | head -1 || echo "ripgrep not found"
-        bat --version || echo "bat not found"
-
-        echo -e "\n=== Verifying Package Managers ==="
-        brew --version || echo "brew not found"
-        ~/.local/bin/mise --version || echo "mise not found"
-
-        echo -e "\n=== Verifying Config Files ==="
-        ls -la ~/.zshrc || echo ".zshrc not found"
-        ls -la ~/.tmux.conf || echo ".tmux.conf not found"
-        ls -la ~/.config/nvim/ || echo "nvim config not found"
+        chmod +x verify-installation.sh
+        ./verify-installation.sh
 
     - name: Check Ansible RECAP
       run: |
@@ -238,23 +168,8 @@ jobs:
 
     - name: Verify installations
       run: |
-        # Source Linuxbrew environment dynamically
-        if [ -f /home/linuxbrew/.linuxbrew/bin/brew ]; then
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-        elif [ -f /opt/homebrew/bin/brew ]; then
-          eval "$(/opt/homebrew/bin/brew shellenv)"
-        elif [ -f /usr/local/bin/brew ]; then
-          eval "$(/usr/local/bin/brew shellenv)"
-        elif command -v brew &> /dev/null; then
-          eval "$(brew shellenv)"
-        fi
-        echo "PATH=$PATH"
-
-        echo "=== Verifying Core Tools ==="
-        git --version || echo "git not found"
-        zsh --version || echo "zsh not found"
-        tmux -V || echo "tmux not found"
-        nvim --version 2>&1 | head -1 || echo "nvim not found"
+        chmod +x verify-installation.sh
+        ./verify-installation.sh
 
         echo -e "\n=== Verifying Development Tools ==="
         python3 --version || echo "python3 not found"
@@ -396,23 +311,8 @@ jobs:
 
     - name: Verify installations
       run: |
-        # Source Linuxbrew environment dynamically
-        if [ -f /home/linuxbrew/.linuxbrew/bin/brew ]; then
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-        elif [ -f /opt/homebrew/bin/brew ]; then
-          eval "$(/opt/homebrew/bin/brew shellenv)"
-        elif [ -f /usr/local/bin/brew ]; then
-          eval "$(/usr/local/bin/brew shellenv)"
-        elif command -v brew &> /dev/null; then
-          eval "$(brew shellenv)"
-        fi
-        echo "PATH=$PATH"
-
-        echo "=== Verifying Core Tools ==="
-        git --version || echo "git not found"
-        zsh --version || echo "zsh not found"
-        tmux -V || echo "tmux not found"
-        nvim --version 2>&1 | head -1 || echo "nvim not found"
+        chmod +x verify-installation.sh
+        ./verify-installation.sh
 
         echo -e "\n=== Verifying Config Files ==="
         ls -la ~/.zshrc || echo ".zshrc not found"
@@ -466,23 +366,8 @@ jobs:
 
     - name: Verify installations
       run: |
-        # Source Linuxbrew environment dynamically
-        if [ -f /home/linuxbrew/.linuxbrew/bin/brew ]; then
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-        elif [ -f /opt/homebrew/bin/brew ]; then
-          eval "$(/opt/homebrew/bin/brew shellenv)"
-        elif [ -f /usr/local/bin/brew ]; then
-          eval "$(/usr/local/bin/brew shellenv)"
-        elif command -v brew &> /dev/null; then
-          eval "$(brew shellenv)"
-        fi
-        echo "PATH=$PATH"
-
-        echo "=== Verifying Core Tools ==="
-        git --version || echo "git not found"
-        zsh --version || echo "zsh not found"
-        tmux -V || echo "tmux not found"
-        nvim --version 2>&1 | head -1 || echo "nvim not found"
+        chmod +x verify-installation.sh
+        ./verify-installation.sh
 
     - name: Upload logs on failure
       if: failure()
@@ -608,23 +493,8 @@ jobs:
 
     - name: Verify installations
       run: |
-        # Source Linuxbrew environment dynamically
-        if [ -f /home/linuxbrew/.linuxbrew/bin/brew ]; then
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-        elif [ -f /opt/homebrew/bin/brew ]; then
-          eval "$(/opt/homebrew/bin/brew shellenv)"
-        elif [ -f /usr/local/bin/brew ]; then
-          eval "$(/usr/local/bin/brew shellenv)"
-        elif command -v brew &> /dev/null; then
-          eval "$(brew shellenv)"
-        fi
-        echo "PATH=$PATH"
-
-        echo "=== Verifying Core Tools ==="
-        git --version || echo "git not found"
-        zsh --version || echo "zsh not found"
-        tmux -V || echo "tmux not found"
-        nvim --version 2>&1 | head -1 || echo "nvim not found"
+        chmod +x verify-installation.sh
+        ./verify-installation.sh
 
         echo -e "\n=== Verifying Config Files ==="
         ls -la ~/.zshrc || echo ".zshrc not found"
@@ -676,23 +546,8 @@ jobs:
 
     - name: Verify installations
       run: |
-        # Source Linuxbrew environment dynamically
-        if [ -f /home/linuxbrew/.linuxbrew/bin/brew ]; then
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-        elif [ -f /opt/homebrew/bin/brew ]; then
-          eval "$(/opt/homebrew/bin/brew shellenv)"
-        elif [ -f /usr/local/bin/brew ]; then
-          eval "$(/usr/local/bin/brew shellenv)"
-        elif command -v brew &> /dev/null; then
-          eval "$(brew shellenv)"
-        fi
-        echo "PATH=$PATH"
-
-        echo "=== Verifying Core Tools ==="
-        git --version || echo "git not found"
-        zsh --version || echo "zsh not found"
-        tmux -V || echo "tmux not found"
-        nvim --version 2>&1 | head -1 || echo "nvim not found"
+        chmod +x verify-installation.sh
+        ./verify-installation.sh
 
         echo -e "\n=== Verifying Config Files ==="
         ls -la ~/.zshrc || echo ".zshrc not found"

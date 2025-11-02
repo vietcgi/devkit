@@ -46,7 +46,7 @@ print_error() {
 
 # Check Docker
 check_docker() {
-    if ! docker ps &> /dev/null; then
+    if ! docker ps &>/dev/null; then
         print_error "Docker is not running. Please start Docker Desktop."
         exit 1
     fi
@@ -57,7 +57,7 @@ check_docker() {
 test_distribution() {
     local distro_name="$1"
     local docker_image="$2"
-    local expected_result="$3"  # "pass" or "fail" or "skip"
+    local expected_result="$3" # "pass" or "fail" or "skip"
 
     print_header "Testing $distro_name"
 
@@ -76,7 +76,7 @@ test_distribution() {
         export DEBIAN_FRONTEND=noninteractive
         chmod +x bootstrap-ansible.sh
         ./bootstrap-ansible.sh 2>&1
-    " > "$log_file" 2>&1; then
+    " >"$log_file" 2>&1; then
         local end_time
         end_time=$(date +%s)
         local duration=$((end_time - start_time))
@@ -124,15 +124,15 @@ print_summary() {
     for distro in "${!RESULTS[@]}"; do
         local result="${RESULTS[$distro]}"
         case "$result" in
-            PASS)
-                echo -e "  ${GREEN}✅ $distro${NC} - PASSED"
-                ;;
-            FAIL)
-                echo -e "  ${RED}❌ $distro${NC} - FAILED"
-                ;;
-            WARN)
-                echo -e "  ${YELLOW}⚠️  $distro${NC} - WARNING"
-                ;;
+        PASS)
+            echo -e "  ${GREEN}✅ $distro${NC} - PASSED"
+            ;;
+        FAIL)
+            echo -e "  ${RED}❌ $distro${NC} - FAILED"
+            ;;
+        WARN)
+            echo -e "  ${YELLOW}⚠️  $distro${NC} - WARNING"
+            ;;
         esac
     done
 
@@ -186,45 +186,45 @@ main() {
     choice=${choice:-1}
 
     case "$choice" in
-        1)
-            # Test all distributions
-            test_distribution "Debian 12" "debian:12" "pass"
-            test_distribution "Debian 11" "debian:11" "pass"
-            test_distribution "Ubuntu 24.04" "ubuntu:24.04" "pass"
-            test_distribution "Ubuntu 22.04" "ubuntu:22.04" "pass"
-            test_distribution "Fedora 40" "fedora:40" "pass"
-            test_distribution "Fedora 39" "fedora:39" "pass"
-            test_distribution "Arch Linux" "archlinux:latest" "pass"
-            test_distribution "openSUSE Leap" "opensuse/leap:latest" "pass"
-            ;;
-        2)
-            # Debian family
-            test_distribution "Debian 12" "debian:12" "pass"
-            test_distribution "Debian 11" "debian:11" "pass"
-            test_distribution "Ubuntu 24.04" "ubuntu:24.04" "pass"
-            test_distribution "Ubuntu 22.04" "ubuntu:22.04" "pass"
-            ;;
-        3)
-            # RedHat family
-            test_distribution "Fedora 40" "fedora:40" "pass"
-            test_distribution "Fedora 39" "fedora:39" "pass"
-            ;;
-        4)
-            # Arch family
-            test_distribution "Arch Linux" "archlinux:latest" "pass"
-            ;;
-        5)
-            # Custom
-            print_info "Custom selection not yet implemented. Running all tests."
-            test_distribution "Debian 12" "debian:12" "pass"
-            test_distribution "Ubuntu 24.04" "ubuntu:24.04" "pass"
-            test_distribution "Fedora 40" "fedora:40" "pass"
-            test_distribution "Arch Linux" "archlinux:latest" "pass"
-            ;;
-        *)
-            print_error "Invalid choice. Exiting."
-            exit 1
-            ;;
+    1)
+        # Test all distributions
+        test_distribution "Debian 12" "debian:12" "pass"
+        test_distribution "Debian 11" "debian:11" "pass"
+        test_distribution "Ubuntu 24.04" "ubuntu:24.04" "pass"
+        test_distribution "Ubuntu 22.04" "ubuntu:22.04" "pass"
+        test_distribution "Fedora 40" "fedora:40" "pass"
+        test_distribution "Fedora 39" "fedora:39" "pass"
+        test_distribution "Arch Linux" "archlinux:latest" "pass"
+        test_distribution "openSUSE Leap" "opensuse/leap:latest" "pass"
+        ;;
+    2)
+        # Debian family
+        test_distribution "Debian 12" "debian:12" "pass"
+        test_distribution "Debian 11" "debian:11" "pass"
+        test_distribution "Ubuntu 24.04" "ubuntu:24.04" "pass"
+        test_distribution "Ubuntu 22.04" "ubuntu:22.04" "pass"
+        ;;
+    3)
+        # RedHat family
+        test_distribution "Fedora 40" "fedora:40" "pass"
+        test_distribution "Fedora 39" "fedora:39" "pass"
+        ;;
+    4)
+        # Arch family
+        test_distribution "Arch Linux" "archlinux:latest" "pass"
+        ;;
+    5)
+        # Custom
+        print_info "Custom selection not yet implemented. Running all tests."
+        test_distribution "Debian 12" "debian:12" "pass"
+        test_distribution "Ubuntu 24.04" "ubuntu:24.04" "pass"
+        test_distribution "Fedora 40" "fedora:40" "pass"
+        test_distribution "Arch Linux" "archlinux:latest" "pass"
+        ;;
+    *)
+        print_error "Invalid choice. Exiting."
+        exit 1
+        ;;
     esac
 
     # Print summary

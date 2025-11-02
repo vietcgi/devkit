@@ -47,7 +47,7 @@ echo ""
 echo -e "${BLUE}GATE 2: Tests Execution${NC}"
 echo -n "   Running tests... "
 
-if command -v pytest &> /dev/null; then
+if command -v pytest &>/dev/null; then
     if pytest -q 2>/dev/null; then
         # shellcheck disable=SC2034  # TEST_COUNT computed but not used in output
         TEST_COUNT=$(pytest --collect-only -q 2>/dev/null | tail -1 | awk '{print $1}' || echo "?")
@@ -70,8 +70,8 @@ echo -n "   Checking coverage (minimum 85%)... "
 
 if [ -z "$PYTHON_FILES" ]; then
     echo -e "${GREEN}✓${NC} (no Python files changed)"
-elif command -v coverage &> /dev/null; then
-    if coverage report --fail-under=85 > /tmp/coverage.txt 2>&1; then
+elif command -v coverage &>/dev/null; then
+    if coverage report --fail-under=85 >/tmp/coverage.txt 2>&1; then
         COVERAGE=$(grep TOTAL /tmp/coverage.txt | awk '{print $(NF-1)}' || echo "?")
         echo -e "${GREEN}✓${NC} ($COVERAGE)"
     else
@@ -93,9 +93,9 @@ echo -n "   Checking types (mypy strict)... "
 
 if [ -z "$PYTHON_FILES" ]; then
     echo -e "${GREEN}✓${NC} (no Python files)"
-elif command -v mypy &> /dev/null; then
+elif command -v mypy &>/dev/null; then
     # shellcheck disable=SC2086  # Word splitting is intentional here
-    if mypy --strict $PYTHON_FILES > /tmp/mypy.txt 2>&1; then
+    if mypy --strict $PYTHON_FILES >/tmp/mypy.txt 2>&1; then
         echo -e "${GREEN}✓${NC}"
     else
         echo -e "${RED}✗${NC}"
@@ -116,8 +116,8 @@ echo -n "   Scanning for vulnerabilities... "
 
 if [ -z "$PYTHON_FILES" ]; then
     echo -e "${GREEN}✓${NC} (no Python files)"
-elif command -v bandit &> /dev/null; then
-    if bandit -r -ll $PYTHON_FILES > /tmp/bandit.txt 2>&1; then
+elif command -v bandit &>/dev/null; then
+    if bandit -r -ll $PYTHON_FILES >/tmp/bandit.txt 2>&1; then
         echo -e "${GREEN}✓${NC}"
     else
         echo -e "${RED}✗${NC}"
@@ -138,10 +138,10 @@ echo -n "   Linting code (minimum 8.0 score)... "
 
 if [ -z "$PYTHON_FILES" ]; then
     echo -e "${GREEN}✓${NC} (no Python files)"
-elif command -v pylint &> /dev/null; then
-    if pylint --exit-zero $PYTHON_FILES > /tmp/pylint.txt 2>&1; then
+elif command -v pylint &>/dev/null; then
+    if pylint --exit-zero $PYTHON_FILES >/tmp/pylint.txt 2>&1; then
         SCORE=$(grep -oP 'rated at \K[0-9.]+' /tmp/pylint.txt | head -1 || echo "?")
-        if (( $(echo "$SCORE >= 8.0" | bc -l 2>/dev/null || echo 0) )); then
+        if (($(echo "$SCORE >= 8.0" | bc -l 2>/dev/null || echo 0))); then
             echo -e "${GREEN}✓${NC} ($SCORE)"
         else
             echo -e "${RED}✗${NC} ($SCORE/10)"

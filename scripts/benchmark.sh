@@ -37,31 +37,31 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
-            -r|--runs)
-                RUNS="$2"
-                shift 2
-                ;;
-            -o|--output)
-                OUTPUT_FILE="$2"
-                shift 2
-                ;;
-            -c|--clear-cache)
-                CLEAR_CACHE=true
-                shift
-                ;;
-            -s|--skip-gui)
-                SKIP_GUI=true
-                shift
-                ;;
-            -h|--help)
-                show_help
-                exit 0
-                ;;
-            *)
-                echo "Unknown option: $1"
-                show_help
-                exit 1
-                ;;
+        -r | --runs)
+            RUNS="$2"
+            shift 2
+            ;;
+        -o | --output)
+            OUTPUT_FILE="$2"
+            shift 2
+            ;;
+        -c | --clear-cache)
+            CLEAR_CACHE=true
+            shift
+            ;;
+        -s | --skip-gui)
+            SKIP_GUI=true
+            shift
+            ;;
+        -h | --help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            show_help
+            exit 1
+            ;;
         esac
     done
 }
@@ -160,7 +160,7 @@ run_benchmark() {
     start_time=$(date +%s%N)
     cd "$PROJECT_DIR"
 
-    if $bootstrap_cmd > /tmp/bootstrap-$run_num.log 2>&1; then
+    if $bootstrap_cmd >/tmp/bootstrap-$run_num.log 2>&1; then
         local end_time
         end_time=$(date +%s%N)
         duration=$(echo "scale=2; ($end_time - $start_time) / 1000000000" | bc)
@@ -203,10 +203,10 @@ generate_report() {
             duration=$(echo "$line" | grep -o '[0-9.]*' | head -1)
             total_time=$(echo "$total_time + $duration" | bc)
 
-            if (( $(echo "$duration < $min_time" | bc -l) )); then
+            if (($(echo "$duration < $min_time" | bc -l))); then
                 min_time=$duration
             fi
-            if (( $(echo "$duration > $max_time" | bc -l) )); then
+            if (($(echo "$duration > $max_time" | bc -l))); then
                 max_time=$duration
             fi
 
@@ -216,7 +216,7 @@ generate_report() {
             fi
             last_run_time=$duration
         fi
-    done <<< "$results_json"
+    done <<<"$results_json"
 
     local avg_time
     avg_time=$(echo "scale=2; $total_time / $num_runs" | bc)
@@ -251,7 +251,7 @@ Cache Impact:
 Recommendations:
 EOF
 
-    if (( $(echo "$improvement < 30" | bc -l) )); then
+    if (($(echo "$improvement < 30" | bc -l))); then
         cat <<EOF
   - Run more benchmarks to better utilize caching
   - Check network speed (may be bottleneck)
@@ -295,7 +295,7 @@ main() {
     results="$results]"
 
     # Save results
-    echo "$results" | jq '.' > "$OUTPUT_FILE"
+    echo "$results" | jq '.' >"$OUTPUT_FILE"
     log_success "Results saved to $OUTPUT_FILE"
     echo ""
 

@@ -4,52 +4,52 @@
 
 # Use mise for version management
 use_mise() {
-  direnv_load mise direnv exec
+    direnv_load mise direnv exec
 }
 
 # Load .env files automatically
 dotenv_if_exists() {
-  if [ -f .env ]; then
-    dotenv .env
-  fi
+    if [ -f .env ]; then
+        dotenv .env
+    fi
 }
 
 # AWS profile switching
 use_aws() {
-  export AWS_PROFILE=$1
-  export AWS_REGION=${2:-us-east-1}
+    export AWS_PROFILE=$1
+    export AWS_REGION=${2:-us-east-1}
 }
 
 # Kubernetes context switching
 use_kube() {
-  export KUBECONFIG=$1
+    export KUBECONFIG=$1
 }
 
 # Layout patterns for different project types
 layout_poetry() {
-  if [[ ! -f pyproject.toml ]]; then
-    log_error 'No pyproject.toml found. Use `poetry init` to create one first.'
-    exit 2
-  fi
+    if [[ ! -f pyproject.toml ]]; then
+        log_error 'No pyproject.toml found. Use `poetry init` to create one first.'
+        exit 2
+    fi
 
-  local VENV
-  VENV=$(poetry env info --path 2>/dev/null)
-  if [[ -z $VENV || ! -d $VENV/bin ]]; then
-    log_status 'No poetry virtual environment found. Use `poetry install` to create one first.'
-    exit 2
-  fi
+    local VENV
+    VENV=$(poetry env info --path 2>/dev/null)
+    if [[ -z $VENV || ! -d $VENV/bin ]]; then
+        log_status 'No poetry virtual environment found. Use `poetry install` to create one first.'
+        exit 2
+    fi
 
-  export VIRTUAL_ENV=$VENV
-  PATH_add "$VENV/bin"
+    export VIRTUAL_ENV=$VENV
+    PATH_add "$VENV/bin"
 }
 
 layout_node() {
-  local NODE_VERSION=${1:-lts}
-  mise use node@$NODE_VERSION
-  PATH_add node_modules/.bin
+    local NODE_VERSION=${1:-lts}
+    mise use node@$NODE_VERSION
+    PATH_add node_modules/.bin
 }
 
 layout_go() {
-  export GOPATH="${PWD}/.go"
-  PATH_add "${GOPATH}/bin"
+    export GOPATH="${PWD}/.go"
+    PATH_add "${GOPATH}/bin"
 }

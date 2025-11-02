@@ -23,15 +23,15 @@ AUDIT_LOG="$AUDIT_DIR/commits.log"
 # Get GPG signature status
 GPG_SIGNATURE=$(git log -1 --format=%G? || echo "N")
 case "$GPG_SIGNATURE" in
-    G) SIGNATURE_STATUS="good" ;;
-    B) SIGNATURE_STATUS="bad" ;;
-    U) SIGNATURE_STATUS="untrusted" ;;
-    X) SIGNATURE_STATUS="expired" ;;
-    Y) SIGNATURE_STATUS="expired_key" ;;
-    R) SIGNATURE_STATUS="revoked" ;;
-    E) SIGNATURE_STATUS="missing" ;;
-    N) SIGNATURE_STATUS="not_signed" ;;
-    *) SIGNATURE_STATUS="unknown" ;;
+G) SIGNATURE_STATUS="good" ;;
+B) SIGNATURE_STATUS="bad" ;;
+U) SIGNATURE_STATUS="untrusted" ;;
+X) SIGNATURE_STATUS="expired" ;;
+Y) SIGNATURE_STATUS="expired_key" ;;
+R) SIGNATURE_STATUS="revoked" ;;
+E) SIGNATURE_STATUS="missing" ;;
+N) SIGNATURE_STATUS="not_signed" ;;
+*) SIGNATURE_STATUS="unknown" ;;
 esac
 
 # Extract test stats from commit message (if available)
@@ -48,7 +48,8 @@ if [[ "$COMMIT_MSG" =~ Coverage:\ ([0-9]+)% ]] || [[ "$COMMIT_MSG" =~ coverage:\
 fi
 
 # Create audit log entry in JSONL format
-AUDIT_ENTRY=$(cat <<EOF
+AUDIT_ENTRY=$(
+    cat <<EOF
 {
   "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "commit_hash": "$COMMIT_HASH",
@@ -70,7 +71,7 @@ EOF
 )
 
 # Log to audit trail
-echo "$AUDIT_ENTRY" >> "$AUDIT_LOG"
+echo "$AUDIT_ENTRY" >>"$AUDIT_LOG"
 
 # Display commit info
 echo ""

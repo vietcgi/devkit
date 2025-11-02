@@ -153,7 +153,7 @@ download_bootstrap_script() {
         return 1
     fi
 
-    log_success "Bootstrap script downloaded ($(wc -c < "$SCRIPT_FILE") bytes)"
+    log_success "Bootstrap script downloaded ($(wc -c <"$SCRIPT_FILE") bytes)"
     return 0
 }
 
@@ -187,8 +187,8 @@ verify_script_integrity() {
     # If we have a checksum, verify it
     if [ -n "$expected_checksum" ]; then
         local actual_checksum
-        actual_checksum=$(sha256sum "$SCRIPT_FILE" 2>/dev/null | awk '{print $1}' || \
-                         shasum -a 256 "$SCRIPT_FILE" 2>/dev/null | awk '{print $1}')
+        actual_checksum=$(sha256sum "$SCRIPT_FILE" 2>/dev/null | awk '{print $1}' ||
+            shasum -a 256 "$SCRIPT_FILE" 2>/dev/null | awk '{print $1}')
 
         if [ "$actual_checksum" != "$expected_checksum" ]; then
             log_error "Checksum verification FAILED!"

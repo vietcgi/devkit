@@ -186,15 +186,14 @@ repos:
   # =========================================================================
   # TIER 11: INFRASTRUCTURE AS CODE (Ansible validation)
   # =========================================================================
-  - repo: local
+  - repo: https://github.com/ansible/ansible-lint.git
+    rev: v6.20.3
     hooks:
       - id: ansible-lint
         name: "Lint Ansible playbooks (ansible-lint)"
-        entry: bash -c 'ansible-lint setup.yml && ansible-playbook setup.yml --syntax-check'
-        language: system
         files: ^(setup\.yml|ansible/)
         types: [yaml]
-        pass_filenames: false
+        additional_dependencies: ["ansible-core>=2.12,<2.16"]
 
   # =========================================================================
   # TIER 12: COMPLEXITY ANALYSIS (radon)

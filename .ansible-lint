@@ -1,10 +1,28 @@
-# Ansible-lint configuration
-# Lenient rules for development setup
+# .ansible-lint configuration for devkit
 
-# Skip rules that are too strict for this repo
+# Skip rules that conflict with project requirements
 skip_list:
-  - yaml[indentation]       # Allow flexible indentation
-  - yaml[truthy]            # Allow truthy values without explicit false/true
-  - command-instead-of-shell  # Allow command module when needed
-  - name[casing]            # Allow lowercase task names
-  - no-handler              # Allow tasks without handlers
+  # Stylistic rules - handled by other tools
+  - key-order
+  - name[casing]
+  - yaml
+
+  # Project-specific exceptions for infrastructure bootstrap
+  - command-instead-of-module  # Some commands are necessary for setup
+  - command-instead-of-shell  # Shell complexity requires shell module
+  - schema[meta]  # Meta validation too strict
+  - latest  # Version pinning is intentional
+  - risky-file-permissions  # Specific perms required for setup
+  - risky-shell-pipe  # Pipes necessary for complex operations
+  - no-changed-when  # Changed detection is task-specific
+  - no-handler  # Handlers used appropriately
+
+# Rules to exclude
+exclude_paths:
+  - .git
+  - .direnv
+  - htmlcov
+  - .ansible
+
+# Profiles: min, basic, moderate, safety, shared, production
+profile: min

@@ -184,7 +184,20 @@ repos:
         types: [python]
 
   # =========================================================================
-  # TIER 11: COMPLEXITY ANALYSIS (radon)
+  # TIER 11: INFRASTRUCTURE AS CODE (ansible-lint)
+  # =========================================================================
+  - repo: local
+    hooks:
+      - id: ansible-lint
+        name: "Lint Ansible playbooks (ansible-lint)"
+        entry: ansible-lint
+        language: system
+        files: ^(setup\.yml|ansible/)
+        types: [yaml]
+        pass_filenames: true
+
+  # =========================================================================
+  # TIER 12: COMPLEXITY ANALYSIS (radon)
   # =========================================================================
   - repo: local
     hooks:

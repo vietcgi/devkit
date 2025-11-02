@@ -254,7 +254,7 @@ install_system_dependencies() {
                     }
 
                     # Install pipx (optional - not critical to bootstrap success)
-                    sudo dnf install -y python3-pipx 2>/dev/null || log_warning "pipx installation skipped (not available)"
+                    sudo dnf install -y pipx 2>/dev/null || log_warning "pipx installation skipped (not available)"
                 else
                     log_error "sudo not found, but required for dnf"
                     return 1
@@ -266,7 +266,7 @@ install_system_dependencies() {
                 }
 
                 # Install pipx (optional - not critical to bootstrap success)
-                dnf install -y python3-pipx 2>/dev/null || log_warning "pipx installation skipped (not available)"
+                dnf install -y pipx 2>/dev/null || log_warning "pipx installation skipped (not available)"
             fi
 
             log_success "Build tools installed via dnf"
@@ -283,7 +283,7 @@ install_system_dependencies() {
                     }
 
                     # Install pipx (optional - not critical to bootstrap success)
-                    sudo yum install -y python3-pipx 2>/dev/null || log_warning "pipx installation skipped (not available)"
+                    sudo yum install -y pipx 2>/dev/null || log_warning "pipx installation skipped (not available)"
                 else
                     log_error "sudo not found, but required for yum"
                     return 1
@@ -295,7 +295,7 @@ install_system_dependencies() {
                 }
 
                 # Install pipx (optional - not critical to bootstrap success)
-                yum install -y python3-pipx 2>/dev/null || log_warning "pipx installation skipped (not available)"
+                yum install -y pipx 2>/dev/null || log_warning "pipx installation skipped (not available)"
             fi
 
             log_success "Build tools installed via yum"

@@ -20,16 +20,11 @@
 
 set -euo pipefail # Strict error handling: exit on error, undefined vars, pipe failures
 
-# Color codes for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-BOLD='\033[1m'
-NC='\033[0m' # No Color
+# Source common functions library
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/lib/functions.sh"
 
 # Configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_NAME="Devkit"
 PYTHON_REQUIRED=true
 INTERACTIVE_MODE=false
@@ -41,45 +36,6 @@ SELECTED_ROLES="core,shell,editors,languages,development"
 # SECURITY: Bootstrap integrity verification
 # This checksum is automatically updated on each release by CI/CD
 BOOTSTRAP_CHECKSUM="${DEVKIT_BOOTSTRAP_CHECKSUM:-}" # Can be overridden by environment
-
-################################################################################
-# Utility Functions
-################################################################################
-
-log_info() {
-    echo -e "${BLUE}ℹ${NC} $1"
-}
-
-log_success() {
-    echo -e "${GREEN}✓${NC} $1"
-}
-
-log_warning() {
-    echo -e "${YELLOW}⚠${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}✗${NC} $1" >&2
-}
-
-suggest_fix() {
-    local issue="$1"
-    local suggestion="$2"
-    echo -e "${YELLOW}💡 Suggestion:${NC} $suggestion" >&2
-}
-
-print_header() {
-    echo ""
-    echo -e "${BOLD}${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${BOLD}${BLUE}  $1${NC}"
-    echo -e "${BOLD}${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo ""
-}
-
-print_section() {
-    echo ""
-    echo -e "${BOLD}${BLUE}» $1${NC}"
-}
 
 ################################################################################
 # Security: Bootstrap Script Integrity Verification
@@ -129,58 +85,22 @@ verify_bootstrap_integrity() {
 }
 
 ################################################################################
-# Retry Logic with Exponential Backoff
+# System Detection (wrapper functions to set variables)
 ################################################################################
 
-retry() {
-    local max_attempts=3
-    local timeout=2
-    local attempt=1
-
-    while ((attempt <= max_attempts)); do
-        if "$@"; then
-            return 0
-        fi
-
-        if ((attempt < max_attempts)); then
-            log_warning "Attempt $attempt failed, retrying in ${timeout}s... (attempt $((attempt + 1))/$max_attempts)"
-            sleep "$timeout"
-            timeout=$((timeout + 1)) # Exponential backoff: 2s, 3s, 4s
-        fi
-
-        attempt=$((attempt + 1))
-    done
-
-    log_error "Command failed after $max_attempts attempts: $*"
-    return 1
-}
-
-################################################################################
-# System Detection
-################################################################################
-
-detect_os() {
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        OS="macos"
-        UNAME_S="Darwin"
-    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        OS="linux"
-        UNAME_S="Linux"
-    else
+setup_os_arch() {
+    # Detect and set OS and ARCH_TYPE variables
+    # These are used throughout the bootstrap script
+    OS=$(detect_os)
+    if [[ "$OS" == "unknown" ]]; then
         log_error "Unsupported OS: $OSTYPE"
         return 1
     fi
     log_success "Detected OS: $OS ($OSTYPE)"
-}
 
-detect_arch() {
-    ARCH=$(uname -m)
-    if [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "aarch64" ]]; then
-        ARCH_TYPE="arm64"
-    elif [[ "$ARCH" == "x86_64" ]]; then
-        ARCH_TYPE="x86_64"
-    else
-        log_error "Unsupported architecture: $ARCH"
+    ARCH_TYPE=$(detect_arch)
+    if [[ "$ARCH_TYPE" == "unknown" ]]; then
+        log_error "Unsupported architecture: $(uname -m)"
         return 1
     fi
     log_success "Detected architecture: $ARCH_TYPE"
@@ -964,8 +884,7 @@ main() {
 
     # Step 1: Detect system
     print_section "Step 1: System Detection"
-    detect_os || exit 1
-    detect_arch || exit 1
+    setup_os_arch || exit 1
 
     # Step 2: Install system dependencies (for Linux platforms)
     print_section "Step 2: Install System Dependencies"

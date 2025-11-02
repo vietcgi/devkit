@@ -7,25 +7,11 @@
 
 set -euo pipefail
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# Source common functions library
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/lib/functions.sh"
 
-# Detect OS
-detect_os() {
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        echo "darwin"
-    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        echo "linux"
-    else
-        echo "unknown"
-    fi
-}
-
-# Detect Linux package manager
+# Detect Linux package manager (not in common library, script-specific)
 detect_package_manager() {
     if command -v apt-get &>/dev/null; then
         echo "apt"
@@ -43,6 +29,10 @@ detect_package_manager() {
 }
 
 OS=$(detect_os)
+# Normalize macos to darwin for backward compatibility
+if [[ "$OS" == "macos" ]]; then
+    OS="darwin"
+fi
 PKG_MGR=$(detect_package_manager)
 
 # Determine if we need sudo (not root and sudo exists)
@@ -58,7 +48,8 @@ else
     HOMEBREW_PREFIX="/home/linuxbrew/.linuxbrew"
 fi
 
-# Helper functions
+# Wrapper functions for bootstrap-ansible.sh-specific formatting
+# These provide custom output formatting while using library functions
 print_info() {
     echo -e "${BLUE}[INFO] $1${NC}"
 }
@@ -73,33 +64,6 @@ print_warning() {
 
 print_error() {
     echo -e "${RED}[ERROR] $1${NC}"
-}
-
-# Retry function for network operations
-retry() {
-    local max_attempts=3
-    local timeout=5
-    local attempt=1
-    local exitCode=0
-
-    while ((attempt <= max_attempts)); do
-        if [[ $attempt -gt 1 ]]; then
-            print_warning "Attempt $attempt of $max_attempts..."
-            sleep $timeout
-        fi
-
-        "$@"
-        exitCode=$?
-
-        if [[ $exitCode -eq 0 ]]; then
-            return 0
-        fi
-
-        attempt=$((attempt + 1))
-    done
-
-    print_error "Failed after $max_attempts attempts"
-    return $exitCode
 }
 
 # Check if running as root (only on macOS where Homebrew is required)

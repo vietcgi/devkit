@@ -7,29 +7,27 @@
 
 set -euo pipefail
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# Source common functions library
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/lib/functions.sh"
 
 # Counters
 UPDATED=0
 SKIPPED=0
 FAILED=0
 
-# Helper functions
+# Wrapper functions for update.sh-specific naming and behavior
+# These wrap the library functions and add counter updates
 print_header() {
-    echo ""
-    echo -e "${BLUE}========================================${NC}"
-    echo -e "${BLUE}  $1${NC}"
-    echo -e "${BLUE}========================================${NC}"
+    log_info ""
+    echo -e "${BOLD}${BLUE}========================================${NC}"
+    echo -e "${BOLD}${BLUE}  $1${NC}"
+    echo -e "${BOLD}${BLUE}========================================${NC}"
     echo ""
 }
 
 print_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+    log_info "$1"
 }
 
 print_success() {
@@ -47,18 +45,12 @@ print_error() {
     ((FAILED++))
 }
 
-# Detect OS
-detect_os() {
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        echo "darwin"
-    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        echo "linux"
-    else
-        echo "unknown"
-    fi
-}
-
+# Detect OS and normalize output
 OS=$(detect_os)
+# Normalize macos output to darwin for backward compatibility
+if [[ "$OS" == "macos" ]]; then
+    OS="darwin"
+fi
 
 ###############################################################################
 # Main Update Function

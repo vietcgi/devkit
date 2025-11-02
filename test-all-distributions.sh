@@ -7,27 +7,26 @@
 
 set -euo pipefail
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+# Source common functions library
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/lib/functions.sh"
 
 # Test results tracking
 PASSED=0
 FAILED=0
 declare -A RESULTS
 
+# Custom print_header for test-all-distributions.sh formatting
 print_header() {
-    echo -e "\n${CYAN}╔═══════════════════════════════════════════════════════════════╗${NC}"
+    local CYAN='\033[0;36m'
+    echo -e "\n${CYAN}╔═══════════════════════════════════════════════════════════════╗${CYAN}"
     echo -e "${CYAN}║$(printf '%63s' "" | tr ' ' ' ')║${NC}"
     echo -e "${CYAN}║  $(printf '%-59s' "$1")  ║${NC}"
     echo -e "${CYAN}║$(printf '%63s' "" | tr ' ' ' ')║${NC}"
     echo -e "${CYAN}╚═══════════════════════════════════════════════════════════════╝${NC}\n"
 }
 
+# Wrapper functions to match test script's formatting
 print_info() {
     echo -e "${BLUE}[INFO] $1${NC}"
 }

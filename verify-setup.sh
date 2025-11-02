@@ -7,12 +7,9 @@
 
 set -euo pipefail
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# Source common functions library
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/lib/functions.sh"
 
 # Counters
 PASS=0
@@ -24,7 +21,8 @@ echo -e "${BLUE}  Mac Setup Verification Script              ${NC}"
 echo -e "${BLUE}================================================${NC}"
 echo ""
 
-# Helper functions
+# Wrapper functions for verify-setup.sh-specific behavior
+# These wrap the library functions and add counter updates
 pass() {
     echo -e "${GREEN}[PASS]${NC} $1"
     ((PASS++))

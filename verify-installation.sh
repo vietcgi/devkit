@@ -2,7 +2,11 @@
 # Post-installation verification script
 # Fails if critical tools are missing
 
-set -e
+set -euo pipefail
+
+# Source common functions library
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/lib/functions.sh"
 
 # Source Homebrew environment dynamically
 if [ -f /home/linuxbrew/.linuxbrew/bin/brew ]; then

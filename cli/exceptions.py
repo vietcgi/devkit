@@ -35,7 +35,7 @@ def _sanitize_path(path: str | Path) -> str:
     try:
         # Try to get relative path from home directory
         rel_path = path_obj.relative_to(home)
-        return f"~/{rel_path}"  # noqa: TRY300
+        return f"~/{rel_path}"
     except ValueError:
         # If not under home directory, show basename only for privacy
         return f".../{path_obj.name}"

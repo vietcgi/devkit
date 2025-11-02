@@ -148,6 +148,8 @@ ignore = [
     "PLR0911", # Too many return statements (validation logic necessity)
     "PLR0913", # Too many arguments
     "PLR2004", # Magic values
+    "PLR6301", # Method could be a function (design choice for OOP)
+    "TRY300",  # Conflicts with pylint R1705 (no-else-return)
     "UP007",  # Use `X | Y` instead of `Union` (older Python compatibility)
 ]
 

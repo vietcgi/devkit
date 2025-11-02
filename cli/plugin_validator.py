@@ -92,8 +92,7 @@ class PluginManifest:
         # Validate version format (semantic versioning)
         if "version" in self.data and not self._is_valid_semver(self.data["version"]):
             errors.append(
-                f"Invalid version format: {self.data["version"]}. "
-                f"Must be semantic version (X.Y.Z)",
+                f"Invalid version format: {self.data["version"]}. Must be semantic version (X.Y.Z)",
             )
 
         # Validate optional fields if present
@@ -212,10 +211,48 @@ class PluginValidator:
         self.plugins_dir = plugins_dir
         self.logger = logger or self._setup_logger()
 
+    def _validate_manifest(
+        self,
+        plugin_dir: Path,
+    ) -> tuple[bool, str, dict[str, Any] | None]:
+        """Validate manifest file."""
+        manifest_path = plugin_dir / "manifest.json"
+        try:
+            manifest = PluginManifest(manifest_path)
+            manifest_is_valid, errors = manifest.validate()
+            if not manifest_is_valid:
+                error_msg = "; ".join(errors)
+                return False, f"Manifest validation failed: {error_msg}", None
+            return True, "", manifest.data
+        except FileNotFoundError:
+            return False, f"Missing manifest.json in {plugin_dir}", None
+        except ValueError as e:
+            return False, str(e), None
+
+    def _validate_init_file(self, plugin_dir: Path) -> tuple[bool, str]:
+        """Validate __init__.py file exists and has content."""
+        init_file = plugin_dir / "__init__.py"
+        if not init_file.exists():
+            return False, f"Missing {init_file} (required entry point)"
+
+        if not init_file.stat().st_size:
+            return False, f"{init_file} is empty"
+
+        return True, ""
+
+    def _validate_plugin_class(self, plugin_dir: Path) -> tuple[bool, str]:
+        """Validate plugin class definition."""
+        try:
+            if not self._verify_plugin_class(plugin_dir):
+                return False, "Plugin class not properly defined in __init__.py"
+            return True, ""
+        except (OSError, UnicodeDecodeError) as e:
+            return False, f"Cannot load plugin class: {e}"
+
     def validate_plugin(
         self,
         plugin_name: str,
-    ) -> tuple[bool, str]:  # pylint: disable=too-many-return-statements
+    ) -> tuple[bool, str]:
         """Validate plugin before loading.
 
         Checks:
@@ -238,45 +275,26 @@ class PluginValidator:
             return False, f"Plugin directory not found: {plugin_dir}"
 
         # Load and validate manifest
-        manifest_path = plugin_dir / "manifest.json"
-        try:
-            manifest = PluginManifest(manifest_path)
-            manifest_is_valid, errors = manifest.validate()
-
-            if not manifest_is_valid:
-                error_msg = "; ".join(errors)
-                return False, f"Manifest validation failed: {error_msg}"
-
-            # Additional validation after basic schema check
-            plugin_info = manifest.data
-
-        except FileNotFoundError:
-            return False, f"Missing manifest.json in {plugin_dir}"
-        except ValueError as e:
-            return False, str(e)
+        manifest_valid, error_msg, plugin_info = self._validate_manifest(plugin_dir)
+        if not manifest_valid:
+            return False, error_msg
 
         # Check for required __init__.py
-        init_file = plugin_dir / "__init__.py"
-        if not init_file.exists():
-            return False, f"Missing {init_file} (required entry point)"
-
-        # Verify __init__.py is not empty
-        if not init_file.stat().st_size:
-            return False, f"{init_file} is empty"
+        init_valid, error_msg = self._validate_init_file(plugin_dir)
+        if not init_valid:
+            return False, error_msg
 
         # Verify plugin class exists in __init__.py
-        try:
-            if not self._verify_plugin_class(plugin_dir):
-                return False, "Plugin class not properly defined in __init__.py"
-        except (OSError, UnicodeDecodeError) as e:
-            return False, f"Cannot load plugin class: {e}"
+        class_valid, error_msg = self._validate_plugin_class(plugin_dir)
+        if not class_valid:
+            return False, error_msg
 
         # Log successful validation
         self.logger.info(
             "✓ Plugin validated: %s v%s by %s",
             plugin_name,
-            plugin_info.get("version", "?"),
-            plugin_info.get("author", "Unknown"),
+            plugin_info.get("version", "?") if plugin_info else "?",
+            plugin_info.get("author", "Unknown") if plugin_info else "Unknown",
         )
 
         return True, "Plugin validation passed"

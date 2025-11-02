@@ -169,11 +169,78 @@ class PluginLoader:
         self.logger.info("Discovered %d plugins", len(discovered))
         return discovered
 
+    def _validate_plugin_manifest(self, plugin_dir: Path, module_name: str) -> bool:
+        """Validate plugin manifest integrity."""
+        manifest_path = plugin_dir / "manifest.json"
+        if not manifest_path.exists():
+            return True
+
+        try:
+            manifest = PluginManifest(manifest_path)
+            integrity_valid, integrity_message = manifest.verify_integrity()
+            if not integrity_valid:
+                self.logger.error(
+                    "Plugin integrity check failed for %s: %s",
+                    module_name,
+                    integrity_message,
+                )
+                return False
+            self.logger.debug("Plugin integrity verified for %s", module_name)
+            return True
+        except (OSError, ValueError, json.JSONDecodeError):
+            self.logger.exception(
+                "Failed to verify plugin integrity for %s",
+                module_name,
+            )
+            return False
+
+    def _load_plugin_module(
+        self,
+        full_module_name: str,
+        plugin_path: str,
+        module_name: str,
+    ) -> Any:
+        """Load plugin module from file."""
+        spec = importlib.util.spec_from_file_location(full_module_name, plugin_path)
+        if not spec or not spec.loader:
+            self.logger.error("Could not load spec for %s", module_name)
+            return None
+
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[full_module_name] = module
+        spec.loader.exec_module(module)
+        return module
+
+    def _find_plugin_class(self, module: Any, module_name: str) -> PluginInterface | None:
+        """Find and instantiate plugin class from module."""
+        for item_name in dir(module):
+            item = getattr(module, item_name)
+            if (
+                isinstance(item, type)
+                and issubclass(item, PluginInterface)
+                and item is not PluginInterface
+            ):
+                plugin_instance = item()
+                plugin_instance.initialize()
+
+                is_valid, errors = plugin_instance.validate()
+                if not is_valid:
+                    self.logger.warning("Plugin %s validation failed: %s", module_name, errors)
+                    return None
+
+                self.logger.info(
+                    "Loaded plugin: %s v%s",
+                    plugin_instance.name,
+                    plugin_instance.version,
+                )
+                return plugin_instance
+        return None
+
     def load_plugin(
         self,
         plugin_path: str,
         module_name: str,
-    ) -> PluginInterface | None:  # pylint: disable=too-many-return-statements
+    ) -> PluginInterface | None:
         """Load a single plugin module with security validation.
 
         SECURITY: Before loading, validates:
@@ -198,26 +265,9 @@ class PluginLoader:
                 self.logger.error("Plugin validation failed for %s: %s", module_name, message)
                 return None
 
-            # SECURITY: Verify manifest integrity (detect tampering)
-            manifest_path = plugin_dir / "manifest.json"
-            if manifest_path.exists():
-                try:
-                    manifest = PluginManifest(manifest_path)
-                    integrity_valid, integrity_message = manifest.verify_integrity()
-                    if not integrity_valid:
-                        self.logger.error(
-                            "Plugin integrity check failed for %s: %s",
-                            module_name,
-                            integrity_message,
-                        )
-                        return None
-                    self.logger.debug("Plugin integrity verified for %s", module_name)
-                except (OSError, ValueError, json.JSONDecodeError):
-                    self.logger.exception(
-                        "Failed to verify plugin integrity for %s",
-                        module_name,
-                    )
-                    return None
+            # SECURITY: Verify manifest integrity
+            if not self._validate_plugin_manifest(plugin_dir, module_name):
+                return None
 
             self.logger.debug("Plugin validation passed for %s", module_name)
 
@@ -225,43 +275,15 @@ class PluginLoader:
             full_module_name = f"mac_setup_plugins.{module_name}"
 
             # Load the module
-            spec = importlib.util.spec_from_file_location(full_module_name, plugin_path)
-            if not spec or not spec.loader:
-                self.logger.error("Could not load spec for %s", module_name)
+            module = self._load_plugin_module(full_module_name, plugin_path, module_name)
+            if module is None:
                 return None
 
-            module = importlib.util.module_from_spec(spec)
-            sys.modules[full_module_name] = module
-            spec.loader.exec_module(module)
-
-            # Look for plugin class
-            for item_name in dir(module):
-                item = getattr(module, item_name)
-                if (
-                    isinstance(item, type)
-                    and issubclass(item, PluginInterface)
-                    and item is not PluginInterface
-                ):
-                    plugin_instance = item()
-                    plugin_instance.initialize()
-
-                    is_valid, errors = plugin_instance.validate()
-                    if not is_valid:
-                        self.logger.warning("Plugin %s validation failed: %s", module_name, errors)
-                        return None
-
-                    self.logger.info(
-                        "Loaded plugin: %s v%s",
-                        plugin_instance.name,
-                        plugin_instance.version,
-                    )
-                    return plugin_instance
+            # Find and instantiate plugin class
+            return self._find_plugin_class(module, module_name)
         except (ImportError, AttributeError, OSError):
             self.logger.exception("Error loading plugin %s", module_name)
             return None
-
-        self.logger.warning("No PluginInterface found in %s", module_name)
-        return None
 
     def load_all(self, plugin_paths: list[Path] | None = None) -> int:
         """Discover and load all plugins.

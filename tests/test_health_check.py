@@ -363,5 +363,292 @@ class TestCreateDefaultMonitor(unittest.TestCase):
         self.assertIn(overall, HealthStatus.ALL_STATUSES)
 
 
+class TestHealthStatusMethods(unittest.TestCase):
+    """Test HealthStatus utility methods."""
+
+    def test_is_valid_healthy(self):
+        """Test is_valid for healthy status."""
+        self.assertTrue(HealthStatus.is_valid(HealthStatus.HEALTHY))
+
+    def test_is_valid_warning(self):
+        """Test is_valid for warning status."""
+        self.assertTrue(HealthStatus.is_valid(HealthStatus.WARNING))
+
+    def test_is_valid_critical(self):
+        """Test is_valid for critical status."""
+        self.assertTrue(HealthStatus.is_valid(HealthStatus.CRITICAL))
+
+    def test_is_valid_unknown(self):
+        """Test is_valid for unknown status."""
+        self.assertTrue(HealthStatus.is_valid(HealthStatus.UNKNOWN))
+
+    def test_is_valid_invalid_status(self):
+        """Test is_valid for invalid status."""
+        self.assertFalse(HealthStatus.is_valid("invalid"))
+        self.assertFalse(HealthStatus.is_valid(""))
+        self.assertFalse(HealthStatus.is_valid("error"))
+
+    def test_get_severity_healthy(self):
+        """Test severity for healthy status."""
+        severity = HealthStatus.get_severity(HealthStatus.HEALTHY)
+        self.assertEqual(severity, 0)
+
+    def test_get_severity_warning(self):
+        """Test severity for warning status."""
+        severity = HealthStatus.get_severity(HealthStatus.WARNING)
+        self.assertEqual(severity, 1)
+
+    def test_get_severity_critical(self):
+        """Test severity for critical status."""
+        severity = HealthStatus.get_severity(HealthStatus.CRITICAL)
+        self.assertEqual(severity, 2)
+
+    def test_get_severity_unknown(self):
+        """Test severity for unknown status."""
+        severity = HealthStatus.get_severity(HealthStatus.UNKNOWN)
+        self.assertEqual(severity, 3)
+
+    def test_get_severity_invalid(self):
+        """Test severity for invalid status returns unknown."""
+        severity = HealthStatus.get_severity("invalid")
+        self.assertEqual(severity, 3)
+
+    def test_get_severity_comparison(self):
+        """Test severity ordering."""
+        healthy_sev = HealthStatus.get_severity(HealthStatus.HEALTHY)
+        warning_sev = HealthStatus.get_severity(HealthStatus.WARNING)
+        critical_sev = HealthStatus.get_severity(HealthStatus.CRITICAL)
+        unknown_sev = HealthStatus.get_severity(HealthStatus.UNKNOWN)
+
+        self.assertLess(healthy_sev, warning_sev)
+        self.assertLess(warning_sev, critical_sev)
+        self.assertLess(critical_sev, unknown_sev)
+
+
+class TestHealthCheckBaseMethods(unittest.TestCase):
+    """Test HealthCheck base class methods."""
+
+    def setUp(self):
+        """Set up test health check."""
+        from cli.health_check import HealthCheck
+        self.check = HealthCheck("TestCheck", "Test description")
+
+    def test_health_check_init(self):
+        """Test HealthCheck initialization."""
+        self.assertEqual(self.check.name, "TestCheck")
+        self.assertEqual(self.check.description, "Test description")
+
+    def test_health_check_run_not_implemented(self):
+        """Test HealthCheck run is abstract."""
+        with self.assertRaises(NotImplementedError):
+            self.check.run()
+
+    def test_get_result_summary_healthy(self):
+        """Test result summary for healthy status."""
+        result = (HealthStatus.HEALTHY, "All systems operational", {})
+        summary = self.check.get_result_summary(result)
+        self.assertIn("HEALTHY", summary)
+        self.assertIn("TestCheck", summary)
+        self.assertIn("All systems operational", summary)
+
+    def test_get_result_summary_warning(self):
+        """Test result summary for warning status."""
+        result = (HealthStatus.WARNING, "Minor issues detected", {})
+        summary = self.check.get_result_summary(result)
+        self.assertIn("WARNING", summary)
+        self.assertIn("TestCheck", summary)
+
+    def test_get_result_summary_critical(self):
+        """Test result summary for critical status."""
+        result = (HealthStatus.CRITICAL, "Critical error", {})
+        summary = self.check.get_result_summary(result)
+        self.assertIn("CRITICAL", summary)
+        self.assertIn("Critical error", summary)
+
+
+class TestDependencyCheckStaticMethod(unittest.TestCase):
+    """Test DependencyCheck static method."""
+
+    def test_check_tool_existing(self):
+        """Test checking for existing tool."""
+        # bash should exist on most systems
+        result = DependencyCheck.check_tool("bash")
+        self.assertTrue(result)
+
+    def test_check_tool_nonexistent(self):
+        """Test checking for nonexistent tool."""
+        result = DependencyCheck.check_tool("nonexistent_tool_xyz_123")
+        self.assertFalse(result)
+
+    def test_check_tool_system_command(self):
+        """Test checking for common system command."""
+        # ls should exist on Unix systems
+        result = DependencyCheck.check_tool("ls")
+        self.assertTrue(result)
+
+
+class TestDiskSpaceCheckResults(unittest.TestCase):
+    """Test DiskSpaceCheck result details."""
+
+    def setUp(self):
+        """Set up test disk space check."""
+        self.check = DiskSpaceCheck(min_gb=1)
+
+    def test_disk_space_check_run(self):
+        """Test disk space check execution."""
+        status, message, details = self.check.run()
+
+        # Verify result structure
+        self.assertIn(status, HealthStatus.ALL_STATUSES)
+        self.assertIsNotNone(message)
+        self.assertIsInstance(details, dict)
+
+    def test_disk_space_check_init(self):
+        """Test DiskSpaceCheck initialization."""
+        check = DiskSpaceCheck(min_gb=10)
+        self.assertEqual(check.min_gb, 10)
+        self.assertEqual(check.name, "Disk Space")
+
+
+class TestConfigurationCheckValidation(unittest.TestCase):
+    """Test ConfigurationCheck validation."""
+
+    def setUp(self):
+        """Set up test configuration check."""
+        self.check = ConfigurationCheck()
+
+    def test_configuration_check_run(self):
+        """Test configuration check execution."""
+        status, message, details = self.check.run()
+
+        self.assertIn(status, HealthStatus.ALL_STATUSES)
+        self.assertIsNotNone(message)
+        self.assertIsInstance(details, dict)
+
+    def test_configuration_check_init(self):
+        """Test ConfigurationCheck initialization."""
+        self.assertEqual(self.check.name, "Configuration")
+
+
+class TestLogCheckParsing(unittest.TestCase):
+    """Test LogCheck log file parsing."""
+
+    def setUp(self):
+        """Set up test log check."""
+        self.check = LogCheck()
+
+    def test_log_check_run(self):
+        """Test log check execution."""
+        status, message, details = self.check.run()
+
+        self.assertIn(status, HealthStatus.ALL_STATUSES)
+        self.assertIsNotNone(message)
+        self.assertIsInstance(details, dict)
+
+    def test_log_check_init(self):
+        """Test LogCheck initialization."""
+        self.assertEqual(self.check.name, "Logs")
+
+    def test_log_check_count_errors_and_warnings(self):
+        """Test log check error/warning counting."""
+        errors, warnings = self.check.count_errors_and_warnings()
+        self.assertIsInstance(errors, int)
+        self.assertIsInstance(warnings, int)
+        self.assertGreaterEqual(errors, 0)
+        self.assertGreaterEqual(warnings, 0)
+
+
+class TestSystemCheckComprehensive(unittest.TestCase):
+    """Test SystemCheck comprehensive results."""
+
+    def setUp(self):
+        """Set up test system check."""
+        self.check = SystemCheck()
+
+    def test_system_check_run_complete(self):
+        """Test system check returns complete information."""
+        status, message, details = self.check.run()
+
+        self.assertIn(status, HealthStatus.ALL_STATUSES)
+        self.assertIsNotNone(message)
+        self.assertIsInstance(details, dict)
+
+    def test_system_check_init(self):
+        """Test SystemCheck initialization."""
+        self.assertEqual(self.check.name, "System")
+
+    def test_system_check_get_load_average(self):
+        """Test get_load_average method."""
+        load = SystemCheck.get_load_average()
+        # Should return either None or a tuple of 3 floats
+        if load is not None:
+            self.assertEqual(len(load), 3)
+            for val in load:
+                self.assertIsInstance(val, (int, float))
+
+
+class TestHealthMonitorComprehensive(unittest.TestCase):
+    """Test HealthMonitor comprehensive functionality."""
+
+    def setUp(self):
+        """Set up test monitor."""
+        self.monitor = HealthMonitor()
+
+    def test_monitor_multiple_checks(self):
+        """Test monitor with multiple checks."""
+        self.monitor.add_check(SystemCheck())
+        self.monitor.add_check(DependencyCheck(["bash"]))
+
+        self.assertEqual(len(self.monitor.checks), 2)
+
+    def test_monitor_run_returns_dict(self):
+        """Test monitor run_all returns dictionary."""
+        self.monitor.add_check(SystemCheck())
+        results = self.monitor.run_all()
+
+        self.assertIsInstance(results, dict)
+        self.assertIn("System", results)
+
+    def test_monitor_has_results(self):
+        """Test monitor stores results after running."""
+        self.monitor.add_check(SystemCheck())
+        self.monitor.run_all()
+
+        self.assertIn("System", self.monitor.results)
+
+    def test_monitor_severity_comparison(self):
+        """Test that critical status has higher severity."""
+        dep_check = DependencyCheck(["nonexistent_xyz"])
+        self.monitor.add_check(dep_check)
+        self.monitor.run_all()
+
+        overall = self.monitor.get_overall_status()
+        self.assertEqual(overall, HealthStatus.CRITICAL)
+
+    def test_monitor_json_report_format(self):
+        """Test JSON report formatting."""
+        self.monitor.add_check(SystemCheck())
+        self.monitor.run_all()
+
+        report = self.monitor.get_json_report()
+        self.assertIsInstance(report, str)
+        self.assertIn("System", report)
+        self.assertTrue(len(report) > 0)
+
+    def test_monitor_print_report(self):
+        """Test print_report method."""
+        self.monitor.add_check(SystemCheck())
+        self.monitor.run_all()
+
+        # print_report() doesn't return anything, just verify it doesn't crash
+        self.monitor.print_report()
+
+    def test_monitor_overall_status_unknown(self):
+        """Test overall status when no checks have run."""
+        monitor = HealthMonitor()
+        overall = monitor.get_overall_status()
+        self.assertEqual(overall, HealthStatus.UNKNOWN)
+
+
 if __name__ == "__main__":
     unittest.main()

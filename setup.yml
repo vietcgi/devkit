@@ -85,6 +85,7 @@
       - jq
       - build-essential
       - python3-pip
+      - python3-pipx
       - nodejs
       - npm
       - golang-go
@@ -121,6 +122,7 @@
       - gcc-c++
       - make
       - python3-pip
+      - pipx
       - nodejs
       - npm
       - golang
@@ -139,7 +141,7 @@
   - name: Install essential Linux packages (Arch Linux)
     ansible.builtin.shell: |
       pacman -Syu --noconfirm git curl wget vim neovim tmux zsh \
-        fzf ripgrep bat tree htop jq base-devel python-pip nodejs \
+        fzf ripgrep bat tree htop jq base-devel python-pip python-pipx nodejs \
         npm go postgresql sqlite direnv shellcheck
     args:
       executable: /bin/bash

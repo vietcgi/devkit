@@ -456,14 +456,28 @@ class HealthMonitor:
         if not self.results:
             return
 
-        self.get_overall_status()
+        overall_status = self.get_overall_status()
+        {
+            HealthStatus.HEALTHY: "✓",
+            HealthStatus.WARNING: "⚠",
+            HealthStatus.CRITICAL: "✗",
+            HealthStatus.UNKNOWN: "?",
+        }.get(overall_status, "?")
 
-        # Status emoji
+        for status, _message, details in self.results.values():
+            {
+                HealthStatus.HEALTHY: "✓",
+                HealthStatus.WARNING: "⚠",
+                HealthStatus.CRITICAL: "✗",
+                HealthStatus.UNKNOWN: "?",
+            }.get(status, "?")
 
-        for _status, _message, details in self.results.values():
             if details:
-                for value in details.values():
-                    if isinstance(value, list) and len(value) > 3:
+                for detail_value in details.values():
+                    if isinstance(detail_value, list):
+                        for _item in detail_value:
+                            pass
+                    elif detail_value:
                         pass
 
     def get_json_report(self) -> str:

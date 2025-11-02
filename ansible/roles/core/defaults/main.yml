@@ -1,0 +1,39 @@
+---
+# Core role defaults - System fundamental packages and utilities
+
+# System packages to install
+core_packages:
+  - git
+  - curl
+  - wget
+  - jq
+  - vim
+  - nano
+  - tmux
+  - htop
+  - tree
+  - tar
+  - zip
+  - unzip
+  - openssh-client
+
+# Security tools
+security_packages:
+  - gnupg
+  - openssh-client
+
+# Development tools
+dev_packages:
+  - build-essential
+  - pkg-config
+  - autoconf
+  - automake
+
+# Update system before installing
+update_system: true
+
+# Enable verbose output
+verbose: false
+
+# Timeout for package installation (seconds)
+install_timeout: 600

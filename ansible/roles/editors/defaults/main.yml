@@ -1,0 +1,43 @@
+---
+# Editors role defaults - Neovim, VS Code, JetBrains IDE configuration
+
+# Neovim settings
+install_neovim: true
+neovim_plugin_manager: "vim-plug"
+neovim_theme: "default"
+neovim_enable_lsp: true
+neovim_lsp_servers:
+  - lua_ls
+  - pyright
+  - tsserver
+  - gopls
+  - rust_analyzer
+
+# VS Code settings
+install_vscode: true
+vscode_extensions:
+  - ms-python.python
+  - wholroyd.jinja
+  - redhat.vscode-yaml
+  - streetsidesoftware.code-spell-checker
+  - esbenp.prettier-vscode
+  - dbaeumer.vscode-eslint
+  - eamodio.gitlens
+  - github.copilot
+vscode_font_family: "MesloLGS NF"
+vscode_font_size: 13
+vscode_tab_size: 2
+vscode_format_on_save: true
+
+# JetBrains IDEs settings
+install_jetbrains: false
+jetbrains_products:
+  - intellij-idea-ce
+  - pycharm-ce
+  - goland
+
+# Editor configuration
+editor_backup: true
+editor_config_backup: true
+nvim_config_dir: "{{ home_dir }}/.config/nvim"
+nvim_plugin_dir: "{{ home_dir }}/.local/share/nvim/site/autoload"

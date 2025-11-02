@@ -1,0 +1,48 @@
+---
+# Security role defaults - SSH, GPG, audit logging, hardening
+
+# SSH configuration
+enable_ssh_setup: true
+ssh_key_type: "ed25519"
+ssh_key_path: "{{ home_dir }}/.ssh/id_ed25519"
+ssh_config_path: "{{ home_dir }}/.ssh/config"
+ssh_config_mode: "0644"
+ssh_key_mode: "0600"
+ssh_directory_mode: "0700"
+ssh_server_alive_interval: 60
+ssh_server_alive_count_max: 10
+ssh_password_authentication: false
+ssh_pubkey_authentication: true
+ssh_strict_host_key_checking: "accept-new"
+ssh_host_key_checking: true
+ssh_add_keys_to_agent: true
+
+# GPG configuration
+enable_gpg_setup: true
+gpg_key_type: "EdDSA"
+gpg_key_curve: "Ed25519"
+gpg_export_path: "{{ home_dir }}/.gpg_public_key.asc"
+gpg_directory_mode: "0700"
+gpg_batch_file: "/tmp/gpg_batch"
+
+# Audit logging
+enable_audit_logging: true
+audit_log_dir: "{{ home_dir }}/.devkit/logs/audit"
+audit_log_file: "{{ home_dir }}/.devkit/logs/audit/setup.log"
+audit_log_mode: "0644"
+history_file: "{{ home_dir }}/.bash_history"
+enable_shell_audit_logging: true
+
+# Hardening options
+enable_passwordless_sudo: false
+enable_file_permission_hardening: true
+hardened_paths:
+  - "{{ home_dir }}/.ssh"
+  - "{{ home_dir }}/.gnupg"
+  - "{{ home_dir }}/.bash_history"
+hardened_permissions: "0600"
+
+# Verification settings
+verify_ssh_keys: true
+verify_gpg_keys: true
+security_summary_enabled: true

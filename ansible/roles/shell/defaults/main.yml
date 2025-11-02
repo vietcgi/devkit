@@ -1,0 +1,75 @@
+---
+# Shell role defaults - Zsh, Fish, PowerShell configuration
+
+# Shell choice
+config_shell: "zsh"
+shell_choice: "{{ config_shell }}"
+
+# Zsh configuration
+install_zsh: true
+install_oh_my_zsh: true
+oh_my_zsh_path: "{{ home_dir }}/.oh-my-zsh"
+oh_my_zsh_custom_path: "{{ home_dir }}/.oh-my-zsh/custom"
+zsh_config_file: "{{ home_dir }}/.zshrc"
+zsh_config_mode: "0644"
+zsh_enable_completions: true
+zsh_install_plugins: true
+
+# Zsh plugins
+zsh_plugins:
+  - git
+  - docker
+  - kubectl
+  - macos
+  - common-aliases
+  - copyfile
+  - direnv
+  - fzf
+  - history
+  - osx
+  - sudo
+  - zsh-syntax-highlighting
+  - zsh-autosuggestions
+
+# Zsh theme
+zsh_theme: "powerlevel10k/powerlevel10k"
+install_powerlevel10k: true
+powerlevel10k_repo: "https://github.com/romkatv/powerlevel10k.git"
+powerlevel10k_path: "{{ home_dir }}/.oh-my-zsh/custom/themes/powerlevel10k"
+
+# Zsh aliases
+zsh_aliases:
+  ll: "ls -lh"
+  la: "ls -la"
+  grep: "grep --color=auto"
+  cat: "bat"
+  ls: "lsd"
+
+# Font configuration
+install_nerd_fonts: true
+nerd_font: "font-meslo-lg-nerd-font"
+font_family: "MesloLGS NF"
+
+# Fish shell configuration
+install_fish: false
+fish_config_dir: "{{ home_dir }}/.config/fish"
+fish_config_file: "{{ home_dir }}/.config/fish/config.fish"
+fish_config_mode: "0644"
+
+# Fish aliases
+fish_aliases:
+  ll: "ls -lh"
+  la: "ls -la"
+  cat: "bat"
+
+# Environment setup
+setup_path_exports: true
+setup_gnu_tools: true
+setup_colorizer: true
+setup_direnv: true
+setup_mise: true
+setup_aliases: true
+
+# Shell-specific settings
+homebrew_prefix: "{{ '/opt/homebrew' if is_macos else '/home/linuxbrew/.linuxbrew' }}"
+backup_existing_config: true

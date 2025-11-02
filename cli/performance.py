@@ -201,9 +201,9 @@ class PerformanceMonitor:
             return
 
         for _label, stats in sorted(summary.items()):
-            for value in stats.values():
-                if isinstance(value, float):
-                    pass
+            count = stats.get("count", 0)
+            if count:
+                pass
 
 
 class InstallationOptimizer:

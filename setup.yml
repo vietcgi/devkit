@@ -90,18 +90,12 @@
       - curl
       - wget
       - vim
-      - neovim
-      - tmux
       - zsh
-      - fzf
-      - ripgrep
-      - bat
       - tree
       - htop
       - jq
       - build-essential
       - python3-pip
-      - pipx
       - nodejs
       - npm
       - golang-go
@@ -118,6 +112,47 @@
     tags:
     - linux
     - packages
+
+  - name: Install optional packages from apt (best effort)
+    ansible.builtin.apt:
+      name:
+      - neovim
+      - tmux
+      - fzf
+      - ripgrep
+      - bat
+      - pipx
+      state: present
+      update_cache: false
+    become: "{{ not (ansible_user_id == 'root') }}"
+    register: apt_optional_result
+    failed_when: false
+    ignore_errors: true
+    when:
+    - ansible_os_family == "Debian"
+    - install_dev_tools | default(true)
+    tags:
+    - linux
+    - packages
+
+  - name: Install optional Linux tools via Homebrew (Linuxbrew fallback)
+    ansible.builtin.command: '{{ homebrew_prefix }}/bin/brew install {{ item }}'
+    loop:
+      - neovim
+      - tmux
+      - fzf
+      - ripgrep
+      - bat
+    when:
+    - ansible_os_family != "Darwin"
+    - install_dev_tools | default(true)
+    register: brew_linux_result
+    changed_when: 'not "is already installed" in brew_linux_result.stdout'
+    failed_when: false
+    tags:
+    - linux
+    - homebrew
+    - packages
   - name: Install essential Linux packages (RedHat/Fedora)
     ansible.builtin.dnf:
       name:
@@ -125,12 +160,7 @@
       - curl
       - wget
       - vim
-      - neovim
-      - tmux
       - zsh
-      - fzf
-      - ripgrep
-      - bat
       - tree
       - htop
       - jq
@@ -138,7 +168,6 @@
       - gcc-c++
       - make
       - python3-pip
-      - pipx
       - nodejs
       - npm
       - golang
@@ -148,6 +177,29 @@
       - ShellCheck
       state: present
     become: "{{ not (ansible_user_id == 'root') }}"
+    register: dnf_result
+    failed_when: false
+    when:
+    - ansible_os_family == "RedHat"
+    - install_dev_tools | default(true)
+    tags:
+    - linux
+    - packages
+
+  - name: Install optional packages from dnf (best effort)
+    ansible.builtin.dnf:
+      name:
+      - neovim
+      - tmux
+      - fzf
+      - ripgrep
+      - bat
+      - pipx
+      state: present
+    become: "{{ not (ansible_user_id == 'root') }}"
+    register: dnf_optional_result
+    failed_when: false
+    ignore_errors: true
     when:
     - ansible_os_family == "RedHat"
     - install_dev_tools | default(true)
@@ -162,6 +214,8 @@
     args:
       executable: /bin/bash
     changed_when: false
+    register: pacman_result
+    failed_when: false
     become: "{{ not (ansible_user_id == 'root') }}"
     when:
     - ansible_os_family == "Archlinux"

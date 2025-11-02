@@ -20,6 +20,8 @@
     - commit-msg
     - post-commit
     - prepare-commit-msg
+  failed_when: false  # Pre-commit framework may not deploy all hooks
+  changed_when: false
   tags: [git, hooks, reload]
 
 - name: restart git services

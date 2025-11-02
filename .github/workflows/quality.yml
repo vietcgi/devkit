@@ -72,8 +72,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Install shellcheck
-      run: apt-get update && apt-get install -y shellcheck
+    - name: Install shellcheck and shfmt
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y shellcheck shfmt
 
     - name: Run shellcheck with strict options
       run: |
@@ -88,8 +90,8 @@ jobs:
 
     - name: Run shfmt (shell formatting check)
       run: |
-        apt-get install -y shfmt
-        shfmt -d bootstrap.sh bootstrap-ansible.sh verify-setup.sh update.sh cli/config.sh
+        shfmt -d bootstrap.sh bootstrap-ansible.sh verify-setup.sh \
+          update.sh cli/config.sh
 
   # YAML quality
   yaml-quality:

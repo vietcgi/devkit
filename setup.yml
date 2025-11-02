@@ -169,12 +169,17 @@
     tags:
     - linux
     - packages
+  - name: Set ansible_user_dir for dotfiles role (container compatibility)
+    ansible.builtin.set_fact:
+      ansible_user_dir: "{{ home }}"
+      ansible_user_id: "{{ user }}"
+    tags:
+    - dotfiles
+    - configuration
+    - always
   - name: Include dotfiles role
     ansible.builtin.include_role:
       name: dotfiles
-    vars:
-      ansible_user_dir: "{{ home }}"
-      ansible_user_id: "{{ user }}"
     tags:
     - dotfiles
     - configuration

@@ -438,8 +438,8 @@
           Hooks Available: {{ git_hooks_check.stat.exists }}
       tags: [git, verify]
 
-- name: Final git configuration verification
-  ansible.builtin.shell: git config --list --show-origin  # noqa: command-instead-of-module
+- name: Final git configuration verification  # noqa: command-instead-of-module
+  ansible.builtin.shell: git config --list --show-origin
   register: git_config_list
   changed_when: false
   tags: [git, verify]

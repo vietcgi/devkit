@@ -186,6 +186,24 @@ detect_arch() {
     log_success "Detected architecture: $ARCH_TYPE"
 }
 
+detect_distro() {
+    # Detect Linux distribution and version
+    if [[ "$OS" != "linux" ]]; then
+        return 0  # Not on Linux, skip
+    fi
+
+    DISTRO=""
+    DISTRO_VERSION=""
+
+    if [ -f /etc/os-release ]; then
+        # Source the os-release file
+        # shellcheck disable=SC1091
+        . /etc/os-release
+        DISTRO="$ID"
+        DISTRO_VERSION="$VERSION_ID"
+    fi
+}
+
 ################################################################################
 # Prerequisite Installation
 ################################################################################
@@ -753,10 +771,13 @@ run_ansible_setup() {
         return 1
     fi
 
-    # Set UTF-8 locale for Ansible (required on some Linux containers like Debian 11)
-    # This fixes "Ansible requires the locale encoding to be UTF-8; Detected None" errors
-    export LC_ALL=C.UTF-8
-    export LANG=C.UTF-8
+    # Debian 11 Docker containers don't have UTF-8 locale configured
+    # This fixes "Ansible requires the locale encoding to be UTF-8; Detected None" on Debian 11 only
+    if [[ "${DISTRO:-}" == "debian" ]] && [[ "${DISTRO_VERSION:-}" == "11" ]]; then
+        log_info "Debian 11 detected: setting UTF-8 locale for Ansible"
+        export LC_ALL=C.UTF-8
+        export LANG=C.UTF-8
+    fi
 
     if ! ansible-playbook -i inventory.yml setup.yml \
         --extra-vars="setup_environment=${ENVIRONMENT:-development}" \
@@ -969,6 +990,7 @@ main() {
     print_section "Step 1: System Detection"
     detect_os || exit 1
     detect_arch || exit 1
+    detect_distro || exit 1
 
     # Step 2: Install system dependencies (for Linux platforms)
     print_section "Step 2: Install System Dependencies"

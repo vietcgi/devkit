@@ -20,6 +20,7 @@
     fi
   loop:
     - pre-commit
+    - pre-push
     - commit-msg
     - post-commit
     - prepare-commit-msg

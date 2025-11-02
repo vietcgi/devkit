@@ -32,7 +32,7 @@
     - name: Configure Neovim init.lua
       ansible.builtin.copy:
         content: |
-          -- Mac-Setup Neovim Configuration
+          -- Devkit Neovim Configuration
           -- Modern Lua-based configuration
 
           -- Basic settings

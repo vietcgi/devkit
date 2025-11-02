@@ -1,7 +1,7 @@
 #  Copyright (c) 2024 Devkit Contributors
 #  SPDX-License-Identifier: MIT
 # !/usr/bin/env python3
-"""Mac-Setup Plugin System.
+"""Devkit Plugin System.
 
 Allows users to extend devkit with custom roles, hooks, and tasks.
 Plugins can be defined in ~/.devkit/plugins/ and are auto-discovered.
@@ -272,7 +272,7 @@ class PluginLoader:
             self.logger.debug("Plugin validation passed for %s", module_name)
 
             # Create a proper module name with namespace
-            full_module_name = f"mac_setup_plugins.{module_name}"
+            full_module_name = f"devkit_plugins.{module_name}"
 
             # Load the module
             module = self._load_plugin_module(full_module_name, plugin_path, module_name)
@@ -489,7 +489,7 @@ def _display_plugin_summary(loader: "PluginLoader") -> None:  # pylint: disable=
 
 def main() -> None:
     """CLI interface for plugin system."""
-    parser = argparse.ArgumentParser(description="Mac-Setup Plugin System")
+    parser = argparse.ArgumentParser(description="Devkit Plugin System")
     parser.add_argument("--plugin-path", action="append", help="Add plugin path")
     parser.add_argument("--list", action="store_true", help="List plugins")
     parser.add_argument("--info", action="store_true", help="Show plugin info")

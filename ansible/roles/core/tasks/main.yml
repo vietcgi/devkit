@@ -144,7 +144,7 @@
 - name: Initialize setup log file
   ansible.builtin.copy:
     content: |
-      # Mac-Setup Log
+      # Devkit Log
       # Started: {{ ansible_date_time.iso8601 }}
       # Platform: {{ os_family }}
       # User: {{ current_user }}

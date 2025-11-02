@@ -1,7 +1,7 @@
 #  Copyright (c) 2024 Devkit Contributors
 #  SPDX-License-Identifier: MIT
 # !/usr/bin/env python3
-"""Mac-Setup Configuration Engine.
+"""Devkit Configuration Engine.
 
 Handles loading, validating, merging, and managing configuration from multiple sources.
 Supports YAML configuration files, environment variables, and runtime overrides.
@@ -822,7 +822,7 @@ class ConfigDiff:
 
 def main() -> None:
     """CLI interface for configuration engine."""
-    parser = argparse.ArgumentParser(description="Mac-Setup Configuration Engine")
+    parser = argparse.ArgumentParser(description="Devkit Configuration Engine")
     parser.add_argument("--project-root", default=str(Path(__file__).parent.parent))
     parser.add_argument("--group", help="Machine group")
     parser.add_argument("--platform", default="macos", help="Platform (macos/linux)")

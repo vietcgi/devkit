@@ -1,8 +1,8 @@
 #!/bin/bash
 ################################################################################
-# Mac-Setup Configuration Manager (Using yq for YAML operations)
+# Devkit Configuration Manager (Using yq for YAML operations)
 #
-# PURPOSE: Manage mac-setup configuration safely and reliably
+# PURPOSE: Manage devkit configuration safely and reliably
 # REQUIRES: bash, yq
 #
 # USAGE:
@@ -200,7 +200,7 @@ export_command() {
 
 help_command() {
     cat <<'EOF'
-Mac-Setup Configuration Manager
+Devkit Configuration Manager
 
 USAGE:
     config.sh COMMAND [ARGS]

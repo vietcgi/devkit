@@ -1,6 +1,6 @@
 #  Copyright (c) 2024 Devkit Contributors
 #  SPDX-License-Identifier: MIT
-"""Mac-Setup Interactive Setup Wizard.
+"""Devkit Interactive Setup Wizard.
 
 Provides an interactive CLI interface for configuring and running devkit.
 Includes progress tracking, validation, and real-time feedback.
@@ -315,7 +315,7 @@ class SetupWizard:
 
 def main() -> int:
     """Run setup wizard."""
-    parser = argparse.ArgumentParser(description="Mac-Setup Interactive Wizard")
+    parser = argparse.ArgumentParser(description="Devkit Interactive Wizard")
     parser.add_argument("--skip-wizard", action="store_true", help="Skip interactive wizard")
     parser.add_argument("--config", help="Custom config file")
     parser.add_argument("--project-root", default=str(Path(__file__).parent.parent))

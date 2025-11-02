@@ -79,9 +79,9 @@ show_help() {
         ;;
     "python")
         log_info "Python installation help:"
-        log_info "  1. Install: brew install python@3.12"
+        log_info "  1. Install: brew install python@3.13"
         log_info "  2. Verify: python3 --version"
-        log_info "  3. Link: brew link python@3.12"
+        log_info "  3. Link: brew link python@3.13"
         ;;
     "ansible")
         log_info "Ansible installation help:"
@@ -483,7 +483,7 @@ install_python() {
         log_error "  • Check disk space: df -h (need 2+ GB free)"
         log_error "  • Update Homebrew: brew update"
         log_error "  • Check Homebrew state: brew doctor"
-        suggest_fix "python" "Try manual installation: brew install python@3.12"
+        suggest_fix "python" "Try manual installation: brew install python@3.13"
         return 1
     }
 

@@ -12,9 +12,9 @@ node = "lts"              # Use LTS version, or specify like "20.11.0"
 go = "latest"             # Use latest stable, or specify like "1.22.0"
 # go = "1.22"             # Use latest Go 1.22.x
 
-# Python (if needed)
-python = "latest"         # Use latest stable, or specify like "3.12.1"
-# python = "3.12"         # Use latest Python 3.12.x
+# Python (minimum required: 3.13+)
+python = "latest"         # Use latest stable, or specify like "3.13.1"
+# python = "3.13"         # Use latest Python 3.13.x
 
 # Ruby (if needed)
 # ruby = "latest"

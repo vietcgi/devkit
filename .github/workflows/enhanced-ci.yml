@@ -1,0 +1,308 @@
+name: Enhanced CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run nightly builds for comprehensive testing
+    - cron: "0 2 * * *"
+
+env:
+  PYTHON_VERSION: "3.13"
+  POETRY_VERSION: "1.7.0"
+
+jobs:
+  # =========================================================================
+  # STAGE 1: QUICK VALIDATION (PRs only)
+  # =========================================================================
+  quick-validation:
+    name: Quick Validation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run quick tests
+        run: |
+          python -m pytest tests/test_integration.py -v --tb=short
+          python -m pytest tests/test_plugin_system.py -v --tb=short
+
+      - name: Quick linting
+        run: |
+          python -m ruff check cli/ --select=E,W,F --exit-zero
+          python -m mypy cli/ --no-error-summary 2>/dev/null | head -20 || true
+
+  # =========================================================================
+  # STAGE 2: COMPREHENSIVE TESTING
+  # =========================================================================
+  test-suite:
+    name: Test Suite (${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run full test suite
+        run: python -m pytest tests/ -v --tb=short --timeout=30
+
+      - name: Generate test report
+        if: always()
+        run: |
+          python -m pytest tests/ --html=report.html --self-contained-html || true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: report.html
+
+  # =========================================================================
+  # STAGE 3: CODE COVERAGE ANALYSIS
+  # =========================================================================
+  coverage:
+    name: Code Coverage Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run tests with coverage
+        run: |
+          python -m pytest tests/ \
+            --cov=cli \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-report=term-missing \
+            --cov-fail-under=80
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: htmlcov
+
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request'
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          MINIMUM_GREEN: 85
+          MINIMUM_ORANGE: 70
+
+  # =========================================================================
+  # STAGE 4: CODE QUALITY & SECURITY
+  # =========================================================================
+  quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run mypy type checking
+        run: python -m mypy cli/ --pretty --no-error-summary || true
+
+      - name: Run pylint
+        run: python -m pylint cli/ --exit-zero || true
+
+      - name: Run bandit security check
+        run: python -m bandit -r cli/ -ll -f json -o bandit-report.json || true
+
+      - name: Run complexity analysis
+        run: |
+          python -m radon cc cli/ -a -s
+          python -m radon mi cli/ -n C
+
+      - name: Upload quality reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: quality-reports
+          path: |
+            bandit-report.json
+
+  # =========================================================================
+  # STAGE 5: PERFORMANCE BENCHMARKING
+  # =========================================================================
+  performance:
+    name: Performance Benchmarking
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run performance tests
+        run: |
+          python -m pytest tests/test_performance.py \
+            --benchmark-only \
+            --benchmark-json=benchmark.json \
+            || true
+
+      - name: Run integration performance tests
+        run: |
+          python -m pytest tests/test_integration.py::TestEndToEndWorkflow::test_stress_test_plugin_discovery \
+            -v --durations=10
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmark-results
+          path: benchmark.json
+
+  # =========================================================================
+  # STAGE 6: PRE-COMMIT HOOKS VERIFICATION
+  # =========================================================================
+  pre-commit:
+    name: Pre-commit Hooks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Run pre-commit
+        uses: pre-commit/action@v3
+
+  # =========================================================================
+  # STAGE 7: MUTATION TESTING (nightly only)
+  # =========================================================================
+  mutation:
+    name: Mutation Testing
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 2 * * *' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          pip install mutmut
+
+      - name: Run mutation testing
+        run: |
+          mutmut run --tests-dir tests/ --path cli/ || true
+
+      - name: Generate mutation report
+        run: mutmut results || true
+
+  # =========================================================================
+  # FINAL STAGE: COMPREHENSIVE HEALTH CHECK
+  # =========================================================================
+  health-check:
+    name: System Health Check
+    runs-on: ubuntu-latest
+    needs: [test-suite, coverage, quality, performance]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run comprehensive health check
+        run: python -m pytest tests/test_health_check.py -v
+
+      - name: Verify test counts
+        run: |
+          echo "Verifying test suite integrity..."
+          TEST_COUNT=$(python -m pytest tests/ --collect-only -q | tail -1 | grep -oE '[0-9]+' | head -1)
+          echo "Total tests collected: $TEST_COUNT"
+          if [ "$TEST_COUNT" -lt 730 ]; then
+            echo "ERROR: Test count dropped below expected 730"
+            exit 1
+          fi
+          echo "✓ Test count verified: $TEST_COUNT"
+
+      - name: Summary Report
+        if: always()
+        run: |
+          echo "# CI/CD Pipeline Summary"
+          echo "- Python Version: ${{ env.PYTHON_VERSION }}"
+          echo "- Timestamp: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          echo "- Commit: ${{ github.sha }}"
+          echo "- Branch: ${{ github.ref_name }}"

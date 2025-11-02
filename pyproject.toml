@@ -10,13 +10,22 @@ authors = [
     {name = "Kevin", email = "kevin@example.com"}
 ]
 requires-python = ">=3.13"
-license = {text = "MIT"}
+license = {text = "Apache-2.0"}
+readme = "README.md"
 
 dependencies = [
     "PyYAML>=6.0",
     "requests>=2.28",
     "setuptools>=75.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/vietcgi/devkit"
+Repository = "https://github.com/vietcgi/devkit"
+Issues = "https://github.com/vietcgi/devkit/issues"
+
+[project.scripts]
+devkit = "cli.main:main"
 
 [project.optional-dependencies]
 dev = [

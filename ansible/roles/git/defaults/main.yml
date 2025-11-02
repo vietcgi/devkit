@@ -2,6 +2,11 @@
 # Git Role Default Variables
 # These can be overridden in group_vars, host_vars, or playbook
 
+# System Configuration
+git_current_user: "{{ ansible_user_id }}"
+git_home_dir: "{{ ansible_user_dir }}"
+git_repo_root: "{{ playbook_dir | default('.') }}"
+
 # User Configuration
 git_user_name: "Kevin Vu"
 git_user_email: "vietcgi@gmail.com"
@@ -165,6 +170,6 @@ git_precommit_version: "4.3.0"
 git_precommit_config_repo: ".pre-commit-config.yaml"
 
 # Feature Flags
-configure_git: true
+git_configure: true
 git_enable_lfs: false  # Git Large File Storage
 git_enable_worktrees: true

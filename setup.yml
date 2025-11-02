@@ -106,9 +106,9 @@
     ansible.builtin.include_role:
       name: git
     vars:
-      current_user: "{{ user }}"
-      home_dir: "{{ home }}"
-      repo_root: "{{ playbook_dir }}"
+      git_current_user: "{{ user }}"
+      git_home_dir: "{{ home }}"
+      git_repo_root: "{{ playbook_dir }}"
       git_enable_precommit: true
     tags:
     - git

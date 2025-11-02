@@ -5,12 +5,12 @@
 
 - name: Initialize git variables
   ansible.builtin.set_fact:
-    git_config_home: "{{ home_dir }}/.config/git"
-    git_templates_dir: "{{ home_dir }}/.git-templates"
-    git_hooks_dir: "{{ home_dir }}/.git-templates/hooks"
-    git_global_config: "{{ home_dir }}/.gitconfig"
-    git_local_config: "{{ home_dir }}/.gitconfig.local"
-    git_attributes_file: "{{ home_dir }}/.gitattributes"
+    git_config_home: "{{ git_home_dir }}/.config/git"
+    git_templates_dir: "{{ git_home_dir }}/.git-templates"
+    git_hooks_dir: "{{ git_home_dir }}/.git-templates/hooks"
+    git_global_config: "{{ git_home_dir }}/.gitconfig"
+    git_local_config: "{{ git_home_dir }}/.gitconfig.local"
+    git_attributes_file: "{{ git_home_dir }}/.gitattributes"
   tags: [always, git]
 
 - name: Create git directories
@@ -19,20 +19,20 @@
     path: "{{ item }}"
     state: directory
     mode: '0755'
-    owner: "{{ current_user }}"
+    owner: "{{ git_current_user }}"
     group: "{{ ansible_user_gid | default(omit) }}"
   loop:
     - "{{ git_config_home }}"
     - "{{ git_templates_dir }}"
     - "{{ git_hooks_dir }}"
-    - "{{ home_dir }}/.devkit/git"
+    - "{{ git_home_dir }}/.devkit/git"
 
 - name: Deploy global gitconfig (user info, core settings)
   ansible.builtin.template:
     src: gitconfig.j2
     dest: "{{ git_global_config }}"
     mode: '0644'
-    owner: "{{ current_user }}"
+    owner: "{{ git_current_user }}"
     group: "{{ ansible_user_gid | default(omit) }}"
   changed_when: false
   notify: reload git config
@@ -43,7 +43,7 @@
     src: gitconfig.local.j2
     dest: "{{ git_local_config }}"
     mode: '0644'
-    owner: "{{ current_user }}"
+    owner: "{{ git_current_user }}"
     group: "{{ ansible_user_gid | default(omit) }}"
   changed_when: false
   notify: reload git config
@@ -54,7 +54,7 @@
     src: gitattributes.j2
     dest: "{{ git_attributes_file }}"
     mode: '0644'
-    owner: "{{ current_user }}"
+    owner: "{{ git_current_user }}"
     group: "{{ ansible_user_gid | default(omit) }}"
   tags: [git, config]
 
@@ -63,7 +63,7 @@
     src: gitignore_global
     dest: "{{ git_config_home }}/ignore"
     mode: '0644'
-    owner: "{{ current_user }}"
+    owner: "{{ git_current_user }}"
     group: "{{ ansible_user_gid | default(omit) }}"
   tags: [git, config]
 
@@ -76,7 +76,7 @@
     src: hooks/pre-commit.sh.j2
     dest: "{{ git_hooks_dir }}/pre-commit"
     mode: '0755'
-    owner: "{{ current_user }}"
+    owner: "{{ git_current_user }}"
     group: "{{ ansible_user_gid | default(omit) }}"
   notify: reload git hooks
   when: not git_enable_precommit | default(true)
@@ -87,7 +87,7 @@
     src: hooks/commit-msg.sh.j2
     dest: "{{ git_hooks_dir }}/commit-msg"
     mode: '0755'
-    owner: "{{ current_user }}"
+    owner: "{{ git_current_user }}"
     group: "{{ ansible_user_gid | default(omit) }}"
   notify: reload git hooks
   when: not git_enable_precommit | default(true)
@@ -98,7 +98,7 @@
     src: hooks/post-commit.sh.j2
     dest: "{{ git_hooks_dir }}/post-commit"
     mode: '0755'
-    owner: "{{ current_user }}"
+    owner: "{{ git_current_user }}"
     group: "{{ ansible_user_gid | default(omit) }}"
   when: not git_enable_precommit | default(true)
   tags: [git, hooks]
@@ -108,7 +108,7 @@
     src: hooks/prepare-commit-msg.sh.j2
     dest: "{{ git_hooks_dir }}/prepare-commit-msg"
     mode: '0755'
-    owner: "{{ current_user }}"
+    owner: "{{ git_current_user }}"
     group: "{{ ansible_user_gid | default(omit) }}"
   when: not git_enable_precommit | default(true)
   tags: [git, hooks]
@@ -151,15 +151,15 @@
     path: "{{ item }}"
   register: git_ssh_key_stat
   loop:
-    - "{{ home_dir }}/.ssh/id_rsa"
-    - "{{ home_dir }}/.ssh/id_ed25519"
-    - "{{ home_dir }}/.ssh/id_ecdsa"
+    - "{{ git_home_dir }}/.ssh/id_rsa"
+    - "{{ git_home_dir }}/.ssh/id_ed25519"
+    - "{{ git_home_dir }}/.ssh/id_ecdsa"
   tags: [git, config, ssh]
 
 - name: Configure git to use SSH for GitHub URLs in devkit repo (if SSH keys available)
   ansible.builtin.shell: |
     set -o pipefail
-    cd {{ repo_root }}
+    cd {{ git_repo_root }}
     git config --local url."git@github.com:".insteadOf https://github.com/
   when:
     - repo_root is defined
@@ -170,7 +170,7 @@
 
 - name: Remove SSH URL rewrite if no SSH keys found (prevent auth failures)
   ansible.builtin.shell: |
-    cd {{ repo_root }}
+    cd {{ git_repo_root }}
     git config --local --unset url."git@github.com:".insteadOf 2>/dev/null || true
   when:
     - repo_root is defined
@@ -197,6 +197,7 @@
 
 # Conditional GPG Configuration
 - name: Configure git GPG signing (optional)
+  tags: [git, gpg, optional]
   block:
     - name: Check GPG key availability
       ansible.builtin.shell: |
@@ -223,10 +224,9 @@
       notify: reload git config
       tags: [git, gpg]
 
-  tags: [git, gpg, optional]
-
 # SSH Key Configuration (optional)
 - name: Configure SSH signing (optional)
+  tags: [git, ssh, optional]
   block:
     - name: Check SSH key availability
       ansible.builtin.stat:
@@ -255,10 +255,9 @@
       notify: reload git config
       tags: [git, ssh]
 
-  tags: [git, ssh, optional]
-
 # Pre-Commit Framework Setup (Multi-language quality enforcement)
 - name: Install pre-commit framework
+  tags: [git, precommit, optional]
   block:
     - name: Check if pre-commit is already installed
       ansible.builtin.command: which pre-commit
@@ -271,7 +270,7 @@
     - name: Install pre-commit via pipx (if not already installed)
       ansible.builtin.command: pipx install pre-commit
       environment:
-        HOME: "{{ home_dir }}"
+        HOME: "{{ git_home_dir }}"
       register: git_precommit_install
       when:
         - git_enable_precommit | default(true)
@@ -282,8 +281,8 @@
     - name: Verify pre-commit installation
       ansible.builtin.command: pre-commit --version
       environment:
-        PATH: "{{ home_dir }}/.local/bin:{{ ansible_env.PATH }}"
-        HOME: "{{ home_dir }}"
+        PATH: "{{ git_home_dir }}/.local/bin:{{ ansible_env.PATH }}"
+        HOME: "{{ git_home_dir }}"
       register: git_precommit_version
       changed_when: false
       when: git_enable_precommit | default(true)
@@ -293,9 +292,9 @@
       ansible.builtin.copy:
         src: >-
           {{ role_path }}/../../../.pre-commit-config.yaml
-        dest: "{{ repo_root }}/.pre-commit-config.yaml"
+        dest: "{{ git_repo_root }}/.pre-commit-config.yaml"
         mode: '0644'
-        owner: "{{ current_user }}"
+        owner: "{{ git_current_user }}"
         group: "{{ ansible_user_gid | default(omit) }}"
       when:
         - git_enable_precommit | default(true)
@@ -311,7 +310,7 @@
         else
           echo "not-set"
         fi
-      register: hooks_path_status
+      register: git_hooks_path_status
       changed_when: false
       when: git_enable_precommit | default(true)
       tags: [git, precommit, config]
@@ -321,8 +320,8 @@
         cd {{ repo_root | default(lookup('env', 'PWD')) }}
         pre-commit install
       environment:
-        PATH: "{{ home_dir }}/.local/bin:{{ ansible_env.PATH }}"
-        HOME: "{{ home_dir }}"
+        PATH: "{{ git_home_dir }}/.local/bin:{{ ansible_env.PATH }}"
+        HOME: "{{ git_home_dir }}"
       register: git_precommit_init
       changed_when: false
       when: git_enable_precommit | default(true)
@@ -338,8 +337,6 @@
             {{ git_precommit_init.stdout_lines | default(['Not initialized']) }}
       when: git_enable_precommit | default(true)
       tags: [git, precommit, verify]
-
-  tags: [git, precommit, optional]
 
 # Git Aliases
 - name: Configure git aliases
@@ -405,13 +402,14 @@
   ansible.builtin.shell: |
     if [ -f "{{ git_global_config }}" ]; then
       cp "{{ git_global_config }}" \
-        "{{ home_dir }}/.devkit/git/gitconfig.backup.$(date +%s)"
+        "{{ git_home_dir }}/.devkit/git/gitconfig.backup.$(date +%s)"
     fi
   changed_when: false
   tags: [git, backup]
 
 # Verification
 - name: Verify git is properly configured
+  tags: [git, verify]
   block:
     - name: Check git user configuration
       ansible.builtin.shell: |
@@ -439,10 +437,9 @@
           User Email: {{ git_user_check.stdout_lines[1] | default('NOT SET') }}
           Hooks Available: {{ git_hooks_check.stat.exists }}
       tags: [git, verify]
-  tags: [git, verify]
 
 - name: Final git configuration verification
-  ansible.builtin.command: git config --list --show-origin
+  ansible.builtin.shell: git config --list --show-origin
   register: git_config_list
   changed_when: false
   tags: [git, verify]

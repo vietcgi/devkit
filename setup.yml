@@ -16,33 +16,6 @@
       home: "{{ (lookup('env', 'HOME') or '/root') | trim }}"
     tags:
     - always
-  - name: Check if Homebrew is installed
-    ansible.builtin.stat:
-      path: '{{ homebrew_prefix }}/bin/brew'
-    register: homebrew_check
-    tags:
-    - always
-    - homebrew
-  - name: Install Homebrew
-    ansible.builtin.shell: >
-      /bin/bash -c "$(curl -fsSL
-      https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    register: homebrew_install
-    when: not homebrew_check.stat.exists
-    changed_when: homebrew_install.rc == 0
-    retries: 3
-    delay: 5
-    until: homebrew_install is succeeded
-    tags:
-    - homebrew
-  - name: Ensure Homebrew is in PATH
-    ansible.builtin.set_fact:
-      ansible_env: |
-        {{ ansible_env | combine({'PATH': homebrew_prefix ~ '/bin:' ~
-        ansible_env.PATH}) }}
-    when: not homebrew_check.stat.exists
-    tags:
-    - homebrew
   - name: Check if Brewfile exists
     ansible.builtin.stat:
       path: '{{ brewfile_path }}'

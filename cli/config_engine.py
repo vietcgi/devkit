@@ -365,7 +365,7 @@ class ConfigurationEngine:
             return [v.strip() for v in value.split(",")]
         return value
 
-    @staticmethod
+    @staticmethod  # type: ignore[misc]
     def set_nested_value(
         target: dict[str, Any],
         key_parts: list[str],

@@ -154,6 +154,26 @@ else
 fi
 
 # ============================================
+# GATE 7: PRE-COMMIT FRAMEWORK (all files)
+# ============================================
+echo ""
+echo -e "${BLUE}GATE 7: Pre-Commit Framework Checks${NC}"
+echo -n "   Running pre-commit on all files... "
+
+if command -v pre-commit &>/dev/null; then
+    if pre-commit run --all-files >/tmp/precommit.txt 2>&1; then
+        echo -e "${GREEN}✓${NC}"
+    else
+        echo -e "${RED}✗${NC}"
+        echo -e "${RED}   Pre-commit checks failed:${NC}"
+        cat /tmp/precommit.txt | tail -20 | sed 's/^/   /'
+        EXIT_CODE=1
+    fi
+else
+    echo -e "${YELLOW}⚠${NC} (pre-commit not installed)"
+fi
+
+# ============================================
 # SUMMARY
 # ============================================
 echo ""

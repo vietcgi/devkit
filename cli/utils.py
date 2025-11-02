@@ -10,6 +10,7 @@ Provides common functionality used across multiple modules:
 
 import logging
 import subprocess
+from pathlib import Path
 from typing import ClassVar
 
 # ============================================================================
@@ -61,6 +62,7 @@ def setup_logger(
     name: str,
     level: int = logging.INFO,
     format_string: str | None = None,
+    log_file: Path | str | None = None,
 ) -> logging.Logger:
     r"""Set up a logger with consistent formatting.
 
@@ -72,6 +74,7 @@ def setup_logger(
         name: Logger name (typically module name or component name)
         level: Logging level (default: INFO)
         format_string: Custom format string (default: "%(levelname)s: %(message)s")
+        log_file: Optional log file path for file handler
 
     Returns:
         Configured logger instance ready for use
@@ -80,22 +83,32 @@ def setup_logger(
         >>> logger = setup_logger("my_module")
         >>> logger.info("Starting process")
         >>> logger.error("An error occurred")
-        >>>\n        >>> # Custom format
-        >>> logger = setup_logger(
-        ...     "app",
-        ...     format_string="[%(name)s] %(levelname)s: %(message)s"
-        ... )
+        >>> # With file logging
+        >>> logger = setup_logger("app", log_file="/tmp/app.log")
     """
     logger = logging.getLogger(name)
+    logger.setLevel(level)
 
-    if not logger.handlers:
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(
-            format_string or "%(levelname)s: %(message)s",
-        )
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-        logger.setLevel(level)
+    # Use standard format
+    fmt = format_string or "[%(asctime)s] %(levelname)s: %(message)s"
+    formatter = logging.Formatter(fmt)
+
+    # Remove existing handlers to avoid duplicates
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+
+    # Add file handler if log_file specified
+    if log_file:
+        log_path = Path(log_file)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        file_handler = logging.FileHandler(log_path)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+    else:
+        # Add stream handler by default
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
 
     return logger
 

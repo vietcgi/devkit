@@ -21,6 +21,7 @@ from typing import Any
 
 import yaml  # pylint: disable=import-error
 
+from cli.exceptions import ConfigError
 from cli.utils import setup_logger
 
 # Add parent directory to path for imports
@@ -98,6 +99,19 @@ class RateLimiter:
             f"operations in {self.window_seconds}s window. "
             f"Please wait {wait_seconds:.1f} seconds."
         )
+
+    def cleanup_old_identifiers(self) -> None:
+        """Clean up empty identifier entries to prevent unbounded memory growth.
+
+        This method removes entries from the operations dictionary that have empty
+        deques (all operations have expired from the time window). Call periodically
+        in long-running processes or when memory is a concern.
+        """
+        expired_identifiers = [
+            identifier for identifier, operations in self.operations.items() if not operations
+        ]
+        for identifier in expired_identifiers:
+            del self.operations[identifier]
 
     def reset(self, identifier: str | None = None) -> None:
         """Reset rate limit for identifier or all identifiers.
@@ -324,6 +338,9 @@ class ConfigurationEngine:
 
         Returns:
             Loaded configuration dictionary
+
+        Raises:
+            ConfigPermissionError: If file cannot be read due to permissions
         """
         path = Path(file_path).expanduser()
         if not path.exists():
@@ -341,9 +358,18 @@ class ConfigurationEngine:
         except yaml.YAMLError:
             self.logger.exception("Invalid YAML in %s", path)
             return {}
-        except OSError:
+        except PermissionError as e:
+            self.logger.exception("Permission denied reading %s", path)
+            raise ConfigError(
+                message=f"Permission denied reading configuration: {path}",
+                cause="File permissions prevent reading",
+            ) from e
+        except OSError as e:
             self.logger.exception("Error loading %s", path)
-            return {}
+            raise ConfigError(
+                message=f"Cannot read configuration file: {path}",
+                cause=str(e),
+            ) from e
 
         return config
 

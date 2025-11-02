@@ -15,7 +15,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from cli.utils import Colors, ValidatorBase, run_command
+from cli.utils import Colors, ValidatorBase, run_command, setup_logger
 
 
 class CodeQualityValidator(ValidatorBase):
@@ -32,13 +32,11 @@ class CodeQualityValidator(ValidatorBase):
     def setup_logging(self) -> None:
         """Setup logging for quality checks."""
         self.log_file = self.devkit_dir / "quality_checks.log"
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
-
-        handler = logging.FileHandler(self.log_file)
-        formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s")
-        handler.setFormatter(formatter)
-        self.logger.addHandler(handler)
+        self.logger = setup_logger(
+            __name__,
+            level=logging.INFO,
+            log_file=self.log_file,
+        )
 
     # ========== QUALITY CHECK METHODS ==========
 

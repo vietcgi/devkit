@@ -21,7 +21,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from cli.utils import Colors, ValidatorBase, run_command
+from cli.utils import Colors, ValidatorBase, run_command, setup_logger
 
 
 class GitConfigManager(ValidatorBase):
@@ -49,18 +49,11 @@ class GitConfigManager(ValidatorBase):
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.log_file = self.log_dir / "git_config_reload.log"
 
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
-
-        handler = logging.FileHandler(self.log_file)
-        handler.setLevel(logging.INFO)
-
-        formatter = logging.Formatter(
-            "[%(asctime)s] %(levelname)s: %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
+        self.logger = setup_logger(
+            __name__,
+            level=logging.INFO,
+            log_file=self.log_file,
         )
-        handler.setFormatter(formatter)
-        self.logger.addHandler(handler)
 
     def validate_git_config_syntax(self) -> bool:
         """Validate git config file syntax.

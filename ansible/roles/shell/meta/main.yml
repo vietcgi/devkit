@@ -1,12 +1,12 @@
 ---
-# Git role metadata
+# Shell role metadata
 
 galaxy_info:
   author: "Devkit Contributors"
-  description: "Manage git configuration, templates, hooks, and aliases"
+  description: "Configure modern shell environments with Zsh, Fish, Oh My Zsh, and Powerlevel10k theme"
   company: "Devkit Project"
   license: "Apache-2.0"
-  min_ansible_version: "2.9"
+  min_ansible_version: 2.9
 
   platforms:
     - name: macOS
@@ -27,11 +27,16 @@ galaxy_info:
         - 24.04
 
   galaxy_tags:
-    - git
-    - vcs
+    - shell
+    - zsh
+    - fish
+    - oh-my-zsh
+    - powerlevel10k
+    - terminal
     - configuration
-    - hooks
-    - development
 
 dependencies:
   - name: core
+    scm: git
+    src: "https://github.com/vietcgi/devkit.git"
+    version: main

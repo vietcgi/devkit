@@ -1,12 +1,12 @@
 ---
-# Git role metadata
+# Security role metadata
 
 galaxy_info:
   author: "Devkit Contributors"
-  description: "Manage git configuration, templates, hooks, and aliases"
+  description: "Configure SSH keys, GPG setup, and security hardening"
   company: "Devkit Project"
   license: "Apache-2.0"
-  min_ansible_version: "2.9"
+  min_ansible_version: 2.9
 
   platforms:
     - name: macOS
@@ -27,11 +27,12 @@ galaxy_info:
         - 24.04
 
   galaxy_tags:
-    - git
-    - vcs
-    - configuration
-    - hooks
-    - development
+    - security
+    - ssh
+    - gpg
+    - authentication
+    - cryptography
+    - hardening
 
 dependencies:
   - name: core

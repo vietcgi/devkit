@@ -412,6 +412,78 @@ class GitConfigManager(ValidatorBase):
         self.print_status(f"Unknown component: {component}", "ERROR")
         return False
 
+    def get_current_branch(self) -> str:
+        """Get current git branch name.
+
+        Returns:
+            Current branch name or "unknown" if not in a git repo
+        """
+        try:
+            result = run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], timeout=5)
+            if result.returncode == 0:
+                return result.stdout.strip()
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+        return "unknown"
+
+    def is_dirty(self) -> bool:
+        """Check if git repository has uncommitted changes.
+
+        Returns:
+            True if repository is dirty, False otherwise
+        """
+        try:
+            result = run_command(["git", "status", "--porcelain"], timeout=5)
+            if result.returncode == 0:
+                return bool(result.stdout.strip())
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+        return False
+
+    def get_commit_info(self, ref: str = "HEAD") -> dict[str, str]:
+        """Get commit information for a given reference.
+
+        Args:
+            ref: Git reference (default: HEAD)
+
+        Returns:
+            Dictionary with commit info (hash, author, message, date)
+        """
+        commit_info: dict[str, str] = {}
+        try:
+            # Get short hash
+            result = run_command(["git", "rev-parse", "--short", ref], timeout=5)
+            if result.returncode == 0:
+                commit_info["hash"] = result.stdout.strip()
+
+            # Get author
+            result = run_command(
+                ["git", "log", "-1", "--format=%an", ref],
+                timeout=5,
+            )
+            if result.returncode == 0:
+                commit_info["author"] = result.stdout.strip()
+
+            # Get message
+            result = run_command(
+                ["git", "log", "-1", "--format=%s", ref],
+                timeout=5,
+            )
+            if result.returncode == 0:
+                commit_info["message"] = result.stdout.strip()
+
+            # Get date
+            result = run_command(
+                ["git", "log", "-1", "--format=%ai", ref],
+                timeout=5,
+            )
+            if result.returncode == 0:
+                commit_info["date"] = result.stdout.strip()
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+
+        return commit_info
+
 
 def main() -> int:
     """CLI entry point."""

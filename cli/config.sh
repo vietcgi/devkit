@@ -1,9 +1,9 @@
 #!/bin/bash
 ################################################################################
-# Mac-Setup Configuration Manager (Pure Bash)
+# Mac-Setup Configuration Manager (Using yq for YAML operations)
 #
-# PURPOSE: Manage mac-setup configuration without Python
-# REQUIRES: bash, grep, sed, awk
+# PURPOSE: Manage mac-setup configuration safely and reliably
+# REQUIRES: bash, yq
 #
 # USAGE:
 #   ./cli/config.sh list              # List enabled roles
@@ -11,8 +11,9 @@
 #   ./cli/config.sh set global.logging.level debug
 #   ./cli/config.sh validate          # Validate configuration
 #   ./cli/config.sh export yaml       # Export as YAML
+#   ./cli/config.sh export json       # Export as JSON
 #
-# This is a lightweight bash alternative to the Python config engine
+# This uses yq for proper YAML/JSON operations instead of text-based tools
 ################################################################################
 
 set -e
@@ -29,20 +30,19 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 ################################################################################
-# YAML Parser Functions (Pure Bash)
+# Configuration Functions Using yq
 ################################################################################
 
-# Parse YAML key from configuration
+# Get YAML value using yq
 get_yaml_value() {
     local key="$1"
     local file="$2"
 
-    # Convert dot notation to grep pattern
-    # e.g., "global.logging.level" -> "level"
-    local last_key
-    last_key=$(echo "$key" | awk -F. '{print $NF}')
+    # Convert dot notation to yq path
+    # e.g., "global.logging.level" -> ".global.logging.level"
+    local yq_path=".${key//.//}"
 
-    grep "^[[:space:]]*$last_key:" "$file" | head -1 | awk -F: '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+    yq eval "$yq_path" "$file" 2>/dev/null || echo "null"
 }
 
 # List all enabled roles
@@ -50,7 +50,7 @@ list_roles() {
     local file="$1"
 
     echo -e "${BLUE}Enabled Roles:${NC}"
-    grep -A 10 "enabled_roles:" "$file" | grep "^[[:space:]]*-" | sed 's/^[[:space:]]*-[[:space:]]*/  - /'
+    yq eval '.enabled_roles[]' "$file" 2>/dev/null | sed 's/^/  - /'
 }
 
 # Validate configuration
@@ -60,28 +60,28 @@ validate_config() {
 
     echo -e "${BLUE}Validating Configuration:${NC}"
 
-    # Check required sections
-    if ! grep -q "^global:" "$file"; then
+    # Check required sections using yq
+    if yq eval '.global' "$file" >/dev/null 2>&1 && [[ $(yq eval '.global' "$file") != "null" ]]; then
+        echo -e "${GREEN}✓ Global section present${NC}"
+    else
         echo -e "${RED}✗ Missing 'global' section${NC}"
         errors=$((errors + 1))
-    else
-        echo -e "${GREEN}✓ Global section present${NC}"
     fi
 
     # Check logging section
-    if ! grep -q "logging:" "$file"; then
+    if yq eval '.global.logging' "$file" >/dev/null 2>&1 && [[ $(yq eval '.global.logging' "$file") != "null" ]]; then
+        echo -e "${GREEN}✓ Logging section present${NC}"
+    else
         echo -e "${RED}✗ Missing 'logging' section${NC}"
         errors=$((errors + 1))
-    else
-        echo -e "${GREEN}✓ Logging section present${NC}"
     fi
 
     # Check enabled_roles
-    if ! grep -q "enabled_roles:" "$file"; then
+    if yq eval '.enabled_roles' "$file" >/dev/null 2>&1 && [[ $(yq eval '.enabled_roles' "$file") != "null" ]]; then
+        echo -e "${GREEN}✓ Enabled roles section present${NC}"
+    else
         echo -e "${RED}✗ Missing 'enabled_roles' section${NC}"
         errors=$((errors + 1))
-    else
-        echo -e "${GREEN}✓ Enabled roles section present${NC}"
     fi
 
     if [[ $errors -eq 0 ]]; then
@@ -93,7 +93,7 @@ validate_config() {
     fi
 }
 
-# Export configuration (simple display)
+# Export configuration
 export_config() {
     local format="${1:-yaml}"
     local file="$2"
@@ -101,9 +101,10 @@ export_config() {
     if [[ "$format" == "yaml" ]]; then
         cat "$file"
     elif [[ "$format" == "json" ]]; then
-        echo '{'
-        grep -v "^#" "$file" | grep -v "^$" | sed 's/$/,/' | sed '$s/,$//' | sed 's/^/  /'
-        echo '}'
+        yq eval -o json "$file"
+    else
+        echo -e "${RED}Error: Unknown format '$format'. Use 'yaml' or 'json'${NC}"
+        return 1
     fi
 }
 
@@ -134,7 +135,13 @@ get_command() {
     fi
 
     echo -e "${BLUE}$key:${NC}"
-    get_yaml_value "$key" "$CONFIG_FILE"
+    local value
+    value=$(get_yaml_value "$key" "$CONFIG_FILE")
+    if [[ "$value" == "null" ]]; then
+        echo -e "${RED}Key not found: $key${NC}"
+        return 1
+    fi
+    echo "$value"
 }
 
 set_command() {
@@ -152,9 +159,23 @@ set_command() {
     fi
 
     echo -e "${BLUE}Setting $key = $value${NC}"
-    # Simple sed replacement (basic implementation)
-    sed -i '' "s/^\([[:space:]]*\)$(echo "$key" | awk -F. '{print $NF}'):.*/\1$(echo "$key" | awk -F. '{print $NF}'): $value/" "$CONFIG_FILE"
-    echo -e "${GREEN}✓ Updated${NC}"
+
+    # Use yq to safely update the value
+    # Convert dot notation to yq path
+    local yq_path=".${key//.//}"
+
+    # Create temporary file for yq output
+    local temp_file
+    temp_file=$(mktemp)
+
+    if yq eval "$yq_path = \"$value\"" "$CONFIG_FILE" >"$temp_file" 2>/dev/null; then
+        mv "$temp_file" "$CONFIG_FILE"
+        echo -e "${GREEN}✓ Updated${NC}"
+    else
+        rm -f "$temp_file"
+        echo -e "${RED}✗ Failed to update configuration${NC}"
+        return 1
+    fi
 }
 
 validate_command() {
@@ -179,7 +200,7 @@ export_command() {
 
 help_command() {
     cat <<'EOF'
-Mac-Setup Configuration Manager (Bash)
+Mac-Setup Configuration Manager
 
 USAGE:
     config.sh COMMAND [ARGS]
@@ -205,11 +226,15 @@ EXAMPLES:
     # Validate
     ./config.sh validate
 
-    # Export
-    ./config.sh export yaml
+    # Export as JSON
+    ./config.sh export json
 
 CONFIGURATION FILE:
     $HOME/.devkit/config.yaml
+
+REQUIREMENTS:
+    - bash
+    - yq (for YAML operations)
 
 EOF
 }

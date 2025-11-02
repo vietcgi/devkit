@@ -186,7 +186,7 @@ EOF
 generate_report() {
     local results_json="$1"
     local num_runs
-    num_runs=$(echo "$results_json" | grep -c '"run":')
+    num_runs=$(echo "$results_json" | jq 'length')
     local total_time=0
     local min_time=999999
     local max_time=0
@@ -195,28 +195,24 @@ generate_report() {
 
     log_info "Generating benchmark report..."
 
-    # Calculate statistics
+    # Calculate statistics using jq to extract durations
     local run_num=0
-    while IFS= read -r line; do
-        if echo "$line" | grep -q '"duration_seconds":'; then
-            local duration
-            duration=$(echo "$line" | grep -o '[0-9.]*' | head -1)
-            total_time=$(echo "$total_time + $duration" | bc)
+    while IFS= read -r duration; do
+        total_time=$(echo "$total_time + $duration" | bc)
 
-            if (($(echo "$duration < $min_time" | bc -l))); then
-                min_time=$duration
-            fi
-            if (($(echo "$duration > $max_time" | bc -l))); then
-                max_time=$duration
-            fi
-
-            run_num=$((run_num + 1))
-            if [ $run_num -eq 1 ]; then
-                first_run_time=$duration
-            fi
-            last_run_time=$duration
+        if (($(echo "$duration < $min_time" | bc -l))); then
+            min_time=$duration
         fi
-    done <<<"$results_json"
+        if (($(echo "$duration > $max_time" | bc -l))); then
+            max_time=$duration
+        fi
+
+        run_num=$((run_num + 1))
+        if [ $run_num -eq 1 ]; then
+            first_run_time=$duration
+        fi
+        last_run_time=$duration
+    done < <(echo "$results_json" | jq '.[] | .duration_seconds')
 
     local avg_time
     avg_time=$(echo "scale=2; $total_time / $num_runs" | bc)

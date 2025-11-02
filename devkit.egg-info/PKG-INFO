@@ -440,10 +440,10 @@ Test the setup on Ubuntu without affecting your main system:
 multipass launch --name test-setup ubuntu:22.04 --cpus 2 --memory 4G --disk 20G
 
 # Transfer setup files
-multipass transfer bootstrap-ansible.sh test-setup:/home/ubuntu/
+multipass transfer bootstrap.sh test-setup:/home/ubuntu/
 
 # Run setup in VM
-multipass exec test-setup -- bash /home/ubuntu/bootstrap-ansible.sh
+multipass exec test-setup -- bash /home/ubuntu/bootstrap.sh
 
 # Test specific components
 multipass exec test-setup -- bash -c "brew list | wc -l"

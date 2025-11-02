@@ -338,8 +338,8 @@ class CodeQualityValidator(ValidatorBase):
         except OSError:
             return []
 
-    @staticmethod
-    def generate_quality_report(checks: dict[str, Any]) -> dict[str, Any]:  # type: ignore[misc]
+    @staticmethod  # type: ignore[misc]
+    def generate_quality_report(checks: dict[str, Any]) -> dict[str, Any]:
         """Generate comprehensive quality report."""
         report = {
             "timestamp": datetime.now(tz=UTC).isoformat(),
@@ -422,8 +422,8 @@ class CodeQualityValidator(ValidatorBase):
 
         return report
 
-    @staticmethod
-    def display_summary(report: dict[str, Any]) -> bool:  # type: ignore[misc]
+    @staticmethod  # type: ignore[misc]
+    def display_summary(report: dict[str, Any]) -> bool:
         """Display quality check summary."""
         for check_result in report["checks"].values():
             if isinstance(check_result, dict):

@@ -407,5 +407,244 @@ class TestLoadAll(unittest.TestCase):
         self.assertGreaterEqual(count, 0)
 
 
+class TestExecuteHooksErrorHandling(unittest.TestCase):
+    """Test error handling in execute_hooks."""
+
+    def setUp(self):
+        """Set up test loader."""
+        self.loader = PluginLoader()
+
+    def test_execute_hooks_with_hook_failure(self):
+        """Test executing hooks when hook returns False."""
+        # Create a mock hook that returns False
+        mock_hook = Mock(spec=HookInterface)
+        mock_hook.execute.return_value = False
+
+        self.loader.hooks["pre_setup"] = [mock_hook]
+
+        ctx = HookContext(stage="pre_setup")
+        result = self.loader.execute_hooks("pre_setup", ctx)
+
+        self.assertFalse(result)
+        self.assertEqual(ctx.status, "failed")
+
+    def test_execute_hooks_with_os_error(self):
+        """Test executing hooks when hook raises OSError."""
+        mock_hook = Mock(spec=HookInterface)
+        mock_hook.execute.side_effect = OSError("Permission denied")
+
+        self.loader.hooks["pre_setup"] = [mock_hook]
+
+        ctx = HookContext(stage="pre_setup")
+        result = self.loader.execute_hooks("pre_setup", ctx)
+
+        self.assertFalse(result)
+        self.assertEqual(ctx.status, "failed")
+        self.assertIn("Permission denied", ctx.error)
+
+    def test_execute_hooks_with_runtime_error(self):
+        """Test executing hooks when hook raises RuntimeError."""
+        mock_hook = Mock(spec=HookInterface)
+        mock_hook.execute.side_effect = RuntimeError("Execution failed")
+
+        self.loader.hooks["post_role"] = [mock_hook]
+
+        ctx = HookContext(stage="post_role")
+        result = self.loader.execute_hooks("post_role", ctx)
+
+        self.assertFalse(result)
+        self.assertEqual(ctx.status, "failed")
+
+    def test_execute_hooks_with_value_error(self):
+        """Test executing hooks when hook raises ValueError."""
+        mock_hook = Mock(spec=HookInterface)
+        mock_hook.execute.side_effect = ValueError("Invalid value")
+
+        self.loader.hooks["setup"] = [mock_hook]
+
+        ctx = HookContext(stage="setup")
+        result = self.loader.execute_hooks("setup", ctx)
+
+        self.assertFalse(result)
+        self.assertEqual(ctx.status, "failed")
+
+    def test_execute_hooks_with_none_context(self):
+        """Test executing hooks with None context creates default context."""
+        mock_hook = Mock(spec=HookInterface)
+        mock_hook.execute.return_value = True
+
+        self.loader.hooks["pre_setup"] = [mock_hook]
+
+        result = self.loader.execute_hooks("pre_setup", None)
+
+        self.assertTrue(result)
+        # Verify hook was called with a HookContext
+        mock_hook.execute.assert_called_once()
+        call_args = mock_hook.execute.call_args[0]
+        self.assertIsInstance(call_args[0], HookContext)
+        self.assertEqual(call_args[0].stage, "pre_setup")
+
+    def test_execute_hooks_success_multiple_hooks(self):
+        """Test executing multiple hooks that all succeed."""
+        mock_hook1 = Mock(spec=HookInterface)
+        mock_hook1.execute.return_value = True
+        mock_hook2 = Mock(spec=HookInterface)
+        mock_hook2.execute.return_value = True
+
+        self.loader.hooks["pre_setup"] = [mock_hook1, mock_hook2]
+
+        ctx = HookContext(stage="pre_setup")
+        result = self.loader.execute_hooks("pre_setup", ctx)
+
+        self.assertTrue(result)
+        self.assertEqual(ctx.status, "success")
+        mock_hook1.execute.assert_called_once()
+        mock_hook2.execute.assert_called_once()
+
+
+class TestPluginLoadingErrorPaths(unittest.TestCase):
+    """Test error handling in plugin loading."""
+
+    def setUp(self):
+        """Set up test loader."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.loader = PluginLoader()
+
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_load_plugin_import_error(self):
+        """Test loading plugin with import error."""
+        plugin_file = Path(self.temp_dir) / "broken_plugin.py"
+        plugin_file.write_text("import nonexistent_module_xyz")
+
+        with patch("cli.plugin_system.PluginValidator") as mock_validator_class:
+            mock_validator = Mock()
+            mock_validator.validate_plugin.return_value = (True, "Valid")
+            mock_validator_class.return_value = mock_validator
+
+            result = self.loader.load_plugin(str(plugin_file), "broken_plugin")
+
+        self.assertIsNone(result)
+
+    def test_load_plugin_attribute_error(self):
+        """Test loading plugin with attribute error."""
+        plugin_file = Path(self.temp_dir) / "no_plugin.py"
+        plugin_file.write_text("# Empty plugin file with no PluginInterface")
+
+        with patch("cli.plugin_system.PluginValidator") as mock_validator_class:
+            mock_validator = Mock()
+            mock_validator.validate_plugin.return_value = (True, "Valid")
+            mock_validator_class.return_value = mock_validator
+
+            result = self.loader.load_plugin(str(plugin_file), "no_plugin")
+
+        self.assertIsNone(result)
+
+    def test_load_plugin_validation_fails(self):
+        """Test loading plugin when validation fails."""
+        plugin_file = Path(self.temp_dir) / "invalid_plugin.py"
+        plugin_file.write_text("""
+from cli.plugin_system import PluginInterface, HookInterface
+
+class TestPlugin(PluginInterface):
+    name = "invalid"
+    version = "1.0"
+    description = "Invalid"
+
+    def initialize(self):
+        pass
+
+    def get_roles(self):
+        return {}
+
+    def get_hooks(self):
+        return {}
+
+    def validate(self):
+        return False, ["Invalid plugin"]
+""")
+
+        result = self.loader.load_plugin(str(plugin_file), "invalid_plugin")
+
+        self.assertIsNone(result)
+
+    def test_load_plugin_invalid_spec(self):
+        """Test loading plugin when spec creation fails."""
+        with patch("importlib.util.spec_from_file_location") as mock_spec:
+            mock_spec.return_value = None
+
+            result = self.loader.load_plugin("/path/to/plugin.py", "plugin")
+
+            self.assertIsNone(result)
+
+    def test_load_plugin_spec_no_loader(self):
+        """Test loading plugin when spec has no loader."""
+        with patch("importlib.util.spec_from_file_location") as mock_spec_fn:
+            mock_spec = Mock()
+            mock_spec.loader = None
+            mock_spec_fn.return_value = mock_spec
+
+            result = self.loader.load_plugin("/path/to/plugin.py", "plugin")
+
+            self.assertIsNone(result)
+
+    def test_load_plugin_successful(self):
+        """Test successfully loading a valid plugin."""
+        plugin_file = Path(self.temp_dir) / "valid_plugin.py"
+        plugin_file.write_text("""
+from cli.plugin_system import PluginInterface
+
+class ValidPlugin(PluginInterface):
+    name = "valid_plugin"
+    version = "1.0.0"
+    description = "A valid test plugin"
+
+    def initialize(self):
+        pass
+
+    def get_roles(self):
+        return {}
+
+    def get_hooks(self):
+        return {}
+
+    def validate(self):
+        return True, []
+""")
+
+        with patch("cli.plugin_system.PluginValidator") as mock_validator_class:
+            mock_validator = Mock()
+            mock_validator.validate_plugin.return_value = (True, "Valid")
+            mock_validator_class.return_value = mock_validator
+
+            result = self.loader.load_plugin(str(plugin_file), "valid_plugin")
+
+            self.assertIsNotNone(result)
+            self.assertEqual(result.name, "valid_plugin")
+            self.assertEqual(result.version, "1.0.0")
+
+    def test_load_plugin_no_plugin_interface_found(self):
+        """Test loading plugin when no PluginInterface found in module."""
+        plugin_file = Path(self.temp_dir) / "no_interface_plugin.py"
+        plugin_file.write_text("""
+# Plugin file with no PluginInterface class
+class NotAPlugin:
+    pass
+""")
+
+        with patch("cli.plugin_system.PluginValidator") as mock_validator_class:
+            mock_validator = Mock()
+            mock_validator.validate_plugin.return_value = (True, "Valid")
+            mock_validator_class.return_value = mock_validator
+
+            result = self.loader.load_plugin(str(plugin_file), "no_interface_plugin")
+
+            # Should return None because no PluginInterface was found
+            self.assertIsNone(result)
+
+
 if __name__ == "__main__":
     unittest.main()

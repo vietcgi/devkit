@@ -480,5 +480,261 @@ class TestConfigurationEngineSetAndGet(unittest.TestCase):
         self.assertIn("Rate limit exceeded", message)
 
 
+class TestConfigurationEngineDefaults(unittest.TestCase):
+    """Test ConfigurationEngine default loading."""
+
+    def setUp(self):
+        """Set up test engine."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.engine = ConfigurationEngine(project_root=self.temp_dir)
+
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_load_defaults_creates_global_section(self):
+        """Test that load_defaults creates global section."""
+        self.engine.load_defaults()
+
+        self.assertIn("global", self.engine.config)
+
+    def test_load_defaults_contains_required_keys(self):
+        """Test that defaults contain required configuration keys."""
+        self.engine.load_defaults()
+
+        required_keys = ["setup_name", "setup_environment", "enabled_roles", "logging"]
+        for key in required_keys:
+            self.assertIn(key, self.engine.config["global"])
+
+    def test_load_defaults_logging_configuration(self):
+        """Test that logging defaults are set."""
+        self.engine.load_defaults()
+
+        logging_config = self.engine.config["global"]["logging"]
+        self.assertTrue(logging_config["enabled"])
+        self.assertEqual(logging_config["level"], "info")
+
+    def test_load_defaults_performance_configuration(self):
+        """Test that performance defaults are set."""
+        self.engine.load_defaults()
+
+        perf_config = self.engine.config["global"]["performance"]
+        self.assertEqual(perf_config["parallel_tasks"], 4)
+        self.assertEqual(perf_config["timeout"], 300)
+
+
+class TestConfigurationEngineParseValue(unittest.TestCase):
+    """Test ConfigurationEngine value parsing."""
+
+    def test_parse_value_boolean_true(self):
+        """Test parsing boolean true values."""
+        result = ConfigurationEngine._parse_config_value("true")
+        self.assertTrue(result)
+
+    def test_parse_value_boolean_false(self):
+        """Test parsing boolean false values."""
+        result = ConfigurationEngine._parse_config_value("false")
+        self.assertFalse(result)
+
+    def test_parse_value_string(self):
+        """Test parsing string values."""
+        result = ConfigurationEngine._parse_config_value("hello")
+        self.assertEqual(result, "hello")
+
+    def test_parse_value_list(self):
+        """Test parsing comma-separated list values."""
+        result = ConfigurationEngine._parse_config_value("item1, item2, item3")
+        self.assertEqual(result, ["item1", "item2", "item3"])
+
+
+class TestConfigurationEngineDeepMerge(unittest.TestCase):
+    """Test ConfigurationEngine deep merge functionality."""
+
+    def setUp(self):
+        """Set up test engine."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.engine = ConfigurationEngine(project_root=self.temp_dir)
+
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_deep_merge_overwrites_simple_values(self):
+        """Test that deep merge overwrites simple values."""
+        base = {"key": "old"}
+        override = {"key": "new"}
+
+        self.engine._deep_merge(base, override)
+
+        self.assertEqual(base["key"], "new")
+
+    def test_deep_merge_adds_new_keys(self):
+        """Test that deep merge adds new keys."""
+        base = {"key1": "value1"}
+        override = {"key2": "value2"}
+
+        self.engine._deep_merge(base, override)
+
+        self.assertIn("key2", base)
+        self.assertEqual(base["key2"], "value2")
+
+    def test_deep_merge_nested_dicts(self):
+        """Test that deep merge handles nested dictionaries."""
+        base = {"nested": {"key1": "value1"}}
+        override = {"nested": {"key2": "value2"}}
+
+        self.engine._deep_merge(base, override)
+
+        self.assertIn("key1", base["nested"])
+        self.assertIn("key2", base["nested"])
+
+
+class TestConfigurationEngineGetters(unittest.TestCase):
+    """Test ConfigurationEngine getter methods."""
+
+    def setUp(self):
+        """Set up test engine."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.engine = ConfigurationEngine(project_root=self.temp_dir)
+        self.engine.load_defaults()
+
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_list_loaded_files(self):
+        """Test listing loaded files."""
+        files = self.engine.list_loaded_files()
+
+        self.assertIsInstance(files, list)
+
+    def test_get_enabled_roles(self):
+        """Test getting enabled roles."""
+        roles = self.engine.get_enabled_roles()
+
+        self.assertIsInstance(roles, list)
+        self.assertGreater(len(roles), 0)
+        self.assertIn("core", roles)
+
+    def test_get_role_config(self):
+        """Test getting role-specific configuration."""
+        config = self.engine.get_role_config("core")
+
+        self.assertIsInstance(config, dict)
+
+    def test_get_rate_limit_stats(self):
+        """Test getting rate limit statistics."""
+        stats = self.engine.get_rate_limit_stats()
+
+        self.assertIsInstance(stats, dict)
+
+    def test_reset_rate_limit(self):
+        """Test resetting rate limit."""
+        # This should not raise an error
+        self.engine.reset_rate_limit()
+
+
+class TestConfigurationEngineSecurityFile(unittest.TestCase):
+    """Test ConfigurationEngine file security operations."""
+
+    def setUp(self):
+        """Set up test engine."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.engine = ConfigurationEngine(project_root=self.temp_dir)
+
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_validate_and_secure_creates_file(self):
+        """Test that validate_and_secure creates file if missing."""
+        config_path = Path(self.temp_dir) / "config.yaml"
+
+        self.engine.validate_and_secure_config_file(config_path)
+
+        self.assertTrue(config_path.exists())
+
+    def test_validate_and_secure_sets_secure_permissions(self):
+        """Test that validate_and_secure sets 0600 permissions."""
+        config_path = Path(self.temp_dir) / "config.yaml"
+
+        self.engine.validate_and_secure_config_file(config_path)
+
+        # Check permissions (mask out other bits)
+        stat_info = config_path.stat()
+        mode = stat_info.st_mode & 0o777
+        self.assertEqual(mode, 0o600)
+
+    def test_validate_and_secure_fixes_insecure_permissions(self):
+        """Test that insecure permissions are fixed."""
+        config_path = Path(self.temp_dir) / "config.yaml"
+        config_path.write_text("test: config\n")
+        config_path.chmod(0o644)  # Make it readable by others
+
+        self.engine.validate_and_secure_config_file(config_path)
+
+        # Check permissions were fixed
+        stat_info = config_path.stat()
+        mode = stat_info.st_mode & 0o777
+        self.assertEqual(mode, 0o600)
+
+
+class TestConfigurationEngineLoadAll(unittest.TestCase):
+    """Test ConfigurationEngine load_all method."""
+
+    def setUp(self):
+        """Set up test engine."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.engine = ConfigurationEngine(project_root=self.temp_dir)
+
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_load_all_with_defaults_only(self):
+        """Test load_all with only defaults."""
+        config = self.engine.load_all()
+
+        self.assertIn("global", config)
+
+    def test_load_all_with_file_and_defaults(self):
+        """Test load_all merging file and defaults."""
+        config_path = Path(self.temp_dir) / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump({"custom": "value"}, f)
+
+        config = self.engine.load_all(local_config=str(config_path))
+
+        self.assertIn("global", config)
+        self.assertIn("custom", config)
+
+    def test_load_all_environment_override(self):
+        """Test load_all with environment overrides."""
+        os.environ["MAC_SETUP_TEST_OVERRIDE"] = "from_env"
+
+        config = self.engine.load_all()
+
+        # Environment overrides are merged into the global section
+        self.assertEqual(config["global"].get("test_override"), "from_env")
+
+
+class TestConfigurationEngineTimestamp(unittest.TestCase):
+    """Test ConfigurationEngine timestamp functionality."""
+
+    def test_get_timestamp_returns_iso_format(self):
+        """Test that _get_timestamp returns ISO format."""
+        timestamp = ConfigurationEngine._get_timestamp()
+
+        self.assertIsInstance(timestamp, str)
+        # Should be able to parse as ISO format
+        from datetime import datetime
+        datetime.fromisoformat(timestamp)
+
+
 if __name__ == "__main__":
     unittest.main()

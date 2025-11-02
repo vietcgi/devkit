@@ -367,5 +367,127 @@ class TestAuditLoggerIntegration(unittest.TestCase):
         self.assertFalse(result["tampering_detected"])
 
 
+class TestAuditLoggerAdditional(unittest.TestCase):
+    """Test additional AuditLogger functionality."""
+
+    def setUp(self):
+        """Set up test logger."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.log_dir = Path(self.temp_dir) / "audit"
+
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_log_install_started(self):
+        """Test logging install started action."""
+        logger = AuditLogger(self.log_dir)
+        entry = logger.log_install_started()
+
+        self.assertEqual(entry["action"], "install_started")
+        self.assertIn("timestamp", entry)
+
+    def test_log_install_completed(self):
+        """Test logging install completed action."""
+        logger = AuditLogger(self.log_dir)
+        entry = logger.log_install_completed(duration_seconds=120)
+
+        self.assertEqual(entry["action"], "install_completed")
+        self.assertIn("duration_seconds", entry["details"])
+        self.assertEqual(entry["details"]["duration_seconds"], 120)
+
+    def test_log_install_failed(self):
+        """Test logging install failed action."""
+        logger = AuditLogger(self.log_dir)
+        entry = logger.log_install_failed(error="Test error")
+
+        self.assertEqual(entry["action"], "install_failed")
+        self.assertIn("error", entry["details"])
+
+    def test_log_plugin_installed(self):
+        """Test logging plugin installed action."""
+        logger = AuditLogger(self.log_dir)
+        entry = logger.log_plugin_installed(plugin_name="test_plugin", version="1.0.0")
+
+        self.assertEqual(entry["action"], "plugin_installed")
+        self.assertEqual(entry["details"]["plugin"], "test_plugin")
+        self.assertEqual(entry["details"]["version"], "1.0.0")
+
+    def test_log_plugin_removed(self):
+        """Test logging plugin removed action."""
+        logger = AuditLogger(self.log_dir)
+        entry = logger.log_plugin_removed(plugin_name="test_plugin")
+
+        self.assertEqual(entry["action"], "plugin_removed")
+        self.assertEqual(entry["details"]["plugin"], "test_plugin")
+
+    def test_log_security_check(self):
+        """Test logging security check action."""
+        logger = AuditLogger(self.log_dir)
+        entry = logger.log_security_check(check_name="ssh_keys", status="passed")
+
+        self.assertEqual(entry["action"], "security_check")
+        self.assertEqual(entry["details"]["check"], "ssh_keys")
+
+    def test_log_permission_changed(self):
+        """Test logging permission changed action."""
+        logger = AuditLogger(self.log_dir)
+        entry = logger.log_permission_changed(path="/path/to/file", old_perms="0644", new_perms="0600")
+
+        self.assertEqual(entry["action"], "permission_changed")
+        self.assertIn("path", entry["details"])
+
+    def test_get_audit_logs(self):
+        """Test retrieving audit logs."""
+        logger = AuditLogger(self.log_dir)
+        logger.log_install_started()
+        logger.log_install_completed(duration_seconds=60)
+
+        logs = logger.get_audit_logs()
+
+        self.assertEqual(len(logs), 2)
+        self.assertEqual(logs[0]["action"], "install_started")
+        self.assertEqual(logs[1]["action"], "install_completed")
+
+
+class TestAuditReporterAdvanced(unittest.TestCase):
+    """Test AuditReporter advanced functionality."""
+
+    def setUp(self):
+        """Set up test reporter."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.log_dir = Path(self.temp_dir) / "audit"
+
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_generate_activity_report(self):
+        """Test generating activity report."""
+        logger = AuditLogger(self.log_dir)
+        logger.log_install_started()
+        logger.log_install_completed(duration_seconds=60)
+
+        reporter = AuditReporter(logger)
+        report = reporter.generate_activity_report(days=30)
+
+        self.assertIsInstance(report, str)
+        self.assertIn("Activity Report", report)
+
+    def test_generate_security_report(self):
+        """Test generating security report."""
+        logger = AuditLogger(self.log_dir)
+        logger.log_security_check(check_name="ssh_keys", status="passed")
+        logger.log_security_check(check_name="permissions", status="passed")
+
+        reporter = AuditReporter(logger)
+        report = reporter.generate_security_report()
+
+        self.assertIsInstance(report, str)
+        self.assertIn("Security & Integrity Report", report)
+
+
 if __name__ == "__main__":
     unittest.main()

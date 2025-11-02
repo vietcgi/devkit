@@ -172,6 +172,9 @@
   - name: Include dotfiles role
     ansible.builtin.include_role:
       name: dotfiles
+    vars:
+      ansible_user_dir: "{{ home }}"
+      ansible_user_id: "{{ user }}"
     tags:
     - dotfiles
     - configuration

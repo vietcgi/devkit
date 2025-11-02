@@ -14,6 +14,7 @@ import time
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+import pytest
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -26,6 +27,7 @@ from cli.performance import (  # noqa: E402
 )
 
 
+@pytest.mark.performance
 class TestCacheManager(unittest.TestCase):
     """Test CacheManager class."""
 
@@ -135,6 +137,7 @@ class TestCacheManager(unittest.TestCase):
         self.assertIsNone(result["null"])
 
 
+@pytest.mark.performance
 class TestPerformanceMonitor(unittest.TestCase):
     """Test PerformanceMonitor class."""
 
@@ -195,6 +198,7 @@ class TestPerformanceMonitor(unittest.TestCase):
         self.assertIn("verify", summary)
 
 
+@pytest.mark.performance
 class TestInstallationOptimizer(unittest.TestCase):
     """Test InstallationOptimizer class."""
 
@@ -248,6 +252,7 @@ class TestInstallationOptimizer(unittest.TestCase):
         self.assertTrue(any("cache" in s.lower() for s in suggestions))
 
 
+@pytest.mark.performance
 class TestParallelInstaller(unittest.TestCase):
     """Test ParallelInstaller class."""
 

@@ -16,6 +16,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+import pytest
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -32,6 +33,7 @@ from cli.health_check import (  # noqa: E402
 )
 
 
+@pytest.mark.unit
 class TestHealthStatus(unittest.TestCase):
     """Test HealthStatus constants."""
 
@@ -51,6 +53,7 @@ class TestHealthStatus(unittest.TestCase):
         self.assertIn(HealthStatus.UNKNOWN, HealthStatus.ALL_STATUSES)
 
 
+@pytest.mark.unit
 class TestDependencyCheck(unittest.TestCase):
     """Test DependencyCheck."""
 
@@ -91,6 +94,7 @@ class TestDependencyCheck(unittest.TestCase):
         self.assertTrue(len(details["missing"]) > 0)
 
 
+@pytest.mark.unit
 class TestDiskSpaceCheck(unittest.TestCase):
     """Test DiskSpaceCheck."""
 
@@ -125,6 +129,7 @@ class TestDiskSpaceCheck(unittest.TestCase):
         self.assertIn("available_gb", details)
 
 
+@pytest.mark.unit
 class TestConfigurationCheck(unittest.TestCase):
     """Test ConfigurationCheck."""
 
@@ -182,6 +187,7 @@ class TestConfigurationCheck(unittest.TestCase):
         self.assertEqual(details["permissions"], "600")
 
 
+@pytest.mark.unit
 class TestLogCheck(unittest.TestCase):
     """Test LogCheck."""
 
@@ -248,6 +254,7 @@ class TestLogCheck(unittest.TestCase):
         self.assertIn("error", message.lower())
 
 
+@pytest.mark.unit
 class TestSystemCheck(unittest.TestCase):
     """Test SystemCheck."""
 
@@ -267,6 +274,7 @@ class TestSystemCheck(unittest.TestCase):
         self.assertIn("cpu_count", details)
 
 
+@pytest.mark.unit
 class TestHealthMonitor(unittest.TestCase):
     """Test HealthMonitor."""
 
@@ -337,6 +345,7 @@ class TestHealthMonitor(unittest.TestCase):
         self.assertTrue(len(report["checks"]) > 0)
 
 
+@pytest.mark.unit
 class TestCreateDefaultMonitor(unittest.TestCase):
     """Test default monitor factory."""
 
@@ -365,6 +374,7 @@ class TestCreateDefaultMonitor(unittest.TestCase):
         self.assertIn(overall, HealthStatus.ALL_STATUSES)
 
 
+@pytest.mark.unit
 class TestHealthStatusMethods(unittest.TestCase):
     """Test HealthStatus utility methods."""
 
@@ -427,6 +437,7 @@ class TestHealthStatusMethods(unittest.TestCase):
         self.assertLess(critical_sev, unknown_sev)
 
 
+@pytest.mark.unit
 class TestHealthCheckBaseMethods(unittest.TestCase):
     """Test HealthCheck base class methods."""
 
@@ -469,6 +480,7 @@ class TestHealthCheckBaseMethods(unittest.TestCase):
         self.assertIn("Critical error", summary)
 
 
+@pytest.mark.unit
 class TestDependencyCheckStaticMethod(unittest.TestCase):
     """Test DependencyCheck static method."""
 
@@ -490,6 +502,7 @@ class TestDependencyCheckStaticMethod(unittest.TestCase):
         self.assertTrue(result)
 
 
+@pytest.mark.unit
 class TestDiskSpaceCheckResults(unittest.TestCase):
     """Test DiskSpaceCheck result details."""
 
@@ -513,6 +526,7 @@ class TestDiskSpaceCheckResults(unittest.TestCase):
         self.assertEqual(check.name, "Disk Space")
 
 
+@pytest.mark.unit
 class TestConfigurationCheckValidation(unittest.TestCase):
     """Test ConfigurationCheck validation."""
 
@@ -533,6 +547,7 @@ class TestConfigurationCheckValidation(unittest.TestCase):
         self.assertEqual(self.check.name, "Configuration")
 
 
+@pytest.mark.unit
 class TestLogCheckParsing(unittest.TestCase):
     """Test LogCheck log file parsing."""
 
@@ -561,6 +576,7 @@ class TestLogCheckParsing(unittest.TestCase):
         self.assertGreaterEqual(warnings, 0)
 
 
+@pytest.mark.unit
 class TestSystemCheckComprehensive(unittest.TestCase):
     """Test SystemCheck comprehensive results."""
 
@@ -590,6 +606,7 @@ class TestSystemCheckComprehensive(unittest.TestCase):
                 self.assertIsInstance(val, (int, float))
 
 
+@pytest.mark.unit
 class TestHealthMonitorComprehensive(unittest.TestCase):
     """Test HealthMonitor comprehensive functionality."""
 

@@ -14,6 +14,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
+import pytest
 
 # Mock sys.argv
 sys.argv = ["pytest"]
@@ -26,6 +27,7 @@ from cli.plugin_system import (  # noqa: E402
 )
 
 
+@pytest.mark.unit
 class TestHookContext(unittest.TestCase):
     """Test HookContext dataclass."""
 
@@ -69,6 +71,7 @@ class TestHookContext(unittest.TestCase):
         self.assertEqual(ctx.error, "Something went wrong")
 
 
+@pytest.mark.unit
 class TestPluginLoader(unittest.TestCase):
     """Test PluginLoader class."""
 
@@ -326,6 +329,7 @@ class TestPluginLoader(unittest.TestCase):
         self.assertEqual(info["test_plugin"]["hooks"], 1)
 
 
+@pytest.mark.unit
 class TestPluginInterfaces(unittest.TestCase):
     """Test plugin interface implementations."""
 
@@ -378,6 +382,7 @@ class TestPluginInterfaces(unittest.TestCase):
         self.assertTrue(plugin.validate()[0])
 
 
+@pytest.mark.unit
 class TestLoadAll(unittest.TestCase):
     """Test load_all functionality."""
 
@@ -411,6 +416,7 @@ class TestLoadAll(unittest.TestCase):
         self.assertGreaterEqual(count, 0)
 
 
+@pytest.mark.unit
 class TestExecuteHooksErrorHandling(unittest.TestCase):
     """Test error handling in execute_hooks."""
 
@@ -506,6 +512,7 @@ class TestExecuteHooksErrorHandling(unittest.TestCase):
         mock_hook2.execute.assert_called_once()
 
 
+@pytest.mark.unit
 class TestPluginLoadingErrorPaths(unittest.TestCase):
     """Test error handling in plugin loading."""
 
@@ -555,6 +562,7 @@ class TestPluginLoadingErrorPaths(unittest.TestCase):
             """
 from cli.plugin_system import PluginInterface, HookInterface
 
+@pytest.mark.unit
 class TestPlugin(PluginInterface):
     name = "invalid"
     version = "1.0"
@@ -657,6 +665,7 @@ class NotAPlugin:
             self.assertIsNone(result)
 
 
+@pytest.mark.unit
 class TestPluginLoaderAdvanced(unittest.TestCase):
     """Test PluginLoader advanced functionality."""
 
@@ -753,6 +762,7 @@ class TestPluginLoaderAdvanced(unittest.TestCase):
         self.assertEqual(total_hooks, 2)
 
 
+@pytest.mark.unit
 class TestBuiltinHook(unittest.TestCase):
     """Test BuiltinHook implementation."""
 
@@ -776,6 +786,7 @@ class TestBuiltinHook(unittest.TestCase):
         self.assertTrue(result)
 
 
+@pytest.mark.unit
 class TestSimplePlugin(unittest.TestCase):
     """Test SimplePlugin example."""
 
@@ -826,6 +837,7 @@ class TestSimplePlugin(unittest.TestCase):
         self.assertEqual(len(errors), 0)
 
 
+@pytest.mark.unit
 class TestHookContextMetadata(unittest.TestCase):
     """Test HookContext metadata functionality."""
 
@@ -877,6 +889,7 @@ class TestHookContextMetadata(unittest.TestCase):
         self.assertIsNotNone(ctx.metadata)
 
 
+@pytest.mark.unit
 class TestPluginLoaderIntegration(unittest.TestCase):
     """Integration tests for PluginLoader."""
 

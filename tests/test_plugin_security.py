@@ -10,6 +10,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+import pytest
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -18,6 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "cli"))
 from plugin_validator import PluginManifest, PluginValidator, validate_plugin_manifest  # noqa: E402
 
 
+@pytest.mark.unit
 class TestPluginManifestValidation(unittest.TestCase):
     """Test plugin manifest validation."""
 
@@ -175,6 +177,7 @@ class TestPluginManifestValidation(unittest.TestCase):
         self.assertFalse(is_valid)
 
 
+@pytest.mark.unit
 class TestPluginValidator(unittest.TestCase):
     """Test comprehensive plugin validation."""
 
@@ -325,6 +328,7 @@ class Plugin(ABC):
         self.assertFalse(is_valid)
 
 
+@pytest.mark.unit
 class TestStandaloneValidation(unittest.TestCase):
     """Test standalone validation function."""
 

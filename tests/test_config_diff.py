@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, patch
+import pytest
 
 import sys
 
@@ -17,6 +18,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from cli.config_engine import ConfigDiff
 
 
+@pytest.mark.unit
+@pytest.mark.edge_case
 class TestConfigDiff(unittest.TestCase):
     """Test ConfigDiff functionality."""
 

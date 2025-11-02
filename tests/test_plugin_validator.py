@@ -14,6 +14,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+import pytest
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -24,6 +25,7 @@ from cli.plugin_validator import (  # noqa: E402
 )
 
 
+@pytest.mark.unit
 class TestPluginManifestValidation(unittest.TestCase):
     """Test PluginManifest validation."""
 
@@ -194,6 +196,7 @@ class TestPluginManifestValidation(unittest.TestCase):
         self.assertIsInstance(message, str)
 
 
+@pytest.mark.unit
 class TestPluginValidator(unittest.TestCase):
     """Test PluginValidator class."""
 

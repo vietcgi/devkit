@@ -16,6 +16,7 @@ import time
 from pathlib import Path
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
+import pytest
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -26,6 +27,7 @@ from cli.plugin_system import PluginInterface, PluginLoader
 from cli.plugin_validator import PluginValidator
 
 
+@pytest.mark.integration
 class TestPluginSystemIntegration(TestCase):
     """Integration tests for plugin system."""
 
@@ -115,6 +117,7 @@ class Plugin(PluginInterface):
         self.assertIsNone(result)
 
 
+@pytest.mark.integration
 class TestConfigEngineIntegration(TestCase):
     """Integration tests for config engine."""
 
@@ -179,6 +182,7 @@ class TestConfigEngineIntegration(TestCase):
             self.fail("Failed to load config file")
 
 
+@pytest.mark.integration
 class TestGitIntegration(TestCase):
     """Integration tests for git functionality."""
 
@@ -222,6 +226,7 @@ class TestGitIntegration(TestCase):
         self.assertIsNotNone(manager)
 
 
+@pytest.mark.integration
 class TestMultiComponentWorkflow(TestCase):
     """Integration tests for workflows spanning multiple components."""
 
@@ -286,6 +291,7 @@ class TestMultiComponentWorkflow(TestCase):
         self.assertLess(duration, 1.0)
 
 
+@pytest.mark.integration
 class TestErrorRecovery(TestCase):
     """Integration tests for error recovery across components."""
 
@@ -338,6 +344,7 @@ class TestErrorRecovery(TestCase):
         self.assertEqual(len(results), 3)
 
 
+@pytest.mark.integration
 class TestEndToEndWorkflow(TestCase):
     """End-to-end integration tests."""
 

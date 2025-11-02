@@ -14,6 +14,7 @@ import tempfile
 import unittest
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+import pytest
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -28,6 +29,8 @@ from cli.audit import (  # noqa: E402
 )
 
 
+@pytest.mark.security
+@pytest.mark.unit
 class TestAuditSigningService(unittest.TestCase):
     """Test AuditSigningService class."""
 
@@ -156,6 +159,8 @@ class TestAuditSigningService(unittest.TestCase):
         self.assertFalse(result2)
 
 
+@pytest.mark.security
+@pytest.mark.unit
 class TestAuditLogStorage(unittest.TestCase):
     """Test AuditLogStorage class."""
 
@@ -304,6 +309,8 @@ class TestAuditLogStorage(unittest.TestCase):
         self.assertTrue(len(entries) >= 2)
 
 
+@pytest.mark.security
+@pytest.mark.unit
 class TestAuditLoggerIntegration(unittest.TestCase):
     """Integration tests for refactored AuditLogger."""
 
@@ -372,6 +379,8 @@ class TestAuditLoggerIntegration(unittest.TestCase):
         self.assertFalse(result["tampering_detected"])
 
 
+@pytest.mark.security
+@pytest.mark.unit
 class TestAuditLoggerAdditional(unittest.TestCase):
     """Test additional AuditLogger functionality."""
 
@@ -459,6 +468,8 @@ class TestAuditLoggerAdditional(unittest.TestCase):
         self.assertEqual(logs[1]["action"], "install_completed")
 
 
+@pytest.mark.security
+@pytest.mark.unit
 class TestAuditReporterAdvanced(unittest.TestCase):
     """Test AuditReporter advanced functionality."""
 
@@ -498,6 +509,8 @@ class TestAuditReporterAdvanced(unittest.TestCase):
         self.assertIn("Security & Integrity Report", report)
 
 
+@pytest.mark.security
+@pytest.mark.unit
 class TestAuditSigningServiceErrors(unittest.TestCase):
     """Test error handling in AuditSigningService."""
 
@@ -593,6 +606,8 @@ class TestAuditSigningServiceErrors(unittest.TestCase):
             parent.chmod(original_mode)
 
 
+@pytest.mark.security
+@pytest.mark.unit
 class TestAuditStorageErrors(unittest.TestCase):
     """Test error handling in AuditLogStorage."""
 
@@ -693,6 +708,8 @@ class TestAuditStorageErrors(unittest.TestCase):
             parent.chmod(original_mode)
 
 
+@pytest.mark.security
+@pytest.mark.unit
 class TestAuditLoggerAdditionalMethods(unittest.TestCase):
     """Test additional AuditLogger methods and error paths."""
 
@@ -937,6 +954,8 @@ class TestAuditLoggerAdditionalMethods(unittest.TestCase):
         self.assertIsInstance(summary, dict)
 
 
+@pytest.mark.security
+@pytest.mark.unit
 class TestAuditReporterErrors(unittest.TestCase):
     """Test error handling in AuditReporter."""
 

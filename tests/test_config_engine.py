@@ -16,6 +16,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+import pytest
 
 import yaml
 
@@ -25,6 +26,7 @@ sys.argv = ["pytest"]
 from cli.config_engine import ConfigEnvironment, ConfigurationEngine, RateLimiter  # noqa: E402
 
 
+@pytest.mark.unit
 class TestRateLimiter(unittest.TestCase):
     """Test RateLimiter class."""
 
@@ -114,6 +116,7 @@ class TestRateLimiter(unittest.TestCase):
         self.assertIsNone(stats["next_reset"])
 
 
+@pytest.mark.unit
 class TestConfigurationEngineLoadFile(unittest.TestCase):
     """Test ConfigurationEngine.load_file() method."""
 
@@ -180,6 +183,7 @@ class TestConfigurationEngineLoadFile(unittest.TestCase):
         self.assertIn("test", result)
 
 
+@pytest.mark.unit
 class TestConfigurationEngineEnvironmentOverrides(unittest.TestCase):
     """Test ConfigurationEngine environment variable handling."""
 
@@ -244,6 +248,7 @@ class TestConfigurationEngineEnvironmentOverrides(unittest.TestCase):
         self.assertIn("test", overrides)
 
 
+@pytest.mark.unit
 class TestConfigurationEngineValidation(unittest.TestCase):
     """Test ConfigurationEngine validation methods."""
 
@@ -315,6 +320,7 @@ class TestConfigurationEngineValidation(unittest.TestCase):
         self.assertTrue(any("timeout" in e for e in errors))
 
 
+@pytest.mark.unit
 class TestConfigurationEngineExport(unittest.TestCase):
     """Test ConfigurationEngine export functionality."""
 
@@ -361,6 +367,7 @@ class TestConfigurationEngineExport(unittest.TestCase):
         self.assertEqual(parsed["test_key"], "test_value")
 
 
+@pytest.mark.unit
 class TestConfigurationEngineSave(unittest.TestCase):
     """Test ConfigurationEngine save functionality."""
 
@@ -405,6 +412,7 @@ class TestConfigurationEngineSave(unittest.TestCase):
         self.assertTrue(save_path.exists())
 
 
+@pytest.mark.unit
 class TestConfigurationEngineSetAndGet(unittest.TestCase):
     """Test ConfigurationEngine get/set operations."""
 
@@ -484,6 +492,7 @@ class TestConfigurationEngineSetAndGet(unittest.TestCase):
         self.assertIn("Rate limit exceeded", message)
 
 
+@pytest.mark.unit
 class TestConfigurationEngineDefaults(unittest.TestCase):
     """Test ConfigurationEngine default loading."""
 
@@ -529,6 +538,7 @@ class TestConfigurationEngineDefaults(unittest.TestCase):
         self.assertEqual(perf_config["timeout"], 300)
 
 
+@pytest.mark.unit
 class TestConfigurationEngineParseValue(unittest.TestCase):
     """Test ConfigurationEngine value parsing."""
 
@@ -553,6 +563,7 @@ class TestConfigurationEngineParseValue(unittest.TestCase):
         self.assertEqual(result, ["item1", "item2", "item3"])
 
 
+@pytest.mark.unit
 class TestConfigurationEngineDeepMerge(unittest.TestCase):
     """Test ConfigurationEngine deep merge functionality."""
 
@@ -597,6 +608,7 @@ class TestConfigurationEngineDeepMerge(unittest.TestCase):
         self.assertIn("key2", base["nested"])
 
 
+@pytest.mark.unit
 class TestConfigurationEngineGetters(unittest.TestCase):
     """Test ConfigurationEngine getter methods."""
 
@@ -644,6 +656,7 @@ class TestConfigurationEngineGetters(unittest.TestCase):
         self.engine.reset_rate_limit()
 
 
+@pytest.mark.unit
 class TestConfigurationEngineSecurityFile(unittest.TestCase):
     """Test ConfigurationEngine file security operations."""
 
@@ -691,6 +704,7 @@ class TestConfigurationEngineSecurityFile(unittest.TestCase):
         self.assertEqual(mode, 0o600)
 
 
+@pytest.mark.unit
 class TestConfigurationEngineLoadAll(unittest.TestCase):
     """Test ConfigurationEngine load_all method."""
 
@@ -732,6 +746,7 @@ class TestConfigurationEngineLoadAll(unittest.TestCase):
         self.assertEqual(config["global"].get("test_override"), "from_env")
 
 
+@pytest.mark.unit
 class TestConfigurationEngineTimestamp(unittest.TestCase):
     """Test ConfigurationEngine timestamp functionality."""
 

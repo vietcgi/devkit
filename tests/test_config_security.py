@@ -14,6 +14,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+import pytest
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -21,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from cli.config_engine import ConfigurationEngine  # noqa: E402
 
 
+@pytest.mark.unit
 class TestConfigSecurityPermissions(unittest.TestCase):
     """Test configuration file permission handling."""
 
@@ -167,6 +169,7 @@ class TestConfigSecurityPermissions(unittest.TestCase):
         self.assertEqual(mode, 0o600)
 
 
+@pytest.mark.unit
 class TestConfigSecurityIntegration(unittest.TestCase):
     """Integration tests for config security."""
 
@@ -233,6 +236,7 @@ aws:
             self.assertEqual(mode, 0o600, f"{filename} should be 0600, got {oct(mode)}")
 
 
+@pytest.mark.unit
 class TestConfigSecurityEdgeCases(unittest.TestCase):
     """Test edge cases and error conditions."""
 

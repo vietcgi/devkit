@@ -11,6 +11,7 @@ Validates that custom exceptions provide:
 import sys
 import unittest
 from pathlib import Path
+import pytest
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -26,6 +27,7 @@ from cli.exceptions import (  # noqa: E402
 )
 
 
+@pytest.mark.unit
 class TestDevkitError(unittest.TestCase):
     """Test base DevkitError class."""
 
@@ -82,6 +84,7 @@ class TestDevkitError(unittest.TestCase):
         self.assertIn("Reason", exc_str)
 
 
+@pytest.mark.unit
 class TestBootstrapError(unittest.TestCase):
     """Test BootstrapError and its static factory methods."""
 
@@ -119,6 +122,7 @@ class TestBootstrapError(unittest.TestCase):
         self.assertTrue(any("cleanup" in sol for sol in exc.solutions))
 
 
+@pytest.mark.unit
 class TestConfigError(unittest.TestCase):
     """Test ConfigError and its static factory methods."""
 
@@ -156,6 +160,7 @@ class TestConfigError(unittest.TestCase):
         self.assertTrue(any("chown" in sol for sol in exc.solutions))
 
 
+@pytest.mark.unit
 class TestPluginError(unittest.TestCase):
     """Test PluginError and its static factory methods."""
 
@@ -194,6 +199,7 @@ class TestPluginError(unittest.TestCase):
         self.assertTrue(any("__init__.py" in sol for sol in exc.solutions))
 
 
+@pytest.mark.unit
 class TestSecurityError(unittest.TestCase):
     """Test SecurityError and its static factory methods."""
 
@@ -216,6 +222,7 @@ class TestSecurityError(unittest.TestCase):
         self.assertTrue(any("chmod" in sol for sol in exc.solutions))
 
 
+@pytest.mark.unit
 class TestDependencyError(unittest.TestCase):
     """Test DependencyError and its static factory methods."""
 
@@ -239,6 +246,7 @@ class TestDependencyError(unittest.TestCase):
         self.assertTrue(any("upgrade" in sol.lower() for sol in exc.solutions))
 
 
+@pytest.mark.unit
 class TestVerificationError(unittest.TestCase):
     """Test VerificationError and its static factory methods."""
 
@@ -262,6 +270,7 @@ class TestVerificationError(unittest.TestCase):
         self.assertTrue(any("logs" in sol.lower() for sol in exc.solutions))
 
 
+@pytest.mark.unit
 class TestErrorMessageFormatting(unittest.TestCase):
     """Test that error messages are properly formatted and helpful."""
 

@@ -18,10 +18,12 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import List, Optional
+import pytest
 
 import yaml
 
 
+@pytest.mark.unit
 class TestStatus(Enum):
     """Test result status."""
 

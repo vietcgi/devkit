@@ -114,7 +114,6 @@ jobs:
           setup.yml \
           inventory.yml \
           .github/workflows/*.yml \
-          ansible/group_vars/ \
           ansible/roles/*/
 
   # Complexity analysis

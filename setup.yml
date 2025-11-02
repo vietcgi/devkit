@@ -113,7 +113,7 @@
       - shellcheck
       state: present
       update_cache: true
-    become: true
+    become: "{{ not (ansible_user_id == 'root') }}"
     when:
     - ansible_os_family == "Debian"
     - install_dev_tools | default(true)
@@ -148,7 +148,7 @@
       - direnv
       - ShellCheck
       state: present
-    become: true
+    become: "{{ not (ansible_user_id == 'root') }}"
     when:
     - ansible_os_family == "RedHat"
     - install_dev_tools | default(true)
@@ -156,32 +156,14 @@
     - linux
     - packages
   - name: Install essential Linux packages (Arch Linux)
-    community.general.pacman:
-      name:
-      - git
-      - curl
-      - wget
-      - vim
-      - neovim
-      - tmux
-      - zsh
-      - fzf
-      - ripgrep
-      - bat
-      - tree
-      - htop
-      - jq
-      - base-devel
-      - python-pip
-      - nodejs
-      - npm
-      - go
-      - postgresql
-      - sqlite
-      - direnv
-      - shellcheck
-      state: present
-    become: true
+    ansible.builtin.shell: |
+      pacman -Syu --noconfirm git curl wget vim neovim tmux zsh \
+        fzf ripgrep bat tree htop jq base-devel python-pip nodejs \
+        npm go postgresql sqlite direnv shellcheck
+    args:
+      executable: /bin/bash
+    changed_when: false
+    become: "{{ not (ansible_user_id == 'root') }}"
     when:
     - ansible_os_family == "Archlinux"
     - install_dev_tools | default(true)
@@ -387,7 +369,7 @@
       dest: /etc/sudoers.d/{{ user }}
       mode: '0440'
       validate: visudo -cf %s
-    become: true
+    become: "{{ not (ansible_user_id == 'root') }}"
     when: configure_sudoers | default(false)
     tags:
     - sudoers
@@ -444,7 +426,7 @@
     - vim
     - vi
     when: install_neovim | default(true)
-    become: true
+    become: "{{ not (ansible_user_id == 'root') }}"
     tags:
     - neovim
   - name: Check if VS Code is installed

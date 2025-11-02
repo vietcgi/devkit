@@ -116,9 +116,11 @@
       when: ansible_os_family == 'RedHat'
 
     - name: Install packages via pacman (Arch Linux)
-      community.general.pacman:
-        name: ['git', 'curl', 'wget', 'base-devel']
-        state: present
+      ansible.builtin.shell: |
+        pacman -Syu --noconfirm git curl wget base-devel
+      args:
+        executable: /bin/bash
+      changed_when: false
       when: ansible_os_family == 'Archlinux'
   when: is_linux
   tags: [packages, linux]

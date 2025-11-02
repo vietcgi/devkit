@@ -11,7 +11,7 @@
   changed_when: false
   tags: [git, reload]
 
-- name: reload git hooks (chmod only if they exist)
+- name: reload git hooks
   ansible.builtin.shell: |
     set -e
     hook_path="{{ git_hooks_dir }}/{{ item }}"

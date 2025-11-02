@@ -356,6 +356,7 @@
     mode: '0755'
     owner: "{{ git_current_user }}"
     group: "{{ ansible_user_gid | default(omit) }}"
+  notify: reload git hooks
   when: git_enable_precommit | default(true)
   tags: [git, hooks, precommit]
 

@@ -384,7 +384,7 @@ class SystemCheck(HealthCheck):
         except (OSError, AttributeError):
             return None
 
-    @staticmethod  # type: ignore[misc]
+    @staticmethod
     def run() -> tuple[str, str, dict[str, Any]]:  # pylint: disable=arguments-differ
         """Check system health."""
         try:

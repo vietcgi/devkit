@@ -646,5 +646,252 @@ class NotAPlugin:
             self.assertIsNone(result)
 
 
+class TestPluginLoaderAdvanced(unittest.TestCase):
+    """Test PluginLoader advanced functionality."""
+
+    def setUp(self):
+        """Set up test loader."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.loader = PluginLoader()
+
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_add_plugin_path(self):
+        """Test adding plugin paths."""
+        plugin_path = Path(self.temp_dir)
+        self.loader.add_plugin_path(plugin_path)
+
+        self.assertIn(plugin_path, self.loader.plugin_paths)
+
+    def test_discover_plugins_empty_directory(self):
+        """Test discovering plugins in empty directory."""
+        self.loader.plugin_paths = [Path(self.temp_dir)]
+
+        discovered = self.loader.discover_plugins()
+
+        self.assertEqual(len(discovered), 0)
+
+    def test_list_plugins_empty(self):
+        """Test listing plugins when none are loaded."""
+        plugins = self.loader.list_plugins()
+
+        self.assertEqual(len(plugins), 0)
+
+    def test_list_plugins_after_loading(self):
+        """Test listing plugins after loading."""
+        # Create a mock plugin
+        plugin = Mock(spec=PluginInterface)
+        plugin.name = "test_plugin"
+        plugin.version = "1.0.0"
+
+        self.loader.plugins["test_plugin"] = plugin
+
+        plugins = self.loader.list_plugins()
+
+        self.assertEqual(len(plugins), 1)
+        self.assertEqual(plugins[0], "test_plugin")
+
+    def test_execute_hooks_success(self):
+        """Test successful hook execution."""
+        hook = Mock(spec=HookInterface)
+        hook.execute.return_value = True
+
+        self.loader.hooks["pre_setup"] = [hook]
+        ctx = HookContext(stage="pre_setup")
+
+        result = self.loader.execute_hooks("pre_setup", ctx)
+
+        self.assertTrue(result)
+        hook.execute.assert_called_once()
+
+    def test_execute_hooks_empty(self):
+        """Test executing hooks when none are registered."""
+        ctx = HookContext(stage="nonexistent")
+
+        result = self.loader.execute_hooks("nonexistent", ctx)
+
+        # Should handle gracefully
+        self.assertTrue(result)
+
+    def test_plugin_count(self):
+        """Test plugin count."""
+        plugin1 = Mock(spec=PluginInterface)
+        plugin1.name = "plugin1"
+
+        plugin2 = Mock(spec=PluginInterface)
+        plugin2.name = "plugin2"
+
+        self.loader.plugins["plugin1"] = plugin1
+        self.loader.plugins["plugin2"] = plugin2
+
+        self.assertEqual(len(self.loader.plugins), 2)
+
+    def test_hook_count(self):
+        """Test hook count."""
+        hook1 = Mock(spec=HookInterface)
+        hook2 = Mock(spec=HookInterface)
+
+        self.loader.hooks["pre_setup"] = [hook1]
+        self.loader.hooks["post_role"] = [hook2]
+
+        total_hooks = sum(len(hooks) for hooks in self.loader.hooks.values())
+        self.assertEqual(total_hooks, 2)
+
+
+class TestBuiltinHook(unittest.TestCase):
+    """Test BuiltinHook implementation."""
+
+    def test_builtin_hook_creation(self):
+        """Test creating builtin hook."""
+        from cli.plugin_system import BuiltinHook
+
+        hook = BuiltinHook("test_hook")
+
+        self.assertEqual(hook.name, "test_hook")
+
+    def test_builtin_hook_execute(self):
+        """Test executing builtin hook."""
+        from cli.plugin_system import BuiltinHook
+
+        hook = BuiltinHook("test_hook")
+        ctx = HookContext(stage="test")
+
+        result = hook.execute(ctx)
+
+        self.assertTrue(result)
+
+
+class TestSimplePlugin(unittest.TestCase):
+    """Test SimplePlugin example."""
+
+    def test_simple_plugin_creation(self):
+        """Test creating simple plugin."""
+        from cli.plugin_system import SimplePlugin
+
+        plugin = SimplePlugin()
+
+        self.assertEqual(plugin.name, "example")
+        self.assertEqual(plugin.version, "1.0.0")
+
+    def test_simple_plugin_initialize(self):
+        """Test simple plugin initialization."""
+        from cli.plugin_system import SimplePlugin
+
+        plugin = SimplePlugin()
+
+        # Should not raise
+        plugin.initialize()
+
+    def test_simple_plugin_get_roles(self):
+        """Test getting roles from simple plugin."""
+        from cli.plugin_system import SimplePlugin
+
+        plugin = SimplePlugin()
+        roles = plugin.get_roles()
+
+        self.assertEqual(roles, {})
+
+    def test_simple_plugin_get_hooks(self):
+        """Test getting hooks from simple plugin."""
+        from cli.plugin_system import SimplePlugin
+
+        plugin = SimplePlugin()
+        hooks = plugin.get_hooks()
+
+        self.assertEqual(hooks, {})
+
+    def test_simple_plugin_validate(self):
+        """Test validating simple plugin."""
+        from cli.plugin_system import SimplePlugin
+
+        plugin = SimplePlugin()
+        is_valid, errors = plugin.validate()
+
+        self.assertTrue(is_valid)
+        self.assertEqual(len(errors), 0)
+
+
+class TestHookContextMetadata(unittest.TestCase):
+    """Test HookContext metadata functionality."""
+
+    def test_hook_context_with_metadata(self):
+        """Test HookContext with metadata."""
+        metadata = {"key": "value", "count": 42}
+        ctx = HookContext(stage="test", metadata=metadata)
+
+        self.assertEqual(ctx.metadata, metadata)
+        self.assertEqual(ctx.metadata["key"], "value")
+
+    def test_hook_context_status_transitions(self):
+        """Test HookContext status transitions."""
+        ctx = HookContext(stage="test")
+
+        # Initial status
+        self.assertEqual(ctx.status, "running")
+
+        # Modify status
+        ctx.status = "success"
+        self.assertEqual(ctx.status, "success")
+
+        ctx.status = "failed"
+        self.assertEqual(ctx.status, "failed")
+
+    def test_hook_context_error_message(self):
+        """Test HookContext error messages."""
+        error_msg = "Test error occurred"
+        ctx = HookContext(stage="test", error=error_msg)
+
+        self.assertEqual(ctx.error, error_msg)
+
+    def test_hook_context_all_fields(self):
+        """Test HookContext with all fields."""
+        ctx = HookContext(
+            stage="post_role",
+            role="shell",
+            task="install_zsh",
+            status="success",
+            error=None,
+            metadata={"duration": 5.2},
+        )
+
+        self.assertEqual(ctx.stage, "post_role")
+        self.assertEqual(ctx.role, "shell")
+        self.assertEqual(ctx.task, "install_zsh")
+        self.assertEqual(ctx.status, "success")
+        self.assertIsNone(ctx.error)
+        self.assertIsNotNone(ctx.metadata)
+
+
+class TestPluginLoaderIntegration(unittest.TestCase):
+    """Integration tests for PluginLoader."""
+
+    def setUp(self):
+        """Set up test loader."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.loader = PluginLoader()
+
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_loader_initialization(self):
+        """Test loader is properly initialized."""
+        self.assertIsNotNone(self.loader.plugins)
+        self.assertIsNotNone(self.loader.hooks)
+        self.assertIsNotNone(self.loader.plugin_paths)
+
+    def test_loader_empty_plugin_dict(self):
+        """Test loader starts with empty plugins."""
+        self.assertEqual(len(self.loader.plugins), 0)
+
+    def test_loader_empty_hooks_dict(self):
+        """Test loader starts with empty hooks."""
+        self.assertEqual(len(self.loader.hooks), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

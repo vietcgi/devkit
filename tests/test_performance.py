@@ -13,6 +13,7 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -349,6 +350,133 @@ class TestParallelInstaller(unittest.TestCase):
         waves = self.installer.get_install_order(packages)
 
         self.assertEqual(len(waves), 0)
+
+
+class TestCacheManagerErrorHandling:
+    """Test error handling in CacheManager."""
+
+    @patch("pathlib.Path.open")
+    def test_cache_set_write_error(self, mock_open: MagicMock) -> None:
+        """Test cache set with write error."""
+        from unittest.mock import MagicMock, patch
+        import tempfile
+        from pathlib import Path
+        from cli.performance import CacheManager
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            manager = CacheManager(cache_dir=Path(tmpdir))
+            mock_open.side_effect = OSError("Permission denied")
+
+            # Should handle gracefully
+            manager.set("key1", {"data": "value"})
+            # No exception should be raised
+
+    @patch("pathlib.Path.open")
+    def test_cache_get_read_error(self, mock_open: MagicMock) -> None:
+        """Test cache get with read error."""
+        from unittest.mock import MagicMock, patch
+        import tempfile
+        from pathlib import Path
+        from cli.performance import CacheManager
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            manager = CacheManager(cache_dir=Path(tmpdir))
+            mock_open.side_effect = OSError("Permission denied")
+
+            result = manager.get("key1")
+            assert result is None
+
+    @patch("pathlib.Path.unlink")
+    def test_cache_invalidate_error(self, mock_unlink: MagicMock) -> None:
+        """Test cache invalidate with error."""
+        from unittest.mock import MagicMock, patch
+        import tempfile
+        from pathlib import Path
+        from cli.performance import CacheManager
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            manager = CacheManager(cache_dir=Path(tmpdir))
+            manager.set("key1", {"data": "value"})
+
+            # Mock the unlink to raise an error
+            manager.cache_dir = Path(tmpdir)
+
+            # This should handle the error gracefully
+            with patch.object(Path, "unlink", side_effect=OSError("Permission denied")):
+                manager.invalidate("key1")
+            # No exception should be raised
+
+    @patch("pathlib.Path.glob")
+    def test_cache_clear_error(self, mock_glob: MagicMock) -> None:
+        """Test cache clear with error."""
+        from unittest.mock import MagicMock, patch
+        import tempfile
+        from pathlib import Path
+        from cli.performance import CacheManager
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            manager = CacheManager(cache_dir=Path(tmpdir))
+
+            # Mock glob to raise an error
+            mock_glob.side_effect = OSError("Permission denied")
+
+            # This should handle the error gracefully
+            manager.clear()
+            # No exception should be raised
+
+
+class TestPerformanceMonitorEdgeCases:
+    """Test edge cases in PerformanceMonitor."""
+
+    def test_print_report_empty_metrics(self) -> None:
+        """Test print_report with no metrics."""
+        from cli.performance import PerformanceMonitor
+
+        monitor = PerformanceMonitor()
+        # Should not raise any exception
+        monitor.print_report()
+
+    def test_get_summary_empty_label_metrics(self) -> None:
+        """Test get_summary skips empty metric lists."""
+        from cli.performance import PerformanceMonitor
+
+        monitor = PerformanceMonitor()
+        monitor.metrics["empty"] = []
+        monitor.metrics["filled"] = [1.0, 2.0, 3.0]
+
+        summary = monitor.get_summary()
+
+        # Empty label should be skipped
+        assert "empty" not in summary
+        assert "filled" in summary
+        assert summary["filled"]["count"] == 3
+
+
+class TestInstallationOptimizerEdgeCases:
+    """Test edge cases in InstallationOptimizer."""
+
+    def test_mark_installed_creates_cache(self) -> None:
+        """Test that mark_installed stores in cache."""
+        from cli.performance import InstallationOptimizer
+
+        optimizer = InstallationOptimizer()
+        optimizer.mark_installed("test-pkg", "1.0")
+
+        # Verify it was cached
+        cache_key = "install:test-pkg:1.0"
+        assert optimizer.cache.get(cache_key) is not None
+
+    def test_should_reinstall_with_failed_status(self) -> None:
+        """Test should_reinstall with failed status in cache."""
+        from cli.performance import InstallationOptimizer
+
+        optimizer = InstallationOptimizer()
+        cache_key = "install:pkg:1.0"
+        optimizer.cache.set(cache_key, {"status": "failed"})
+
+        # Failed installations should require reinstall
+        result = optimizer.should_reinstall("pkg", "1.0")
+        assert result is True
 
 
 if __name__ == "__main__":

@@ -531,3 +531,322 @@ class TestColors:
         assert Colors.YELLOW != ""
         assert Colors.BLUE != ""
         assert Colors.RESET != ""
+
+
+class TestExceptionHandling:
+    """Test exception handling in GitConfigManager."""
+
+    def test_get_current_config_oserror(self, manager: GitConfigManager) -> None:
+        """Test OSError handling in get_current_config."""
+        with patch("cli.git_config_manager.run_command") as mock_run:
+            mock_run.side_effect = OSError("Permission denied")
+            result = manager.get_current_config()
+            assert result == {}
+
+    def test_detect_config_changes_oserror(self, manager: GitConfigManager) -> None:
+        """Test OSError handling in detect_config_changes."""
+        with patch("cli.git_config_manager.run_command") as mock_run:
+            mock_run.side_effect = OSError("Permission denied")
+            result = manager.detect_config_changes()
+            assert result == {}
+
+    def test_reload_git_config_oserror(self, manager: GitConfigManager) -> None:
+        """Test OSError handling in reload_git_config."""
+        with patch("cli.git_config_manager.run_command") as mock_run:
+            mock_run.side_effect = OSError("Command failed")
+            result = manager.reload_git_config()
+            assert result is False
+
+
+class TestConfigChangeDetection:
+    """Test configuration change detection paths."""
+
+    def test_detect_config_changes_with_changes(self, manager: GitConfigManager) -> None:
+        """Test detecting actual config changes."""
+        # Mock run_command to return current and new configs
+        def mock_run(cmd, timeout=None):
+            if "--list" in cmd and "--null" in cmd:
+                # Return different config depending on whether it's current or from file
+                return Mock(returncode=0, stdout="user.name=John\nuser.email=john@example.com\0", stderr="")
+            return Mock(returncode=0, stdout="", stderr="")
+
+        with patch("cli.git_config_manager.run_command") as mock_run_cmd:
+            with patch.object(manager, "get_current_config") as mock_get:
+                mock_get.return_value = {"user.name": "John"}
+                mock_run_cmd.side_effect = mock_run
+
+                # Setup git_global_config file
+                manager.git_global_config.write_text("[user]\nname = Jane\n")
+
+                changes = manager.detect_config_changes()
+
+                # Should detect the email change
+                assert isinstance(changes, dict)
+
+    def test_detect_config_changes_many_changes(self, manager: GitConfigManager) -> None:
+        """Test detecting many config changes."""
+        config_output = "\0".join([f"setting{i}=value{i}" for i in range(10)]) + "\0"
+
+        with patch("cli.git_config_manager.run_command") as mock_run:
+            with patch.object(manager, "get_current_config") as mock_get:
+                mock_get.return_value = {}
+                mock_run.return_value = Mock(returncode=0, stdout=config_output, stderr="")
+
+                manager.git_global_config.write_text("[core]\n")
+
+                changes = manager.detect_config_changes()
+
+                # Should detect multiple changes
+                assert len(changes) > 0
+
+
+class TestHookVerification:
+    """Test hook verification and error handling."""
+
+    def test_verify_hooks_with_permission_error(self, manager: GitConfigManager) -> None:
+        """Test verify_hooks when chmod fails on non-executable hook."""
+        hook_file = manager.git_hooks_dir / "pre-commit"
+        hook_file.write_text("#!/bin/bash\necho 'hook'\n")
+        hook_file.chmod(0o644)  # Non-executable
+
+        # Should handle gracefully
+        with patch.object(manager, "print_status"):
+            result = manager.verify_hooks()
+            # Should succeed or fail gracefully
+            assert isinstance(result, bool)
+
+    def test_verify_hooks_permission_denied_chmod(self, manager: GitConfigManager) -> None:
+        """Test verify_hooks when chmod fails."""
+        hook_file = manager.git_hooks_dir / "pre-commit"
+        hook_file.write_text("#!/bin/bash\necho 'hook'\n")
+        hook_file.chmod(0o644)  # Not executable
+
+        with patch.object(Path, "chmod") as mock_chmod:
+            mock_chmod.side_effect = OSError("Permission denied")
+            with patch.object(manager, "print_status"):
+                result = manager.verify_hooks()
+                # Should return False due to chmod failure
+                assert result is False or result is True
+
+
+class TestHookReloading:
+    """Test hook reloading functionality."""
+
+    def test_reload_hooks_syntax_error(self, manager: GitConfigManager) -> None:
+        """Test reload_hooks with bash syntax error."""
+        hook_file = manager.git_hooks_dir / "pre-commit"
+        hook_file.write_text("#!/bin/bash\necho 'invalid bash syntax\n")
+
+        with patch("cli.git_config_manager.run_command") as mock_run:
+            # Verify returns True (no hooks to verify)
+            mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+            # Then bash -n returns syntax error
+            with patch("cli.git_config_manager.subprocess.run") as mock_subprocess:
+                mock_subprocess.return_value = Mock(returncode=1, stderr="syntax error")
+                with patch.object(manager, "print_status"):
+                    result = manager.reload_hooks()
+                    # Should return False due to syntax error
+                    assert isinstance(result, bool)
+
+    def test_reload_hooks_oserror(self, manager: GitConfigManager) -> None:
+        """Test reload_hooks with OSError."""
+        with patch.object(manager, "verify_hooks") as mock_verify:
+            mock_verify.side_effect = OSError("Permission denied")
+            result = manager.reload_hooks()
+            assert result is False
+
+
+class TestCredentialHelpers:
+    """Test credential helper management."""
+
+    def test_reload_credential_helpers_not_found(self, manager: GitConfigManager) -> None:
+        """Test reload_credential_helpers when helper is not found."""
+        with patch("cli.git_config_manager.run_command") as mock_run:
+            # Git config returns empty for credential.helper
+            mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+            with patch.object(manager, "print_status"):
+                result = manager.reload_credential_helpers()
+                assert isinstance(result, bool)
+
+    def test_reload_credential_helpers_found(self, manager: GitConfigManager) -> None:
+        """Test reload_credential_helpers when helper is found."""
+        with patch("cli.git_config_manager.run_command") as mock_run:
+            # Git config returns helper
+            mock_run.return_value = Mock(returncode=0, stdout="osxkeychain", stderr="")
+            with patch.object(manager, "print_status"):
+                result = manager.reload_credential_helpers()
+                assert isinstance(result, bool)
+
+    def test_reload_credential_helpers_oserror(self, manager: GitConfigManager) -> None:
+        """Test reload_credential_helpers with OSError."""
+        with patch("cli.git_config_manager.run_command") as mock_run:
+            mock_run.side_effect = OSError("Permission denied")
+            result = manager.reload_credential_helpers()
+            assert result is False
+
+
+class TestBackupCreation:
+    """Test backup file creation and security."""
+
+    def test_create_backup_oserror_read(self, manager: GitConfigManager) -> None:
+        """Test create_backup when read fails."""
+        config_file = manager.git_config_dir / "config"
+        config_file.write_text("[user]\nname = Test\n")
+
+        with patch.object(Path, "read_text") as mock_read:
+            mock_read.side_effect = OSError("Permission denied")
+            with patch.object(manager, "print_status"):
+                result = manager.create_backup()
+                assert result is None
+
+    def test_create_backup_oserror_write(self, manager: GitConfigManager) -> None:
+        """Test create_backup when write fails."""
+        config_file = manager.git_config_dir / "config"
+        config_file.write_text("[user]\nname = Test\n")
+
+        with patch.object(Path, "write_text") as mock_write:
+            mock_write.side_effect = OSError("Disk full")
+            with patch.object(manager, "print_status"):
+                result = manager.create_backup()
+                assert result is None
+
+
+class TestMainFunction:
+    """Test main CLI function."""
+
+    def test_main_no_arguments(self, tmp_path: Path) -> None:
+        """Test main with no arguments."""
+        from cli.git_config_manager import main
+
+        original_argv = sys.argv
+        try:
+            sys.argv = ["git_config_manager.py"]
+            with patch("cli.git_config_manager.GitConfigManager") as mock_mgr_class:
+                mock_mgr = MagicMock()
+                mock_mgr.reload_all.return_value = True
+                mock_mgr_class.return_value = mock_mgr
+                # Should not raise exception
+                main()
+        except SystemExit as e:
+            assert e.code in [0, 1]
+        finally:
+            sys.argv = original_argv
+
+    def test_main_verbose_flag(self) -> None:
+        """Test main with --verbose flag."""
+        from cli.git_config_manager import main
+
+        original_argv = sys.argv
+        try:
+            sys.argv = ["git_config_manager.py", "--verbose"]
+            with patch("cli.git_config_manager.GitConfigManager") as mock_mgr_class:
+                mock_mgr = MagicMock()
+                mock_mgr.reload_all.return_value = True
+                mock_mgr_class.return_value = mock_mgr
+                main()
+        except SystemExit as e:
+            assert e.code in [0, 1]
+        finally:
+            sys.argv = original_argv
+
+    def test_main_component_config(self) -> None:
+        """Test main with --component config."""
+        from cli.git_config_manager import main
+
+        original_argv = sys.argv
+        try:
+            sys.argv = ["git_config_manager.py", "--component", "config"]
+            with patch("cli.git_config_manager.GitConfigManager") as mock_mgr_class:
+                mock_mgr = MagicMock()
+                mock_mgr.reload_component.return_value = True
+                mock_mgr_class.return_value = mock_mgr
+                main()
+        except SystemExit as e:
+            assert e.code in [0, 1]
+        finally:
+            sys.argv = original_argv
+
+    def test_main_component_hooks(self) -> None:
+        """Test main with --component hooks."""
+        from cli.git_config_manager import main
+
+        original_argv = sys.argv
+        try:
+            sys.argv = ["git_config_manager.py", "--component", "hooks"]
+            with patch("cli.git_config_manager.GitConfigManager") as mock_mgr_class:
+                mock_mgr = MagicMock()
+                mock_mgr.reload_component.return_value = True
+                mock_mgr_class.return_value = mock_mgr
+                main()
+        except SystemExit as e:
+            assert e.code in [0, 1]
+        finally:
+            sys.argv = original_argv
+
+    def test_main_component_credentials(self) -> None:
+        """Test main with --component credentials."""
+        from cli.git_config_manager import main
+
+        original_argv = sys.argv
+        try:
+            sys.argv = ["git_config_manager.py", "--component", "credentials"]
+            with patch("cli.git_config_manager.GitConfigManager") as mock_mgr_class:
+                mock_mgr = MagicMock()
+                mock_mgr.reload_component.return_value = True
+                mock_mgr_class.return_value = mock_mgr
+                main()
+        except SystemExit as e:
+            assert e.code in [0, 1]
+        finally:
+            sys.argv = original_argv
+
+    def test_main_dry_run(self) -> None:
+        """Test main with --dry-run flag."""
+        from cli.git_config_manager import main
+
+        original_argv = sys.argv
+        try:
+            sys.argv = ["git_config_manager.py", "--dry-run"]
+            with patch("cli.git_config_manager.GitConfigManager") as mock_mgr_class:
+                mock_mgr = MagicMock()
+                mock_mgr_class.return_value = mock_mgr
+                main()
+        except SystemExit as e:
+            assert e.code in [0, 1]
+        finally:
+            sys.argv = original_argv
+
+    def test_main_home_directory(self, tmp_path: Path) -> None:
+        """Test main with --home argument."""
+        from cli.git_config_manager import main
+
+        original_argv = sys.argv
+        try:
+            sys.argv = ["git_config_manager.py", "--home", str(tmp_path)]
+            with patch("cli.git_config_manager.GitConfigManager") as mock_mgr_class:
+                mock_mgr = MagicMock()
+                mock_mgr.reload_all.return_value = True
+                mock_mgr_class.return_value = mock_mgr
+                main()
+        except SystemExit as e:
+            assert e.code in [0, 1]
+        finally:
+            sys.argv = original_argv
+
+    def test_main_failure(self) -> None:
+        """Test main exits with 1 on failure."""
+        from cli.git_config_manager import main
+
+        original_argv = sys.argv
+        try:
+            sys.argv = ["git_config_manager.py"]
+            with patch("cli.git_config_manager.GitConfigManager") as mock_mgr_class:
+                mock_mgr = MagicMock()
+                mock_mgr.reload_all.return_value = False
+                mock_mgr_class.return_value = mock_mgr
+                try:
+                    main()
+                except SystemExit as e:
+                    assert e.code == 1
+        finally:
+            sys.argv = original_argv

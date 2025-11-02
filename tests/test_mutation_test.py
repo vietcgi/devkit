@@ -534,6 +534,526 @@ def is_valid(x):
                 assert any(expected_mutation in m.mutated_code for m in comp_mutations)
 
 
+class TestMutationDetectorLogicalOperators:
+    """Test detection of logical operator mutations."""
+
+    def test_logical_and_to_or_mutation(self) -> None:
+        """Test detecting 'and' to 'or' mutations."""
+        source = "if x and y:\n    pass\n"
+        detector = MutationDetector(source, Path("test.py"))
+        mutations = detector.detect()
+
+        # Should detect and -> or mutation
+        logical_mutations = [
+            m
+            for m in mutations
+            if m.mutation_type == MutationType.LOGICAL_OPERATOR
+        ]
+        assert len(logical_mutations) > 0
+        assert any("or" in m.mutated_code for m in logical_mutations)
+
+    def test_logical_or_to_and_mutation(self) -> None:
+        """Test detecting 'or' to 'and' mutations."""
+        source = "if x or y:\n    pass\n"
+        detector = MutationDetector(source, Path("test.py"))
+        mutations = detector.detect()
+
+        # Should detect or -> and mutation
+        logical_mutations = [
+            m
+            for m in mutations
+            if m.mutation_type == MutationType.LOGICAL_OPERATOR
+        ]
+        assert len(logical_mutations) > 0
+        assert any("and" in m.mutated_code for m in logical_mutations)
+
+
+class TestMutationTesterDetection:
+    """Test mutation detection in MutationTester."""
+
+    def test_detect_all_mutations(self) -> None:
+        """Test detecting mutations from CLI directory."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cli_dir = Path(tmpdir) / "cli"
+            tests_dir = Path(tmpdir) / "tests"
+            cli_dir.mkdir()
+            tests_dir.mkdir()
+
+            # Create a simple Python file with detectable mutations
+            test_file = cli_dir / "example.py"
+            test_file.write_text("def check(x, y):\n    return x == y\n")
+
+            tester = MutationTester(cli_dir, tests_dir)
+            mutations = tester._detect_all_mutations()
+
+            # Should detect at least one mutation
+            assert len(mutations) > 0
+
+    def test_get_mutation_count(self) -> None:
+        """Test getting mutation count."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cli_dir = Path(tmpdir) / "cli"
+            tests_dir = Path(tmpdir) / "tests"
+            cli_dir.mkdir()
+            tests_dir.mkdir()
+
+            tester = MutationTester(cli_dir, tests_dir)
+
+            # Initially should have 0 mutations
+            assert tester.get_mutation_count() == 0
+
+
+class TestMutationTesterExecution:
+    """Test mutation testing execution."""
+
+    def test_test_mutation_with_syntax_error_handling(self) -> None:
+        """Test _test_mutation handles errors gracefully."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cli_dir = Path(tmpdir) / "cli"
+            tests_dir = Path(tmpdir) / "tests"
+            cli_dir.mkdir()
+            tests_dir.mkdir()
+
+            # Create test file
+            test_file = cli_dir / "test_code.py"
+            test_file.write_text("x = 1\ny = 2\n")
+
+            tester = MutationTester(cli_dir, tests_dir)
+
+            # Create mutation with out-of-range line number
+            mutation = Mutation(
+                file_path=test_file,
+                line_number=999,
+                mutation_type=MutationType.COMPARISON_OPERATOR,
+                original_code="x == y",
+                mutated_code="x != y",
+                description="Test mutation",
+            )
+
+            result = tester._test_mutation(mutation)
+
+            # Should handle gracefully
+            assert isinstance(result, MutationResult)
+            assert result.mutation == mutation
+
+    def test_test_mutation_returns_survived_on_timeout(self) -> None:
+        """Test _test_mutation handles timeout."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cli_dir = Path(tmpdir) / "cli"
+            tests_dir = Path(tmpdir) / "tests"
+            cli_dir.mkdir()
+            tests_dir.mkdir()
+
+            test_file = cli_dir / "example.py"
+            test_file.write_text("x = 1\n")
+
+            tester = MutationTester(cli_dir, tests_dir)
+            mutation = Mutation(
+                file_path=test_file,
+                line_number=1,
+                mutation_type=MutationType.COMPARISON_OPERATOR,
+                original_code="x = 1",
+                mutated_code="x = 2",
+                description="Test mutation",
+            )
+
+            # Mock run_command to raise TimeoutExpired
+            with patch("cli.mutation_test.run_command") as mock_run:
+                import subprocess
+                mock_run.side_effect = subprocess.TimeoutExpired("pytest", 30)
+                result = tester._test_mutation(mutation)
+
+                assert result.test_result == "survived"
+                assert "Test timeout" in result.details
+
+
+class TestMutationTesterRun:
+    """Test MutationTester.run() method."""
+
+    def test_run_with_no_mutations(self) -> None:
+        """Test run() with empty CLI directory."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cli_dir = Path(tmpdir) / "cli"
+            tests_dir = Path(tmpdir) / "tests"
+            cli_dir.mkdir()
+            tests_dir.mkdir()
+
+            tester = MutationTester(cli_dir, tests_dir)
+
+            with patch.object(tester, "_detect_all_mutations", return_value=[]):
+                report = tester.run()
+
+                assert report.total_mutations == 0
+                assert report.killed_mutations == 0
+                assert report.mutation_score == 0.0
+
+    def test_run_updates_report(self) -> None:
+        """Test run() updates the report."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cli_dir = Path(tmpdir) / "cli"
+            tests_dir = Path(tmpdir) / "tests"
+            cli_dir.mkdir()
+            tests_dir.mkdir()
+
+            tester = MutationTester(cli_dir, tests_dir)
+
+            # Create mock mutations and results
+            mutation1 = Mutation(
+                file_path=Path("test.py"),
+                line_number=1,
+                mutation_type=MutationType.COMPARISON_OPERATOR,
+                original_code="x == y",
+                mutated_code="x != y",
+                description="Test",
+            )
+
+            result1 = MutationResult(mutation=mutation1, test_result="killed")
+
+            with patch.object(tester, "_detect_all_mutations", return_value=[mutation1]):
+                with patch.object(tester, "_test_mutation", return_value=result1):
+                    report = tester.run()
+
+                    assert report.total_mutations == 1
+                    assert report.killed_mutations == 1
+
+
+class TestMutationReporting:
+    """Test mutation reporting functions."""
+
+    def test_print_mutation_report_high_score(self) -> None:
+        """Test print_mutation_report with high mutation score."""
+        from cli.mutation_test import print_mutation_report
+
+        mutation = Mutation(
+            file_path=Path("test.py"),
+            line_number=1,
+            mutation_type=MutationType.COMPARISON_OPERATOR,
+            original_code="x == y",
+            mutated_code="x != y",
+            description="Test",
+        )
+        result = MutationResult(mutation=mutation, test_result="killed")
+        report = MutationReport(results=[result])
+        report.update()
+
+        # Should not raise
+        print_mutation_report(report)
+
+    def test_print_mutation_report_low_score(self) -> None:
+        """Test print_mutation_report with low mutation score."""
+        from cli.mutation_test import print_mutation_report
+
+        mutation1 = Mutation(
+            file_path=Path("test.py"),
+            line_number=1,
+            mutation_type=MutationType.COMPARISON_OPERATOR,
+            original_code="x == y",
+            mutated_code="x != y",
+            description="Test",
+        )
+        mutation2 = Mutation(
+            file_path=Path("test.py"),
+            line_number=2,
+            mutation_type=MutationType.BOOLEAN_LITERAL,
+            original_code="True",
+            mutated_code="False",
+            description="Test",
+        )
+        result1 = MutationResult(mutation=mutation1, test_result="killed")
+        result2 = MutationResult(mutation=mutation2, test_result="survived")
+        report = MutationReport(results=[result1, result2])
+        report.update()
+
+        # Should not raise
+        print_mutation_report(report)
+
+    def test_print_mutation_report_with_survived(self) -> None:
+        """Test print_mutation_report with survived mutations."""
+        from cli.mutation_test import print_mutation_report
+
+        mutation = Mutation(
+            file_path=Path("test.py"),
+            line_number=1,
+            mutation_type=MutationType.COMPARISON_OPERATOR,
+            original_code="x == y",
+            mutated_code="x != y",
+            description="Test",
+        )
+        result = MutationResult(mutation=mutation, test_result="survived")
+        report = MutationReport(results=[result])
+        report.update()
+
+        # Should not raise
+        print_mutation_report(report)
+
+    def test_save_mutation_report(self) -> None:
+        """Test save_mutation_report creates JSON file."""
+        from cli.mutation_test import save_mutation_report
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "reports" / "mutation_report.json"
+
+            mutation = Mutation(
+                file_path=Path("test.py"),
+                line_number=1,
+                mutation_type=MutationType.COMPARISON_OPERATOR,
+                original_code="x == y",
+                mutated_code="x != y",
+                description="Test",
+            )
+            result = MutationResult(mutation=mutation, test_result="killed")
+            report = MutationReport(results=[result])
+            report.update()
+
+            save_mutation_report(report, output_path)
+
+            # Should create file
+            assert output_path.exists()
+
+            # Should contain valid JSON
+            import json
+            data = json.loads(output_path.read_text())
+            assert data["total_mutations"] == 1
+            assert data["killed_mutations"] == 1
+
+
+class TestMutationDetectorErrorHandling:
+    """Test error handling in MutationDetector."""
+
+    def test_detector_handles_syntax_error(self) -> None:
+        """Test detector handles syntax errors gracefully."""
+        source = "if x == y\n    pass\n"  # Missing colon - syntax error
+        detector = MutationDetector(source, Path("test.py"))
+        mutations = detector.detect()
+
+        # Should return empty list on syntax error
+        assert isinstance(mutations, list)
+
+    def test_detector_init_with_multiline_code(self) -> None:
+        """Test detector initialization with multiline code."""
+        source = "def func():\n    x = 1\n    y = 2\n    return x == y"
+        detector = MutationDetector(source, Path("test.py"))
+
+        assert detector.source_code == source
+        assert len(detector.lines) == 4
+        assert detector.file_path == Path("test.py")
+
+
+class TestMutationTesterDetectionErrors:
+    """Test error handling in mutation detection."""
+
+    def test_detect_all_mutations_with_syntax_error_in_file(self) -> None:
+        """Test _detect_all_mutations skips files with syntax errors."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cli_dir = Path(tmpdir) / "cli"
+            tests_dir = Path(tmpdir) / "tests"
+            cli_dir.mkdir()
+            tests_dir.mkdir()
+
+            # Create a file with syntax error
+            bad_file = cli_dir / "bad.py"
+            bad_file.write_text("if x == y\n    pass\n")  # Missing colon
+
+            # Create a good file
+            good_file = cli_dir / "good.py"
+            good_file.write_text("def func():\n    return x == y\n")
+
+            tester = MutationTester(cli_dir, tests_dir)
+            mutations = tester._detect_all_mutations()
+
+            # Should still work, skipping the bad file
+            assert isinstance(mutations, list)
+
+    def test_detect_all_mutations_skips_init_file(self) -> None:
+        """Test _detect_all_mutations skips __init__.py."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cli_dir = Path(tmpdir) / "cli"
+            tests_dir = Path(tmpdir) / "tests"
+            cli_dir.mkdir()
+            tests_dir.mkdir()
+
+            # Create __init__.py
+            init_file = cli_dir / "__init__.py"
+            init_file.write_text("x = 1 == 2\n")
+
+            # Create normal file
+            normal_file = cli_dir / "module.py"
+            normal_file.write_text("y = 3 == 4\n")
+
+            tester = MutationTester(cli_dir, tests_dir)
+            mutations = tester._detect_all_mutations()
+
+            # __init__.py should be skipped
+            init_mutations = [m for m in mutations if "__init__" in str(m.file_path)]
+            assert len(init_mutations) == 0
+
+
+class TestMutationResultKilled:
+    """Test MutationResult.killed property."""
+
+    def test_mutation_result_killed_property(self) -> None:
+        """Test killed property returns correct value."""
+        mutation = Mutation(
+            file_path=Path("test.py"),
+            line_number=1,
+            mutation_type=MutationType.COMPARISON_OPERATOR,
+            original_code="x == y",
+            mutated_code="x != y",
+            description="Test",
+        )
+
+        killed_result = MutationResult(mutation=mutation, test_result="killed")
+        survived_result = MutationResult(mutation=mutation, test_result="survived")
+
+        assert killed_result.killed is True
+        assert survived_result.killed is False
+
+
+class TestMutationReportToDictWithSurvived:
+    """Test MutationReport.to_dict() with survived mutations."""
+
+    def test_to_dict_includes_survived_mutations(self) -> None:
+        """Test to_dict includes survived mutation details."""
+        mutation1 = Mutation(
+            file_path=Path("test.py"),
+            line_number=1,
+            mutation_type=MutationType.COMPARISON_OPERATOR,
+            original_code="x == y",
+            mutated_code="x != y",
+            description="Test mutation",
+        )
+        mutation2 = Mutation(
+            file_path=Path("test.py"),
+            line_number=2,
+            mutation_type=MutationType.BOOLEAN_LITERAL,
+            original_code="True",
+            mutated_code="False",
+            description="Test boolean",
+        )
+
+        result1 = MutationResult(mutation=mutation1, test_result="killed")
+        result2 = MutationResult(mutation=mutation2, test_result="survived")
+
+        report = MutationReport(results=[result1, result2])
+        report.update()
+
+        report_dict = report.to_dict()
+
+        assert report_dict["total_mutations"] == 2
+        assert report_dict["killed_mutations"] == 1
+        assert report_dict["survived_mutations"] == 1
+        assert len(report_dict["survived_mutations_details"]) == 1
+        assert report_dict["survived_mutations_details"][0]["type"] == "boolean_literal"
+
+
+class TestMutationTesterTestMutationKilled:
+    """Test _test_mutation when mutation is killed."""
+
+    def test_test_mutation_killed(self) -> None:
+        """Test _test_mutation returns killed result."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cli_dir = Path(tmpdir) / "cli"
+            tests_dir = Path(tmpdir) / "tests"
+            cli_dir.mkdir()
+            tests_dir.mkdir()
+
+            test_file = cli_dir / "example.py"
+            test_file.write_text("x = 1\n")
+
+            tester = MutationTester(cli_dir, tests_dir)
+            mutation = Mutation(
+                file_path=test_file,
+                line_number=1,
+                mutation_type=MutationType.COMPARISON_OPERATOR,
+                original_code="x = 1",
+                mutated_code="x = 2",
+                description="Test mutation",
+            )
+
+            # Mock run_command to return non-zero (failure - mutation caught)
+            with patch("cli.mutation_test.run_command") as mock_run:
+                mock_result = MagicMock()
+                mock_result.returncode = 1
+                mock_run.return_value = mock_result
+
+                result = tester._test_mutation(mutation)
+
+                assert result.test_result == "killed"
+                assert "Tests failed" in result.details
+
+    def test_test_mutation_survived(self) -> None:
+        """Test _test_mutation returns survived result."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cli_dir = Path(tmpdir) / "cli"
+            tests_dir = Path(tmpdir) / "tests"
+            cli_dir.mkdir()
+            tests_dir.mkdir()
+
+            test_file = cli_dir / "example.py"
+            test_file.write_text("x = 1\n")
+
+            tester = MutationTester(cli_dir, tests_dir)
+            mutation = Mutation(
+                file_path=test_file,
+                line_number=1,
+                mutation_type=MutationType.COMPARISON_OPERATOR,
+                original_code="x = 1",
+                mutated_code="x = 2",
+                description="Test mutation",
+            )
+
+            # Mock run_command to return zero (success - mutation not caught)
+            with patch("cli.mutation_test.run_command") as mock_run:
+                mock_result = MagicMock()
+                mock_result.returncode = 0
+                mock_run.return_value = mock_result
+
+                result = tester._test_mutation(mutation)
+
+                assert result.test_result == "survived"
+                assert "Tests passed" in result.details
+
+
+class TestMainFunction:
+    """Test main CLI function."""
+
+    def test_main_returns_zero_on_good_score(self) -> None:
+        """Test main returns 0 for mutation score >= 70."""
+        from cli.mutation_test import main
+
+        with patch("cli.mutation_test.MutationTester") as mock_tester_class:
+            mock_tester = MagicMock()
+            mock_tester_class.return_value = mock_tester
+
+            mock_report = MagicMock()
+            mock_report.mutation_score = 80.0
+            mock_tester.run.return_value = mock_report
+
+            with patch("cli.mutation_test.print_mutation_report"):
+                with patch("cli.mutation_test.save_mutation_report"):
+                    result = main()
+
+                    assert result == 0
+
+    def test_main_returns_one_on_bad_score(self) -> None:
+        """Test main returns 1 for mutation score < 70."""
+        from cli.mutation_test import main
+
+        with patch("cli.mutation_test.MutationTester") as mock_tester_class:
+            mock_tester = MagicMock()
+            mock_tester_class.return_value = mock_tester
+
+            mock_report = MagicMock()
+            mock_report.mutation_score = 50.0
+            mock_tester.run.return_value = mock_report
+
+            with patch("cli.mutation_test.print_mutation_report"):
+                with patch("cli.mutation_test.save_mutation_report"):
+                    result = main()
+
+                    assert result == 1
+
+
 if __name__ == "__main__":
     import pytest
 

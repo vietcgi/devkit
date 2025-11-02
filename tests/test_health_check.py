@@ -10,10 +10,12 @@ Validates:
 """
 
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -648,6 +650,121 @@ class TestHealthMonitorComprehensive(unittest.TestCase):
         monitor = HealthMonitor()
         overall = monitor.get_overall_status()
         self.assertEqual(overall, HealthStatus.UNKNOWN)
+
+
+class TestHealthCheckErrorPaths:
+    """Tests for error handling paths in health checks."""
+
+    @patch("cli.health_check.run_command")
+    def test_dependency_check_tool_timeout(self, mock_run: MagicMock) -> None:
+        """Test check_tool with timeout exception."""
+        mock_run.side_effect = subprocess.TimeoutExpired("which", 2)
+        result = DependencyCheck.check_tool("python")
+        assert result is False
+
+    @patch("cli.health_check.run_command")
+    def test_dependency_check_tool_oserror(self, mock_run: MagicMock) -> None:
+        """Test check_tool with OSError."""
+        mock_run.side_effect = OSError("Command not found")
+        result = DependencyCheck.check_tool("python")
+        assert result is False
+
+    @patch("cli.health_check.run_command")
+    def test_dependency_run_with_timeout(self, mock_run: MagicMock) -> None:
+        """Test DependencyCheck.run with timeout during check."""
+        mock_run.side_effect = subprocess.TimeoutExpired("which", 2)
+        check = DependencyCheck(["python"])
+        status, message, details = check.run()
+        assert status == HealthStatus.CRITICAL
+        assert "python" in details["missing"]
+
+    @patch("cli.health_check.run_command")
+    def test_dependency_run_with_oserror(self, mock_run: MagicMock) -> None:
+        """Test DependencyCheck.run with OSError during check."""
+        mock_run.side_effect = OSError("Permission denied")
+        check = DependencyCheck(["git"])
+        status, message, details = check.run()
+        assert status == HealthStatus.CRITICAL
+        assert "git" in details["missing"]
+
+    @patch("cli.health_check.run_command")
+    def test_disk_space_check_get_available_space_timeout(self, mock_run: MagicMock) -> None:
+        """Test get_available_space with timeout."""
+        mock_run.side_effect = subprocess.TimeoutExpired("df", 2)
+        result = DiskSpaceCheck.get_available_space()
+        assert result is None
+
+    @patch("cli.health_check.run_command")
+    def test_disk_space_check_get_available_space_value_error(self, mock_run: MagicMock) -> None:
+        """Test get_available_space with ValueError in parsing."""
+        mock_result = MagicMock()
+        mock_result.stdout = "invalid output"
+        mock_run.return_value = mock_result
+        result = DiskSpaceCheck.get_available_space()
+        assert result is None
+
+    @patch("cli.health_check.run_command")
+    def test_disk_space_check_run_with_oserror(self, mock_run: MagicMock) -> None:
+        """Test DiskSpaceCheck.run with OSError."""
+        mock_run.side_effect = OSError("Permission denied")
+        check = DiskSpaceCheck()
+        status, message, details = check.run()
+        assert status == HealthStatus.UNKNOWN
+        assert "error" in details
+
+    @patch("cli.health_check.run_command")
+    def test_disk_space_check_parse_error(self, mock_run: MagicMock) -> None:
+        """Test DiskSpaceCheck.run with malformed output."""
+        mock_result = MagicMock()
+        mock_result.stdout = "single_line_only"
+        mock_run.return_value = mock_result
+        check = DiskSpaceCheck()
+        status, message, details = check.run()
+        assert status == HealthStatus.UNKNOWN
+
+    @patch("builtins.open", side_effect=OSError("Permission denied"))
+    def test_configuration_check_run_file_error(self, mock_file: MagicMock) -> None:
+        """Test ConfigurationCheck.run when config file is unreadable."""
+        check = ConfigurationCheck()
+        status, message, details = check.run()
+        assert status == HealthStatus.WARNING
+
+    @patch("builtins.open", side_effect=FileNotFoundError("Config not found"))
+    def test_configuration_check_run_file_not_found(self, mock_file: MagicMock) -> None:
+        """Test ConfigurationCheck.run when config file is missing."""
+        check = ConfigurationCheck()
+        status, message, details = check.run()
+        assert status == HealthStatus.WARNING
+
+    @patch("cli.health_check.os.getloadavg")
+    def test_system_check_get_load_average_error(self, mock_loadavg: MagicMock) -> None:
+        """Test SystemCheck.get_load_average with error."""
+        mock_loadavg.side_effect = OSError("System error")
+        result = SystemCheck.get_load_average()
+        assert result is None
+
+    def test_health_status_invalid_status(self) -> None:
+        """Test HealthStatus with invalid status string."""
+        result = HealthStatus.get_severity("invalid_status")
+        # Should return default (3 for unknown)
+        assert result == 3
+
+    def test_monitor_add_check_valid(self) -> None:
+        """Test adding checks to monitor."""
+        monitor = HealthMonitor()
+        monitor.add_check(SystemCheck())
+        assert len(monitor.checks) >= 1
+
+    def test_monitor_get_json_report(self) -> None:
+        """Test JSON report generation."""
+        monitor = HealthMonitor()
+        check = SystemCheck()
+        monitor.add_check(check)
+        monitor.run_all()
+        report = monitor.get_json_report()
+        assert "checks" in report
+        assert isinstance(report, str)
+        json.loads(report)  # Verify it's valid JSON
 
 
 if __name__ == "__main__":

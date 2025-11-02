@@ -521,3 +521,133 @@ class TestSetupWizard:
         bar = ProgressBar(total=100, description="Test")
         bar.finish()
         assert bar.current == bar.total
+
+    @patch("builtins.input", side_effect=["1", "1", "1", "n", "n", "n", "y", "n", "y", "n", "y", "y"])
+    @patch("builtins.print")
+    def test_wizard_run_complete_sequence(self, mock_print: Mock, mock_input: Mock) -> None:
+        """Test running the complete wizard with all 8 steps."""
+        result = self.wizard.run()
+        assert result == self.wizard.config
+        assert "environment" in result
+        assert "enabled_roles" in result
+        assert "shell" in result
+        assert "editors" in result
+        assert "security" in result
+        assert "backup_enabled" in result
+        assert "verify_after_setup" in result
+
+    @patch("builtins.input", side_effect=["1", "", "1", "n", "n", "n", "y", "n", "y", "y", "/backup", "y", "y"])
+    @patch("builtins.print")
+    def test_wizard_run_with_defaults_and_custom(self, mock_print: Mock, mock_input: Mock) -> None:
+        """Test wizard run with mix of defaults and custom values."""
+        result = self.wizard.run()
+        assert result["environment"] == "development"
+        assert result["shell"] == "zsh"
+        assert result["backup_location"] == "/backup"
+
+    @patch("builtins.input", side_effect=["3", "1,3,5,7", "2", "y", "n", "n", "y", "y", "n", "n", "y", "y"])
+    @patch("builtins.print")
+    def test_wizard_run_all_options(self, mock_print: Mock, mock_input: Mock) -> None:
+        """Test wizard with various option combinations."""
+        result = self.wizard.run()
+        assert result["environment"] == "staging"
+        assert len(result["enabled_roles"]) == 4
+        assert result["shell"] == "fish"
+
+    @patch("builtins.input", side_effect=["1", "invalid", "1,2", "2", "n", "n", "n", "y", "n", "y", "n", "y", "y"])
+    @patch("builtins.print")
+    def test_wizard_run_with_invalid_role_count(self, mock_print: Mock, mock_input: Mock) -> None:
+        """Test wizard with invalid role count then valid."""
+        # This tests the branch coverage for line 179->169 (validation check)
+        result = self.wizard.run()
+        assert "enabled_roles" in result
+        assert len(result["enabled_roles"]) == 2
+
+    @patch("builtins.input", side_effect=["1", "1", "4", "1", "n", "n", "n", "y", "n", "y", "n", "y", "y"])
+    @patch("builtins.print")
+    def test_wizard_run_with_invalid_shell_then_valid(self, mock_print: Mock, mock_input: Mock) -> None:
+        """Test wizard with invalid shell selection then valid."""
+        # This tests the branch coverage for line 201->199
+        result = self.wizard.run()
+        assert result["shell"] == "zsh"
+
+
+class TestSetupWizardMain:
+    """Tests for the main() CLI function."""
+
+    @patch("sys.argv", ["setup_wizard.py"])
+    @patch("cli.setup_wizard.SetupWizard.run")
+    @patch("cli.setup_wizard.SetupWizard.save_config")
+    def test_main_with_wizard(self, mock_save: Mock, mock_run: Mock) -> None:
+        """Test main function runs wizard."""
+        from cli.setup_wizard import main
+
+        mock_run.return_value = {"test": "config"}
+        mock_save.return_value = "/path/to/config"
+
+        result = main()
+        assert result == 0
+        mock_run.assert_called_once()
+        mock_save.assert_called_once()
+
+    @patch("sys.argv", ["setup_wizard.py", "--skip-wizard"])
+    def test_main_skip_wizard(self) -> None:
+        """Test main function with --skip-wizard flag."""
+        from cli.setup_wizard import main
+
+        result = main()
+        assert result == 0
+
+    @patch("sys.argv", ["setup_wizard.py", "--config", "/custom/config.yaml"])
+    @patch("cli.setup_wizard.SetupWizard.run")
+    @patch("cli.setup_wizard.SetupWizard.save_config")
+    def test_main_with_custom_config_path(self, mock_save: Mock, mock_run: Mock) -> None:
+        """Test main function with custom config path."""
+        from cli.setup_wizard import main
+
+        mock_run.return_value = {"test": "config"}
+        mock_save.return_value = "/custom/config.yaml"
+
+        result = main()
+        assert result == 0
+        # Verify save_config was called with the custom path
+        mock_save.assert_called_once_with("/custom/config.yaml")
+
+    @patch("sys.argv", ["setup_wizard.py", "--project-root", "/custom/root"])
+    @patch("cli.setup_wizard.SetupWizard")
+    def test_main_with_custom_project_root(self, mock_wizard_class: Mock) -> None:
+        """Test main function with custom project root."""
+        from cli.setup_wizard import main
+
+        mock_wizard_instance = MagicMock()
+        mock_wizard_class.return_value = mock_wizard_instance
+        mock_wizard_instance.run.return_value = {"test": "config"}
+        mock_wizard_instance.save_config.return_value = "/path/to/config"
+
+        result = main()
+        assert result == 0
+        # Verify SetupWizard was instantiated with custom project root
+        mock_wizard_class.assert_called_once_with("/custom/root")
+
+    @patch("sys.argv", ["setup_wizard.py", "--skip-wizard", "--config", "/custom/config.yaml"])
+    def test_main_skip_wizard_with_custom_config(self) -> None:
+        """Test main with both --skip-wizard and --config flags."""
+        from cli.setup_wizard import main
+
+        result = main()
+        assert result == 0
+
+    @patch("sys.argv", ["setup_wizard.py"])
+    @patch("cli.setup_wizard.logging.basicConfig")
+    @patch("cli.setup_wizard.SetupWizard.run")
+    @patch("cli.setup_wizard.SetupWizard.save_config")
+    def test_main_logging_configured(self, mock_save: Mock, mock_run: Mock, mock_logging: Mock) -> None:
+        """Test that main function configures logging."""
+        from cli.setup_wizard import main
+
+        mock_run.return_value = {"test": "config"}
+        mock_save.return_value = "/path/to/config"
+
+        result = main()
+        assert result == 0
+        mock_logging.assert_called_once()

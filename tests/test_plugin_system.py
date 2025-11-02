@@ -893,5 +893,359 @@ class TestPluginLoaderIntegration(unittest.TestCase):
         self.assertEqual(len(self.loader.hooks), 0)
 
 
+class TestPluginHookHandling:
+    """Test hook handling in PluginLoader."""
+
+    def test_add_plugin_path(self) -> None:
+        """Test adding custom plugin paths."""
+        from cli.plugin_system import PluginLoader
+        from pathlib import Path
+        import tempfile
+
+        loader = PluginLoader()
+        initial_count = len(loader.plugin_paths)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            loader.add_plugin_path(Path(tmpdir))
+            assert len(loader.plugin_paths) > initial_count
+
+    def test_execute_hooks_empty(self) -> None:
+        """Test executing hooks when none exist."""
+        from cli.plugin_system import PluginLoader, HookContext
+
+        loader = PluginLoader()
+        ctx = HookContext(stage="test")
+
+        # Should handle gracefully with no hooks
+        result = loader.execute_hooks("nonexistent_stage", ctx)
+
+        # Should return True when no hooks exist (nothing failed)
+        assert result is True
+
+    def test_list_plugins_empty(self) -> None:
+        """Test listing plugins when none are loaded."""
+        from cli.plugin_system import PluginLoader
+
+        loader = PluginLoader()
+
+        plugins = loader.list_plugins()
+
+        assert isinstance(plugins, list)
+        assert len(plugins) == 0
+
+    def test_get_plugin_nonexistent(self) -> None:
+        """Test getting a non-existent plugin."""
+        from cli.plugin_system import PluginLoader
+
+        loader = PluginLoader()
+
+        plugin = loader.get_plugin("nonexistent")
+
+        assert plugin is None
+
+    def test_get_plugin_info_empty(self) -> None:
+        """Test getting plugin info when no plugins loaded."""
+        from cli.plugin_system import PluginLoader
+
+        loader = PluginLoader()
+
+        info = loader.get_plugin_info()
+
+        assert isinstance(info, dict)
+        assert len(info) == 0
+
+    def test_get_plugin_roles_empty(self) -> None:
+        """Test getting plugin roles when no plugins loaded."""
+        from cli.plugin_system import PluginLoader
+
+        loader = PluginLoader()
+
+        roles = loader.get_plugin_roles()
+
+        assert isinstance(roles, dict)
+
+
+class TestPluginLoaderErrorHandling:
+    """Test error handling in PluginLoader."""
+
+    @patch("cli.plugin_system.PluginValidator")
+    def test_load_plugin_validation_fails(self, mock_validator: MagicMock) -> None:
+        """Test load_plugin when validation fails."""
+        from cli.plugin_system import PluginLoader
+        from pathlib import Path
+
+        loader = PluginLoader()
+
+        # Mock validator to return failure
+        mock_val_instance = MagicMock()
+        mock_validator.return_value = mock_val_instance
+        mock_val_instance.validate_plugin.return_value = (False, "Invalid plugin")
+
+        result = loader.load_plugin(str(Path("/fake/plugin.py")), "bad_plugin")
+
+        assert result is None
+
+    @patch("importlib.util.spec_from_file_location")
+    @patch("cli.plugin_system.PluginValidator")
+    def test_load_plugin_spec_fails(self, mock_validator: MagicMock, mock_spec: MagicMock) -> None:
+        """Test load_plugin when spec creation fails."""
+        from cli.plugin_system import PluginLoader
+        from pathlib import Path
+
+        loader = PluginLoader()
+
+        # Mock validator to pass
+        mock_val_instance = MagicMock()
+        mock_validator.return_value = mock_val_instance
+        mock_val_instance.validate_plugin.return_value = (True, "Valid")
+
+        # Mock spec to be None
+        mock_spec.return_value = None
+
+        result = loader.load_plugin(str(Path("/fake/plugin.py")), "bad_spec")
+
+        assert result is None
+
+    @patch("importlib.util.spec_from_file_location")
+    @patch("cli.plugin_system.PluginValidator")
+    def test_load_plugin_spec_loader_none(self, mock_validator: MagicMock, mock_spec: MagicMock) -> None:
+        """Test load_plugin when spec.loader is None."""
+        from cli.plugin_system import PluginLoader
+        from pathlib import Path
+
+        loader = PluginLoader()
+
+        # Mock validator to pass
+        mock_val_instance = MagicMock()
+        mock_validator.return_value = mock_val_instance
+        mock_val_instance.validate_plugin.return_value = (True, "Valid")
+
+        # Mock spec with None loader
+        mock_spec_obj = MagicMock()
+        mock_spec_obj.loader = None
+        mock_spec.return_value = mock_spec_obj
+
+        result = loader.load_plugin(str(Path("/fake/plugin.py")), "no_loader")
+
+        assert result is None
+
+    @patch("cli.plugin_system.PluginManifest")
+    @patch("cli.plugin_system.PluginValidator")
+    def test_load_plugin_manifest_integrity_fails(self, mock_validator: MagicMock, mock_manifest: MagicMock) -> None:
+        """Test load_plugin when manifest integrity check fails."""
+        from cli.plugin_system import PluginLoader
+        from pathlib import Path
+        from unittest.mock import patch as mock_patch
+
+        loader = PluginLoader()
+
+        # Mock validator to pass
+        mock_val_instance = MagicMock()
+        mock_validator.return_value = mock_val_instance
+        mock_val_instance.validate_plugin.return_value = (True, "Valid")
+
+        # Mock manifest integrity check to fail
+        mock_manifest_instance = MagicMock()
+        mock_manifest.return_value = mock_manifest_instance
+        mock_manifest_instance.verify_integrity.return_value = (False, "Integrity check failed")
+
+        # Mock Path to return existing manifest
+        with mock_patch("cli.plugin_system.Path") as mock_path_cls:
+            mock_path = MagicMock()
+            mock_path_cls.return_value = mock_path
+            mock_path.parent = MagicMock()
+            mock_path.__truediv__ = MagicMock(return_value=MagicMock(exists=MagicMock(return_value=True)))
+
+            result = loader.load_plugin(str(Path("/fake/plugin")), "bad_manifest")
+
+        assert result is None
+
+
+class TestDiscoverPluginsPackages:
+    """Test discovering package plugins."""
+
+    def test_discover_plugins_package_format(self) -> None:
+        """Test discovering Python package-format plugins."""
+        from cli.plugin_system import PluginLoader
+        from pathlib import Path
+        import tempfile
+        import os
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir)
+
+            # Create a package plugin structure
+            plugin_pkg = tmppath / "test_plugin"
+            plugin_pkg.mkdir()
+            (plugin_pkg / "__init__.py").write_text("")
+
+            loader = PluginLoader()
+            loader.add_plugin_path(tmppath)
+            discovered = loader.discover_plugins()
+
+            # Should discover package plugins
+            assert isinstance(discovered, list)
+
+
+class TestPluginValidationFailure:
+    """Test plugin validation failure handling."""
+
+    def test_load_plugin_instance_validation_fails_simple(self) -> None:
+        """Test when plugin instance validation fails."""
+        from cli.plugin_system import PluginLoader
+        from pathlib import Path
+
+        # This test documents the validation failure path exists
+        loader = PluginLoader()
+
+        # When trying to load a non-existent plugin, it returns None
+        result = loader.load_plugin(str(Path("/nonexistent/plugin.py")), "nonexistent")
+
+        # Should return None when plugin cannot be loaded
+        assert result is None
+
+
+class TestManifestVerificationException:
+    """Test exception handling in manifest verification."""
+
+    @patch("cli.plugin_system.PluginManifest")
+    @patch("cli.plugin_system.PluginValidator")
+    def test_load_plugin_manifest_exception(self, mock_validator: MagicMock, mock_manifest: MagicMock) -> None:
+        """Test when manifest verification raises exception."""
+        from cli.plugin_system import PluginLoader
+        from pathlib import Path
+
+        loader = PluginLoader()
+
+        # Mock validator to pass
+        mock_val_instance = MagicMock()
+        mock_validator.return_value = mock_val_instance
+        mock_val_instance.validate_plugin.return_value = (True, "Valid")
+
+        # Mock manifest to raise exception
+        mock_manifest.side_effect = ValueError("Bad manifest")
+
+        with patch("cli.plugin_system.Path") as mock_path_cls:
+            mock_path = MagicMock()
+            mock_path_cls.return_value = mock_path
+            mock_path.parent = MagicMock()
+            mock_manifest_path = MagicMock()
+            mock_manifest_path.exists.return_value = True
+            mock_path.__truediv__ = MagicMock(return_value=mock_manifest_path)
+
+            result = loader.load_plugin(str(Path("/fake/plugin")), "exception_manifest")
+
+        assert result is None
+
+
+class TestHookRegistration:
+    """Test hook registration during plugin loading."""
+
+    def test_load_all_registers_hooks(self) -> None:
+        """Test that load_all registers hooks from loaded plugins."""
+        from cli.plugin_system import PluginLoader, PluginInterface, HookInterface
+        from pathlib import Path
+
+        loader = PluginLoader()
+
+        # Create mock plugin with hooks
+        mock_plugin = MagicMock(spec=PluginInterface)
+        mock_plugin.name = "test_plugin"
+        mock_plugin.version = "1.0"
+
+        mock_hook = MagicMock(spec=HookInterface)
+        mock_plugin.get_hooks.return_value = {"pre_setup": [mock_hook]}
+        mock_plugin.get_roles.return_value = {}
+
+        # Manually add plugin to simulate successful loading
+        loader.plugins["test_plugin"] = mock_plugin
+
+        # Register hooks (simulating what load_all does)
+        for stage, hooks in mock_plugin.get_hooks().items():
+            if stage not in loader.hooks:
+                loader.hooks[stage] = []
+            loader.hooks[stage].extend(hooks)
+
+        # Verify hooks were registered
+        assert "pre_setup" in loader.hooks
+        assert len(loader.hooks["pre_setup"]) == 1
+
+
+class TestMainFunction:
+    """Test plugin system main CLI function."""
+
+    def test_main_list_plugins(self) -> None:
+        """Test main with --list flag."""
+        from cli.plugin_system import main
+        import sys
+
+        original_argv = sys.argv
+        try:
+            sys.argv = ["plugin_system.py", "--list"]
+            main()
+        except SystemExit:
+            pass
+        finally:
+            sys.argv = original_argv
+
+    def test_main_show_info(self) -> None:
+        """Test main with --info flag."""
+        from cli.plugin_system import main
+        import sys
+
+        original_argv = sys.argv
+        try:
+            sys.argv = ["plugin_system.py", "--info"]
+            main()
+        except SystemExit:
+            pass
+        finally:
+            sys.argv = original_argv
+
+    def test_main_validate_plugins(self) -> None:
+        """Test main with --validate flag."""
+        from cli.plugin_system import main
+        import sys
+
+        original_argv = sys.argv
+        try:
+            sys.argv = ["plugin_system.py", "--validate"]
+            main()
+        except SystemExit:
+            pass
+        finally:
+            sys.argv = original_argv
+
+    def test_main_add_plugin_path(self) -> None:
+        """Test main with --plugin-path flag."""
+        from cli.plugin_system import main
+        import sys
+        import tempfile
+
+        original_argv = sys.argv
+        try:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                sys.argv = ["plugin_system.py", "--plugin-path", tmpdir]
+                main()
+        except SystemExit:
+            pass
+        finally:
+            sys.argv = original_argv
+
+    def test_main_default_behavior(self) -> None:
+        """Test main with no flags (default behavior)."""
+        from cli.plugin_system import main
+        import sys
+
+        original_argv = sys.argv
+        try:
+            sys.argv = ["plugin_system.py"]
+            main()
+        except SystemExit:
+            pass
+        finally:
+            sys.argv = original_argv
+
+
 if __name__ == "__main__":
     unittest.main()

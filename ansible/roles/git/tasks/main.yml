@@ -439,7 +439,7 @@
       tags: [git, verify]
 
 - name: Final git configuration verification
-  ansible.builtin.shell: git config --list --show-origin
+  ansible.builtin.shell: git config --list --show-origin  # noqa: command-instead-of-module
   register: git_config_list
   changed_when: false
   tags: [git, verify]

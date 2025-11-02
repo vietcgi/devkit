@@ -199,9 +199,12 @@ detect_distro() {
         # Source the os-release file
         # shellcheck disable=SC1091
         . /etc/os-release
-        DISTRO="$ID"
-        DISTRO_VERSION="$VERSION_ID"
+        DISTRO="${ID:-}"
+        DISTRO_VERSION="${VERSION_ID:-}"
     fi
+
+    # Export for use in subshells
+    export DISTRO DISTRO_VERSION
 }
 
 ################################################################################
@@ -774,6 +777,8 @@ run_ansible_setup() {
     # Debian 11 Docker containers don't have UTF-8 locale configured
     # Set PYTHONIOENCODING to UTF-8 to tell Python/Ansible to use UTF-8 encoding
     # This avoids locale unavailability issues while still providing UTF-8 support
+    log_info "System detected: OS=$OS, DISTRO=${DISTRO:-unknown}, VERSION=${DISTRO_VERSION:-unknown}"
+
     if [[ "${DISTRO:-}" == "debian" ]] && [[ "${DISTRO_VERSION:-}" == "11" ]]; then
         log_info "Debian 11 detected: setting Python encoding to UTF-8 for Ansible"
         export PYTHONIOENCODING=utf-8

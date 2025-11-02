@@ -755,7 +755,6 @@ run_ansible_setup() {
         return 1
     fi
 
-
     if ! ansible-playbook -i inventory.yml setup.yml \
         --extra-vars="setup_environment=${ENVIRONMENT:-development}" \
         --extra-vars="enabled_roles=${SELECTED_ROLES:-core,shell,editors,languages,development}"; then

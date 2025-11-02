@@ -131,7 +131,7 @@ repos:
         require_serial: true
 
   # =========================================================================
-  # TIER 7: SHELL SCRIPTS (ShellCheck)
+  # TIER 7: SHELL SCRIPTS (ShellCheck + shfmt)
   # =========================================================================
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.10.0.1
@@ -139,6 +139,14 @@ repos:
       - id: shellcheck
         name: "Check shell scripts (ShellCheck)"
         args: [--severity=warning]
+        types: [shell]
+
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.8.0-1
+    hooks:
+      - id: shfmt
+        name: "Format shell scripts (shfmt)"
+        args: [-d, -i, "4"]  # diff mode, 4-space indent
         types: [shell]
 
   # =========================================================================

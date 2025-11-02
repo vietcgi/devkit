@@ -67,12 +67,12 @@
     ansible.builtin.shell: '{{ homebrew_prefix }}/bin/brew unlink terraform'
     register: terraform_unlink
     when:
-    - terraform_check is defined
+    - terraform_check.rc is defined
     - terraform_check.rc == 0
     - brewfile_check.stat.exists
     failed_when: false
     changed_when: |
-      terraform_unlink is defined and terraform_unlink.rc == 0 and 'Unlinking' in terraform_unlink.stderr
+      terraform_unlink.rc is defined and terraform_unlink.rc == 0 and 'Unlinking' in terraform_unlink.stderr
     tags:
     - homebrew
     - packages
@@ -488,7 +488,7 @@
     ansible.builtin.command: code --list-extensions
     register: installed_extensions
     when:
-    - vscode_check is defined
+    - vscode_check.rc is defined
     - vscode_check.rc == 0
     - install_vscode | default(true)
     changed_when: false
@@ -500,7 +500,7 @@
     loop: '{{ vscode_extensions }}'
     register: vscode_install
     when:
-    - vscode_check is defined
+    - vscode_check.rc is defined
     - vscode_check.rc == 0
     - install_vscode | default(true)
     - installed_extensions.stdout_lines is defined
@@ -515,7 +515,7 @@
       state: directory
       mode: '0755'
     when:
-    - vscode_check is defined
+    - vscode_check.rc is defined
     - vscode_check.rc == 0
     - install_vscode | default(true)
     - is_macos
@@ -527,7 +527,7 @@
       state: directory
       mode: '0755'
     when:
-    - vscode_check is defined
+    - vscode_check.rc is defined
     - vscode_check.rc == 0
     - install_vscode | default(true)
     - is_linux
@@ -540,7 +540,7 @@
       mode: '0644'
       backup: true
     when:
-    - vscode_check is defined
+    - vscode_check.rc is defined
     - vscode_check.rc == 0
     - install_vscode | default(true)
     - vscode_settings is defined
@@ -554,7 +554,7 @@
       mode: '0644'
       backup: true
     when:
-    - vscode_check is defined
+    - vscode_check.rc is defined
     - vscode_check.rc == 0
     - install_vscode | default(true)
     - vscode_settings is defined
@@ -663,7 +663,7 @@
       register: dock_config
       when:
       - configure_dock | default(true)
-      - dockutil_check is defined
+      - dockutil_check.rc is defined
       - dockutil_check.rc == 0
       changed_when: false
       failed_when: false

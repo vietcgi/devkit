@@ -268,11 +268,6 @@ jobs:
         chmod +x verify-installation.sh
         ./verify-installation.sh
 
-        echo -e "\n=== Verifying Config Files ==="
-        ls -la ~/.zshrc || echo ".zshrc not found"
-        ls -la ~/.tmux.conf || echo ".tmux.conf not found"
-        ls -la ~/.config/nvim/ || echo "nvim config not found"
-
     - name: Upload logs on failure
       if: failure()
       uses: actions/upload-artifact@v4
@@ -450,11 +445,6 @@ jobs:
         chmod +x verify-installation.sh
         ./verify-installation.sh
 
-        echo -e "\n=== Verifying Config Files ==="
-        ls -la ~/.zshrc || echo ".zshrc not found"
-        ls -la ~/.tmux.conf || echo ".tmux.conf not found"
-        ls -la ~/.config/nvim/ || echo "nvim config not found"
-
     - name: Upload logs on failure
       if: failure()
       uses: actions/upload-artifact@v4
@@ -502,11 +492,6 @@ jobs:
       run: |
         chmod +x verify-installation.sh
         ./verify-installation.sh
-
-        echo -e "\n=== Verifying Config Files ==="
-        ls -la ~/.zshrc || echo ".zshrc not found"
-        ls -la ~/.tmux.conf || echo ".tmux.conf not found"
-        ls -la ~/.config/nvim/ || echo "nvim config not found"
 
     - name: Upload logs on failure
       if: failure()

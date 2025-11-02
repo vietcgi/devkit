@@ -12,13 +12,10 @@ galaxy_info:
         - all
     - name: Ubuntu
       versions:
-        - "20.04"
-        - "22.04"
-        - "24.04"
+        - all
     - name: Debian
       versions:
-        - "11"
-        - "12"
+        - all
 
   galaxy_tags:
     - git

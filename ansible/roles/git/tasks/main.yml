@@ -14,6 +14,7 @@
   tags: [always, git]
 
 - name: Create git directories
+  tags: [git, setup]
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
@@ -25,7 +26,6 @@
     - "{{ git_templates_dir }}"
     - "{{ git_hooks_dir }}"
     - "{{ home_dir }}/.devkit/git"
-  tags: [git, setup]
 
 - name: Deploy global gitconfig (user info, core settings)
   ansible.builtin.template:
@@ -149,7 +149,7 @@
 - name: Check if SSH keys exist for git operations
   ansible.builtin.stat:
     path: "{{ item }}"
-  register: ssh_key_stat
+  register: git_ssh_key_stat
   loop:
     - "{{ home_dir }}/.ssh/id_rsa"
     - "{{ home_dir }}/.ssh/id_ed25519"
@@ -158,11 +158,12 @@
 
 - name: Configure git to use SSH for GitHub URLs in devkit repo (if SSH keys available)
   ansible.builtin.shell: |
+    set -o pipefail
     cd {{ repo_root }}
     git config --local url."git@github.com:".insteadOf https://github.com/
   when:
     - repo_root is defined
-    - ssh_key_stat.results | selectattr('stat.exists', 'equalto', true) | list | length > 0
+    - git_ssh_key_stat.results | selectattr('stat.exists', 'equalto', true) | list | length > 0
   changed_when: false
   notify: reload git config
   tags: [git, config, ssh]
@@ -173,7 +174,7 @@
     git config --local --unset url."git@github.com:".insteadOf 2>/dev/null || true
   when:
     - repo_root is defined
-    - ssh_key_stat.results | selectattr('stat.exists', 'equalto', true) | list | length == 0
+    - git_ssh_key_stat.results | selectattr('stat.exists', 'equalto', true) | list | length == 0
   changed_when: false
   notify: reload git config
   tags: [git, config, ssh]
@@ -199,8 +200,9 @@
   block:
     - name: Check GPG key availability
       ansible.builtin.shell: |
+        set -o pipefail
         gpg --list-secret-keys --with-colons | grep -q "{{ git_gpg_key_id }}"
-      register: gpg_key_check
+      register: git_gpg_key_check
       changed_when: false
       failed_when: false
       when: git_enable_gpg_signing | default(false)
@@ -216,7 +218,7 @@
           value: "{{ git_gpg_key_id }}"
         - name: commit.gpgSign
           value: "{{ git_auto_sign_commits | default('false') }}"
-      when: git_enable_gpg_signing | default(false) and gpg_key_check is defined and gpg_key_check.rc == 0
+      when: git_enable_gpg_signing | default(false) and git_gpg_key_check is defined and git_gpg_key_check.rc == 0
       changed_when: false
       notify: reload git config
       tags: [git, gpg]
@@ -229,7 +231,7 @@
     - name: Check SSH key availability
       ansible.builtin.stat:
         path: "{{ git_ssh_signing_key }}"
-      register: ssh_key_check
+      register: git_ssh_key_check
       when: git_enable_ssh_signing | default(false)
       tags: [git, ssh]
 
@@ -247,8 +249,8 @@
           value: "{{ git_auto_sign_commits | default('false') }}"
       when:
         - git_enable_ssh_signing | default(false)
-        - ssh_key_check is defined
-        - ssh_key_check.stat.exists
+        - git_ssh_key_check is defined
+        - git_ssh_key_check.stat.exists
       changed_when: false
       notify: reload git config
       tags: [git, ssh]
@@ -260,7 +262,7 @@
   block:
     - name: Check if pre-commit is already installed
       ansible.builtin.command: which pre-commit
-      register: precommit_check
+      register: git_precommit_check
       failed_when: false
       changed_when: false
       when: git_enable_precommit | default(true)
@@ -270,11 +272,11 @@
       ansible.builtin.command: pipx install pre-commit
       environment:
         HOME: "{{ home_dir }}"
-      register: precommit_install
+      register: git_precommit_install
       when:
         - git_enable_precommit | default(true)
-        - precommit_check.rc != 0
-      changed_when: "'installed' in precommit_install.stdout or 'Installed' in precommit_install.stdout"
+        - git_precommit_check.rc != 0
+      changed_when: "'installed' in git_precommit_install.stdout or 'Installed' in git_precommit_install.stdout"
       tags: [git, precommit, install]
 
     - name: Verify pre-commit installation
@@ -282,7 +284,7 @@
       environment:
         PATH: "{{ home_dir }}/.local/bin:{{ ansible_env.PATH }}"
         HOME: "{{ home_dir }}"
-      register: precommit_version
+      register: git_precommit_version
       changed_when: false
       when: git_enable_precommit | default(true)
       tags: [git, precommit, verify]
@@ -302,6 +304,7 @@
 
     - name: Unset core.hooksPath if set (pre-commit requirement)
       ansible.builtin.shell: |
+        set -o pipefail
         if git config --global core.hooksPath > /dev/null 2>&1; then
           git config --global --unset core.hooksPath
           echo "unset"
@@ -320,7 +323,7 @@
       environment:
         PATH: "{{ home_dir }}/.local/bin:{{ ansible_env.PATH }}"
         HOME: "{{ home_dir }}"
-      register: precommit_init
+      register: git_precommit_init
       changed_when: false
       when: git_enable_precommit | default(true)
       tags: [git, precommit, init]
@@ -330,9 +333,9 @@
         msg: |
           Pre-Commit Framework Status:
           =============================
-          Installed: {{ precommit_version.stdout | default('N/A') }}
+          Installed: {{ git_precommit_version.stdout | default('N/A') }}
           Hooks Configured:
-            {{ precommit_init.stdout_lines | default(['Not initialized']) }}
+            {{ git_precommit_init.stdout_lines | default(['Not initialized']) }}
       when: git_enable_precommit | default(true)
       tags: [git, precommit, verify]
 
@@ -412,6 +415,7 @@
   block:
     - name: Check git user configuration
       ansible.builtin.shell: |
+        set -o pipefail
         git config --get user.name && git config --get user.email
       register: git_user_check
       changed_when: false

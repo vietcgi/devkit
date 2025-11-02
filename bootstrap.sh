@@ -18,7 +18,7 @@
 # Works on systems with or without Python installed
 ################################################################################
 
-set -euo pipefail  # Strict error handling: exit on error, undefined vars, pipe failures
+set -euo pipefail # Strict error handling: exit on error, undefined vars, pipe failures
 
 # Color codes for output
 RED='\033[0;31m'
@@ -40,7 +40,7 @@ SELECTED_ROLES="core,shell,editors,languages,development"
 
 # SECURITY: Bootstrap integrity verification
 # This checksum is automatically updated on each release by CI/CD
-BOOTSTRAP_CHECKSUM="${DEVKIT_BOOTSTRAP_CHECKSUM:-}"  # Can be overridden by environment
+BOOTSTRAP_CHECKSUM="${DEVKIT_BOOTSTRAP_CHECKSUM:-}" # Can be overridden by environment
 
 ################################################################################
 # Utility Functions
@@ -71,35 +71,35 @@ suggest_fix() {
 show_help() {
     local topic="$1"
     case "$topic" in
-        "brew")
-            log_info "Homebrew installation help:"
-            log_info "  1. Check: /opt/homebrew/bin/brew --version"
-            log_info "  2. Add to PATH: echo 'eval \"\$(/opt/homebrew/bin/brew shellenv)\"' >> ~/.zshrc"
-            log_info "  3. Apply: eval \"\$(/opt/homebrew/bin/brew shellenv)\""
-            ;;
-        "python")
-            log_info "Python installation help:"
-            log_info "  1. Install: brew install python@3.12"
-            log_info "  2. Verify: python3 --version"
-            log_info "  3. Link: brew link python@3.12"
-            ;;
-        "ansible")
-            log_info "Ansible installation help:"
-            log_info "  1. Check Homebrew: brew --version"
-            log_info "  2. Install: brew install ansible"
-            log_info "  3. Verify: ansible --version"
-            ;;
-        "space")
-            log_info "Disk space solutions:"
-            log_info "  1. Check usage: df -h"
-            log_info "  2. Clean brew: brew cleanup --all"
-            log_info "  3. Clear cache: rm -rf ~/Library/Caches/*"
-            log_info "  4. Remove downloads: rm -rf ~/Downloads/*"
-            log_info "  5. Check large dirs: du -sh ~/"
-            ;;
-        *)
-            log_warning "Unknown help topic: $topic"
-            ;;
+    "brew")
+        log_info "Homebrew installation help:"
+        log_info "  1. Check: /opt/homebrew/bin/brew --version"
+        log_info "  2. Add to PATH: echo 'eval \"\$(/opt/homebrew/bin/brew shellenv)\"' >> ~/.zshrc"
+        log_info "  3. Apply: eval \"\$(/opt/homebrew/bin/brew shellenv)\""
+        ;;
+    "python")
+        log_info "Python installation help:"
+        log_info "  1. Install: brew install python@3.12"
+        log_info "  2. Verify: python3 --version"
+        log_info "  3. Link: brew link python@3.12"
+        ;;
+    "ansible")
+        log_info "Ansible installation help:"
+        log_info "  1. Check Homebrew: brew --version"
+        log_info "  2. Install: brew install ansible"
+        log_info "  3. Verify: ansible --version"
+        ;;
+    "space")
+        log_info "Disk space solutions:"
+        log_info "  1. Check usage: df -h"
+        log_info "  2. Clean brew: brew cleanup --all"
+        log_info "  3. Clear cache: rm -rf ~/Library/Caches/*"
+        log_info "  4. Remove downloads: rm -rf ~/Downloads/*"
+        log_info "  5. Check large dirs: du -sh ~/"
+        ;;
+    *)
+        log_warning "Unknown help topic: $topic"
+        ;;
     esac
 }
 
@@ -135,9 +135,9 @@ verify_bootstrap_integrity() {
 
     local actual_checksum
     # Use cross-platform compatible checksum command
-    if command -v sha256sum &> /dev/null; then
+    if command -v sha256sum &>/dev/null; then
         actual_checksum=$(sha256sum "$0" | awk '{print $1}')
-    elif command -v shasum &> /dev/null; then
+    elif command -v shasum &>/dev/null; then
         actual_checksum=$(shasum -a 256 "$0" | awk '{print $1}')
     else
         log_warning "Bootstrap integrity check skipped (no checksum utility available)"
@@ -172,15 +172,15 @@ retry() {
     local timeout=2
     local attempt=1
 
-    while (( attempt <= max_attempts )); do
+    while ((attempt <= max_attempts)); do
         if "$@"; then
             return 0
         fi
 
-        if (( attempt < max_attempts )); then
+        if ((attempt < max_attempts)); then
             log_warning "Attempt $attempt failed, retrying in ${timeout}s... (attempt $((attempt + 1))/$max_attempts)"
             sleep "$timeout"
-            timeout=$((timeout + 1))  # Exponential backoff: 2s, 3s, 4s
+            timeout=$((timeout + 1)) # Exponential backoff: 2s, 3s, 4s
         fi
 
         attempt=$((attempt + 1))
@@ -240,12 +240,12 @@ install_system_dependencies() {
         log_info "Detecting Linux distribution..."
 
         # Detect package manager and install required dependencies
-        if command -v apt-get &> /dev/null; then
+        if command -v apt-get &>/dev/null; then
             log_info "Debian/Ubuntu detected - installing dependencies via apt-get"
 
             # Update package lists
             if [[ $EUID -ne 0 ]]; then
-                if command -v sudo &> /dev/null; then
+                if command -v sudo &>/dev/null; then
                     sudo apt-get update -qq || {
                         log_error "Failed to update package lists via apt-get"
                         return 1
@@ -277,12 +277,12 @@ install_system_dependencies() {
 
             log_success "Build tools installed via apt-get"
 
-        elif command -v dnf &> /dev/null; then
+        elif command -v dnf &>/dev/null; then
             log_info "Fedora/RHEL detected - installing dependencies via dnf"
 
             # Install essential build tools and curl
             if [[ $EUID -ne 0 ]]; then
-                if command -v sudo &> /dev/null; then
+                if command -v sudo &>/dev/null; then
                     sudo dnf install -y gcc gcc-c++ make curl git ca-certificates || {
                         log_error "Failed to install build tools via dnf"
                         return 1
@@ -306,12 +306,12 @@ install_system_dependencies() {
 
             log_success "Build tools installed via dnf"
 
-        elif command -v yum &> /dev/null; then
+        elif command -v yum &>/dev/null; then
             log_info "RHEL/CentOS detected - installing dependencies via yum"
 
             # Install essential build tools and curl
             if [[ $EUID -ne 0 ]]; then
-                if command -v sudo &> /dev/null; then
+                if command -v sudo &>/dev/null; then
                     sudo yum install -y gcc gcc-c++ make curl git ca-certificates || {
                         log_error "Failed to install build tools via yum"
                         return 1
@@ -335,12 +335,12 @@ install_system_dependencies() {
 
             log_success "Build tools installed via yum"
 
-        elif command -v pacman &> /dev/null; then
+        elif command -v pacman &>/dev/null; then
             log_info "Arch Linux detected - installing dependencies via pacman"
 
             # Install essential build tools and curl
             if [[ $EUID -ne 0 ]]; then
-                if command -v sudo &> /dev/null; then
+                if command -v sudo &>/dev/null; then
                     sudo pacman -S --noconfirm base-devel curl git ca-certificates || {
                         log_error "Failed to install build tools via pacman"
                         return 1
@@ -364,12 +364,12 @@ install_system_dependencies() {
 
             log_success "Build tools installed via pacman"
 
-        elif command -v apk &> /dev/null; then
+        elif command -v apk &>/dev/null; then
             log_info "Alpine Linux detected - installing dependencies via apk"
 
             # Install essential build tools and curl
             if [[ $EUID -ne 0 ]]; then
-                if command -v sudo &> /dev/null; then
+                if command -v sudo &>/dev/null; then
                     sudo apk add --no-cache gcc g++ make curl git ca-certificates || {
                         log_error "Failed to install build tools via apk"
                         return 1
@@ -406,7 +406,7 @@ install_system_dependencies() {
 install_homebrew() {
     print_section "Installing Homebrew"
 
-    if command -v brew &> /dev/null; then
+    if command -v brew &>/dev/null; then
         log_success "Homebrew already installed"
         return 0
     fi
@@ -456,7 +456,7 @@ install_homebrew() {
 install_python() {
     print_section "Installing Python"
 
-    if command -v python3 &> /dev/null; then
+    if command -v python3 &>/dev/null; then
         PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
         log_success "Python 3 already installed: $PYTHON_VERSION"
         return 0
@@ -464,7 +464,7 @@ install_python() {
 
     log_info "Installing Python 3 via Homebrew..."
 
-    if ! command -v brew &> /dev/null; then
+    if ! command -v brew &>/dev/null; then
         log_error "Homebrew is required to install Python"
         log_error ""
         log_error "Please install Homebrew first:"
@@ -493,7 +493,7 @@ install_python() {
 install_ansible() {
     print_section "Installing Ansible"
 
-    if command -v ansible-playbook &> /dev/null; then
+    if command -v ansible-playbook &>/dev/null; then
         ANSIBLE_VERSION=$(ansible-playbook --version 2>&1 | head -1)
         log_success "Ansible already installed: $ANSIBLE_VERSION"
         return 0
@@ -507,7 +507,7 @@ install_ansible() {
         # macOS: use Homebrew
         log_info "Installing Ansible via Homebrew (macOS)..."
 
-        if ! command -v brew &> /dev/null; then
+        if ! command -v brew &>/dev/null; then
             log_error "Homebrew is required to install Ansible"
             log_error ""
             log_error "Please install Homebrew first: https://brew.sh"
@@ -515,7 +515,7 @@ install_ansible() {
             return 1
         fi
 
-        if ! command -v python3 &> /dev/null; then
+        if ! command -v python3 &>/dev/null; then
             log_error "Python 3 is required to install Ansible"
             log_error "Please install Python first via: brew install python3"
             suggest_fix "ansible" "Install Python 3 before attempting Ansible installation"
@@ -539,14 +539,14 @@ install_ansible() {
         # Linux: try pip first (preferred), then system package manager
         log_info "Installing Ansible via pip3 (Linux)..."
 
-        if ! command -v pip3 &> /dev/null; then
+        if ! command -v pip3 &>/dev/null; then
             log_error "pip3 not found, attempting system package manager..."
 
             # Try system package manager as fallback
-            if command -v apt-get &> /dev/null; then
+            if command -v apt-get &>/dev/null; then
                 log_info "Attempting to install ansible via apt-get..."
                 if [[ $EUID -ne 0 ]]; then
-                    if command -v sudo &> /dev/null; then
+                    if command -v sudo &>/dev/null; then
                         sudo apt-get update && sudo apt-get install -y ansible || {
                             log_error "Failed to install Ansible via apt-get"
                             return 1
@@ -561,10 +561,10 @@ install_ansible() {
                         return 1
                     }
                 fi
-            elif command -v dnf &> /dev/null; then
+            elif command -v dnf &>/dev/null; then
                 log_info "Attempting to install ansible via dnf..."
                 if [[ $EUID -ne 0 ]]; then
-                    if command -v sudo &> /dev/null; then
+                    if command -v sudo &>/dev/null; then
                         sudo dnf install -y ansible || {
                             log_error "Failed to install Ansible via dnf"
                             return 1
@@ -579,10 +579,10 @@ install_ansible() {
                         return 1
                     }
                 fi
-            elif command -v pacman &> /dev/null; then
+            elif command -v pacman &>/dev/null; then
                 log_info "Attempting to install ansible via pacman..."
                 if [[ $EUID -ne 0 ]]; then
-                    if command -v sudo &> /dev/null; then
+                    if command -v sudo &>/dev/null; then
                         sudo pacman -S --noconfirm ansible || {
                             log_error "Failed to install Ansible via pacman"
                             return 1
@@ -647,7 +647,7 @@ create_default_config() {
         return 0
     fi
 
-    cat > "$CONFIG_FILE" << 'EOF'
+    cat >"$CONFIG_FILE" <<'EOF'
 # Devkit Configuration
 # Edit this file to customize your setup
 # Default environment: development
@@ -721,10 +721,10 @@ interactive_setup_bash() {
     env_choice=${env_choice:-1}
 
     case $env_choice in
-        1) ENVIRONMENT="development" ;;
-        2) ENVIRONMENT="production" ;;
-        3) ENVIRONMENT="staging" ;;
-        *) ENVIRONMENT="development" ;;
+    1) ENVIRONMENT="development" ;;
+    2) ENVIRONMENT="production" ;;
+    3) ENVIRONMENT="staging" ;;
+    *) ENVIRONMENT="development" ;;
     esac
 
     log_success "Selected environment: $ENVIRONMENT"
@@ -739,10 +739,10 @@ interactive_setup_bash() {
     roles_choice=${roles_choice:-2}
 
     case $roles_choice in
-        1) SELECTED_ROLES="core,shell" ;;
-        2) SELECTED_ROLES="core,shell,editors,languages,development" ;;
-        3) SELECTED_ROLES="core,shell,editors,languages,development,containers,cloud,security,databases" ;;
-        *) SELECTED_ROLES="core,shell,editors,languages,development" ;;
+    1) SELECTED_ROLES="core,shell" ;;
+    2) SELECTED_ROLES="core,shell,editors,languages,development" ;;
+    3) SELECTED_ROLES="core,shell,editors,languages,development,containers,cloud,security,databases" ;;
+    *) SELECTED_ROLES="core,shell,editors,languages,development" ;;
     esac
 
     log_success "Selected roles: $SELECTED_ROLES"
@@ -760,7 +760,7 @@ run_ansible_setup() {
         return 1
     fi
 
-    if ! command -v ansible-playbook &> /dev/null; then
+    if ! command -v ansible-playbook &>/dev/null; then
         log_error "Ansible not found. Please install Ansible first."
         return 1
     fi
@@ -772,8 +772,8 @@ run_ansible_setup() {
 
     ansible-playbook -i inventory.yml setup.yml \
         --extra-vars="setup_environment=${ENVIRONMENT:-development}" \
-        --extra-vars="enabled_roles=${SELECTED_ROLES:-core,shell,editors,languages,development}" \
-        || {
+        --extra-vars="enabled_roles=${SELECTED_ROLES:-core,shell,editors,languages,development}" ||
+        {
             log_error "Ansible setup failed"
             return 1
         }
@@ -793,7 +793,7 @@ verify_installation() {
 
     # Check Homebrew
     checks_total=$((checks_total + 1))
-    if command -v brew &> /dev/null; then
+    if command -v brew &>/dev/null; then
         log_success "Homebrew: installed"
         checks_passed=$((checks_passed + 1))
     else
@@ -802,7 +802,7 @@ verify_installation() {
 
     # Check git
     checks_total=$((checks_total + 1))
-    if command -v git &> /dev/null; then
+    if command -v git &>/dev/null; then
         log_success "Git: installed"
         checks_passed=$((checks_passed + 1))
     else
@@ -811,7 +811,7 @@ verify_installation() {
 
     # Check Ansible
     checks_total=$((checks_total + 1))
-    if command -v ansible-playbook &> /dev/null; then
+    if command -v ansible-playbook &>/dev/null; then
         log_success "Ansible: installed"
         checks_passed=$((checks_passed + 1))
     else
@@ -820,7 +820,7 @@ verify_installation() {
 
     # Check Python
     checks_total=$((checks_total + 1))
-    if command -v python3 &> /dev/null; then
+    if command -v python3 &>/dev/null; then
         log_success "Python 3: installed"
         checks_passed=$((checks_passed + 1))
     else
@@ -848,7 +848,7 @@ verify_installation() {
 ################################################################################
 
 show_help() {
-    cat << 'EOF'
+    cat <<'EOF'
 Devkit Bootstrap Script - Development Environment Setup
 
 USAGE:
@@ -930,35 +930,35 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
-            --help)
-                show_help
-                exit 0
-                ;;
-            --interactive)
-                INTERACTIVE_MODE=true
-                shift
-                ;;
-            --python-only)
-                PYTHON_REQUIRED=true
-                shift
-                ;;
-            --skip-ansible)
-                SKIP_ANSIBLE=true
-                shift
-                ;;
-            --skip-python)
-                PYTHON_REQUIRED=false
-                shift
-                ;;
-            --verify-only)
-                VERIFY_ONLY=true
-                shift
-                ;;
-            *)
-                log_error "Unknown option: $1"
-                show_help
-                exit 1
-                ;;
+        --help)
+            show_help
+            exit 0
+            ;;
+        --interactive)
+            INTERACTIVE_MODE=true
+            shift
+            ;;
+        --python-only)
+            PYTHON_REQUIRED=true
+            shift
+            ;;
+        --skip-ansible)
+            SKIP_ANSIBLE=true
+            shift
+            ;;
+        --skip-python)
+            PYTHON_REQUIRED=false
+            shift
+            ;;
+        --verify-only)
+            VERIFY_ONLY=true
+            shift
+            ;;
+        *)
+            log_error "Unknown option: $1"
+            show_help
+            exit 1
+            ;;
         esac
     done
 

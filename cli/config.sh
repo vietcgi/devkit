@@ -178,7 +178,7 @@ export_command() {
 }
 
 help_command() {
-    cat << 'EOF'
+    cat <<'EOF'
 Mac-Setup Configuration Manager (Bash)
 
 USAGE:
@@ -222,29 +222,29 @@ main() {
     local command="${1:-help}"
 
     case "$command" in
-        list)
-            list_command
-            ;;
-        get)
-            get_command "$2"
-            ;;
-        set)
-            set_command "$2" "$3"
-            ;;
-        validate)
-            validate_command
-            ;;
-        export)
-            export_command "$2"
-            ;;
-        help|--help|-h)
-            help_command
-            ;;
-        *)
-            echo -e "${RED}Unknown command: $command${NC}"
-            help_command
-            exit 1
-            ;;
+    list)
+        list_command
+        ;;
+    get)
+        get_command "$2"
+        ;;
+    set)
+        set_command "$2" "$3"
+        ;;
+    validate)
+        validate_command
+        ;;
+    export)
+        export_command "$2"
+        ;;
+    help | --help | -h)
+        help_command
+        ;;
+    *)
+        echo -e "${RED}Unknown command: $command${NC}"
+        help_command
+        exit 1
+        ;;
     esac
 }
 

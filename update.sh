@@ -79,7 +79,7 @@ main() {
 
     # 1. Update Homebrew
     print_header "Updating Homebrew"
-    if command -v brew &> /dev/null; then
+    if command -v brew &>/dev/null; then
         print_info "Updating Homebrew itself..."
         if brew update; then
             print_success "Homebrew updated"
@@ -109,7 +109,7 @@ main() {
 
     # 2. Update mise tools
     print_header "Updating mise Tools"
-    if command -v mise &> /dev/null; then
+    if command -v mise &>/dev/null; then
         print_info "Updating mise itself..."
         if brew upgrade mise 2>/dev/null || true; then
             print_success "mise updated"
@@ -147,10 +147,10 @@ main() {
 
         print_info "Updating Powerlevel10k theme..."
         if [ -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k" ]; then
-            cd "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k" && \
-            git pull && \
-            cd - > /dev/null && \
-            print_success "Powerlevel10k updated"
+            cd "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k" &&
+                git pull &&
+                cd - >/dev/null &&
+                print_success "Powerlevel10k updated"
         else
             print_warning "Powerlevel10k not installed"
         fi
@@ -160,7 +160,7 @@ main() {
             if [ -d "$plugin_dir/.git" ]; then
                 plugin_name=$(basename "$plugin_dir")
                 print_info "Updating $plugin_name..."
-                if cd "$plugin_dir" && git pull && cd - > /dev/null; then
+                if cd "$plugin_dir" && git pull && cd - >/dev/null; then
                     print_success "$plugin_name updated"
                 else
                     print_warning "$plugin_name update failed"
@@ -175,17 +175,17 @@ main() {
     print_header "Updating Tmux Plugins"
     if [ -d "$HOME/.tmux/plugins/tpm" ]; then
         print_info "Updating TPM..."
-        if cd "$HOME/.tmux/plugins/tpm" && git pull && cd - > /dev/null; then
+        if cd "$HOME/.tmux/plugins/tpm" && git pull && cd - >/dev/null; then
             print_success "TPM updated"
         else
             print_warning "TPM update failed"
         fi
 
         print_info "Updating tmux plugins..."
-        if command -v tmux &> /dev/null && [ -f "$HOME/.tmux.conf" ]; then
+        if command -v tmux &>/dev/null && [ -f "$HOME/.tmux.conf" ]; then
             # Update plugins using TPM's update script
-            "$HOME/.tmux/plugins/tpm/bin/update_plugins" all 2>/dev/null || \
-            print_warning "Tmux plugins update skipped (run prefix+U in tmux)"
+            "$HOME/.tmux/plugins/tpm/bin/update_plugins" all 2>/dev/null ||
+                print_warning "Tmux plugins update skipped (run prefix+U in tmux)"
         else
             print_warning "Tmux not configured"
         fi
@@ -195,10 +195,10 @@ main() {
 
     # 5. Update VS Code extensions
     print_header "Updating VS Code Extensions"
-    if command -v code &> /dev/null; then
+    if command -v code &>/dev/null; then
         print_info "Updating VS Code extensions..."
-        if code --update-extensions 2>/dev/null || \
-           (code --list-extensions | xargs -L 1 code --install-extension 2>/dev/null); then
+        if code --update-extensions 2>/dev/null ||
+            (code --list-extensions | xargs -L 1 code --install-extension 2>/dev/null); then
             print_success "VS Code extensions updated"
         else
             print_warning "VS Code extensions update failed"
@@ -209,7 +209,7 @@ main() {
 
     # 6. Update Neovim plugins
     print_header "Updating Neovim Plugins"
-    if command -v nvim &> /dev/null && [ -f "$HOME/.config/nvim/init.lua" ]; then
+    if command -v nvim &>/dev/null && [ -f "$HOME/.config/nvim/init.lua" ]; then
         print_info "Updating Neovim plugins via lazy.nvim..."
         if nvim --headless "+Lazy! sync" +qa 2>/dev/null; then
             print_success "Neovim plugins updated"
@@ -222,7 +222,7 @@ main() {
 
     # 7. Update pre-commit hooks
     print_header "Updating Pre-commit Hooks"
-    if command -v pre-commit &> /dev/null && [ -f ".pre-commit-config.yaml" ]; then
+    if command -v pre-commit &>/dev/null && [ -f ".pre-commit-config.yaml" ]; then
         print_info "Updating pre-commit hooks..."
         if pre-commit autoupdate; then
             print_success "Pre-commit hooks updated"

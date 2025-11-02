@@ -223,11 +223,7 @@ install_system_dependencies() {
                     }
 
                     # Install pipx (optional - not critical to bootstrap success)
-                    # Debian 12+ may require --break-system-packages due to PEP 668
-                    sudo apt-get install -y -qq pipx 2>/dev/null || {
-                        log_warning "pipx installation via apt failed, trying pip3..."
-                        pip3 install --user --break-system-packages pipx 2>/dev/null || log_warning "pipx installation skipped"
-                    }
+                    sudo apt-get install -y -qq pipx 2>/dev/null || log_warning "pipx installation skipped (not available)"
                 else
                     log_error "sudo not found, but required for apt-get"
                     return 1
@@ -238,16 +234,9 @@ install_system_dependencies() {
                     return 1
                 }
 
-                apt-get install -y -qq build-essential curl git ca-certificates || {
+                apt-get install -y -qq build-essential curl git ca-certificates pipx || {
                     log_error "Failed to install build tools via apt-get (running as root)"
                     return 1
-                }
-
-                # Install pipx (optional - not critical to bootstrap success)
-                # Debian 12+ may require --break-system-packages due to PEP 668
-                apt-get install -y -qq pipx 2>/dev/null || {
-                    log_warning "pipx installation via apt failed, trying pip3..."
-                    pip3 install --break-system-packages pipx 2>/dev/null || log_warning "pipx installation skipped"
                 }
             fi
 

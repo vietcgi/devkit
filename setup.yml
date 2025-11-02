@@ -129,7 +129,7 @@
       - postgresql
       - sqlite
       - direnv
-      - shellcheck
+      - ShellCheck
       state: present
     become: "{{ not (ansible_user_id == 'root') }}"
     when:
@@ -142,7 +142,7 @@
     ansible.builtin.shell: |
       pacman -Syu --noconfirm git curl wget vim neovim tmux zsh \
         fzf ripgrep bat tree htop jq base-devel python-pip python-pipx nodejs \
-        npm go postgresql sqlite direnv shellcheck --needed
+        npm go postgresql sqlite direnv shellcheck
     args:
       executable: /bin/bash
     changed_when: false

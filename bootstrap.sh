@@ -186,27 +186,6 @@ detect_arch() {
     log_success "Detected architecture: $ARCH_TYPE"
 }
 
-detect_distro() {
-    # Detect Linux distribution and version
-    if [[ "$OS" != "linux" ]]; then
-        return 0  # Not on Linux, skip
-    fi
-
-    DISTRO=""
-    DISTRO_VERSION=""
-
-    if [ -f /etc/os-release ]; then
-        # Source the os-release file
-        # shellcheck disable=SC1091
-        . /etc/os-release
-        DISTRO="${ID:-}"
-        DISTRO_VERSION="${VERSION_ID:-}"
-    fi
-
-    # Export for use in subshells
-    export DISTRO DISTRO_VERSION
-}
-
 ################################################################################
 # Prerequisite Installation
 ################################################################################
@@ -243,14 +222,6 @@ install_system_dependencies() {
                         return 1
                     }
 
-                    # Debian 11 Docker containers need locales for Ansible to work
-                    # Install locales package and generate en_US.UTF-8
-                    if [[ "${DISTRO:-}" == "debian" ]] && [[ "${DISTRO_VERSION:-}" == "11" ]]; then
-                        log_info "Debian 11: Installing locales for UTF-8 support"
-                        sudo apt-get install -y -qq locales || log_warning "locales installation skipped"
-                        sudo locale-gen en_US.UTF-8 2>/dev/null || log_warning "locale-gen failed"
-                    fi
-
                     # Install pipx (optional - not critical to bootstrap success)
                     sudo apt-get install -y -qq pipx 2>/dev/null || log_warning "pipx installation skipped (not available)"
                 else
@@ -267,14 +238,6 @@ install_system_dependencies() {
                     log_error "Failed to install build tools via apt-get (running as root)"
                     return 1
                 }
-
-                # Debian 11 Docker containers need locales for Ansible to work
-                # Install locales package and generate en_US.UTF-8
-                if [[ "${DISTRO:-}" == "debian" ]] && [[ "${DISTRO_VERSION:-}" == "11" ]]; then
-                    log_info "Debian 11: Installing locales for UTF-8 support"
-                    apt-get install -y -qq locales || log_warning "locales installation skipped"
-                    locale-gen en_US.UTF-8 2>/dev/null || log_warning "locale-gen failed"
-                fi
 
                 apt-get install -y -qq pipx 2>/dev/null || log_warning "pipx installation skipped"
             fi
@@ -618,44 +581,25 @@ install_ansible() {
             # Use pip3 to install ansible (user or system-wide)
             log_info "Using pip3 to install Ansible..."
 
-            # Debian 11 has PEP 668 restrictions, so try --break-system-packages first
-            # Other systems: try user install first (preferred, doesn't need sudo)
-            if [[ "${DISTRO:-}" == "debian" ]] && [[ "${DISTRO_VERSION:-}" == "11" ]]; then
-                log_info "Debian 11 detected: using --break-system-packages for pip3"
-                # Try with --break-system-packages first (required for Debian 11 PEP 668)
-                if retry pip3 install --break-system-packages ansible; then
-                    log_success "Ansible installed via pip3 (system with --break-system-packages)"
-                # Fallback: try user install
-                elif retry pip3 install --user ansible; then
-                    log_success "Ansible installed via pip3 (user)"
-                # Final fallback
-                elif retry pip3 install ansible; then
-                    log_success "Ansible installed via pip3 (system)"
-                else
-                    log_error "Failed to install Ansible via pip3 after 3 attempts"
-                    return 1
-                fi
+            # Try user installation first (preferred, doesn't need sudo)
+            if retry pip3 install --user ansible; then
+                log_success "Ansible installed via pip3 (user)"
+            # If user installation fails, try system-wide without externally-managed-environment restrictions
+            elif retry pip3 install --break-system-packages ansible; then
+                log_success "Ansible installed via pip3 (system with --break-system-packages)"
+            # Fallback: try without the flag for older systems
+            elif retry pip3 install ansible; then
+                log_success "Ansible installed via pip3 (system)"
             else
-                # Non-Debian-11 systems: try user installation first (preferred, doesn't need sudo)
-                if retry pip3 install --user ansible; then
-                    log_success "Ansible installed via pip3 (user)"
-                # If user installation fails, try system-wide without externally-managed-environment restrictions
-                elif retry pip3 install --break-system-packages ansible; then
-                    log_success "Ansible installed via pip3 (system with --break-system-packages)"
-                # Fallback: try without the flag for older systems
-                elif retry pip3 install ansible; then
-                    log_success "Ansible installed via pip3 (system)"
-                else
-                    log_error "Failed to install Ansible via pip3 after 3 attempts"
-                    log_error ""
-                    log_error "Troubleshooting steps:"
-                    log_error "  1. Verify pip3 is installed: pip3 --version"
-                    log_error "  2. Upgrade pip: pip3 install --upgrade pip"
-                    log_error "  3. Check disk space: df -h /tmp"
-                    log_error "  4. Try manual install: pip3 install ansible"
-                    suggest_fix "ansible" "Ensure pip3 is functional and has sufficient disk space"
-                    return 1
-                fi
+                log_error "Failed to install Ansible via pip3 after 3 attempts"
+                log_error ""
+                log_error "Troubleshooting steps:"
+                log_error "  1. Verify pip3 is installed: pip3 --version"
+                log_error "  2. Upgrade pip: pip3 install --upgrade pip"
+                log_error "  3. Check disk space: df -h /tmp"
+                log_error "  4. Try manual install: pip3 install ansible"
+                suggest_fix "ansible" "Ensure pip3 is functional and has sufficient disk space"
+                return 1
             fi
         fi
     fi
@@ -811,15 +755,6 @@ run_ansible_setup() {
         return 1
     fi
 
-    # Debian 11 Docker containers need locale set for Ansible to work
-    # The locales package and en_US.UTF-8 should have been generated during dependency installation
-    log_info "System detected: OS=$OS, DISTRO=${DISTRO:-unknown}, VERSION=${DISTRO_VERSION:-unknown}"
-
-    if [[ "${DISTRO:-}" == "debian" ]] && [[ "${DISTRO_VERSION:-}" == "11" ]]; then
-        log_info "Debian 11 detected: setting locale to en_US.UTF-8 for Ansible"
-        export LC_ALL=en_US.UTF-8
-        export LANG=en_US.UTF-8
-    fi
 
     if ! ansible-playbook -i inventory.yml setup.yml \
         --extra-vars="setup_environment=${ENVIRONMENT:-development}" \
@@ -1032,7 +967,6 @@ main() {
     print_section "Step 1: System Detection"
     detect_os || exit 1
     detect_arch || exit 1
-    detect_distro || exit 1
 
     # Step 2: Install system dependencies (for Linux platforms)
     print_section "Step 2: Install System Dependencies"

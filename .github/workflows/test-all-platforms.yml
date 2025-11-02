@@ -426,11 +426,11 @@ jobs:
         name: debian-12-logs
         path: /tmp/*.log
 
-  test-debian-11:
-    name: Debian 11 (Bullseye) - Docker
+  test-debian-13:
+    name: Debian 13 (Trixie) - Docker
     runs-on: ubuntu-latest
     container:
-      image: debian:11
+      image: debian:13
       options: --user root
     timeout-minutes: 45
 
@@ -488,7 +488,7 @@ jobs:
       if: failure()
       uses: actions/upload-artifact@v4
       with:
-        name: debian-11-logs
+        name: debian-13-logs
         path: /tmp/*.log
 
   # ===========================================================================
@@ -504,7 +504,7 @@ jobs:
       - test-ubuntu-24
       - test-ubuntu-22
       - test-debian-12
-      - test-debian-11
+      - test-debian-13
       - test-fedora-40
       - test-arch-linux
     runs-on: ubuntu-latest
@@ -524,7 +524,7 @@ jobs:
         echo ""
         echo "Container Tests (Informational):"
         echo "  Debian 12 (Bookworm): ${{ needs.test-debian-12.result }}"
-        echo "  Debian 11 (Bullseye): ${{ needs.test-debian-11.result }}"
+        echo "  Debian 13 (Trixie):   ${{ needs.test-debian-13.result }}"
         echo "  Fedora 40:            ${{ needs.test-fedora-40.result }}"
         echo "  Arch Linux:           ${{ needs.test-arch-linux.result }}"
         echo ""
@@ -542,7 +542,7 @@ jobs:
 
         # Informational tests (containers - may have transient failures)
         [[ "${{ needs.test-debian-12.result }}" != "success" ]] && ((info_failures++))
-        [[ "${{ needs.test-debian-11.result }}" != "success" ]] && ((info_failures++))
+        [[ "${{ needs.test-debian-13.result }}" != "success" ]] && ((info_failures++))
         [[ "${{ needs.test-fedora-40.result }}" != "success" ]] && ((info_failures++))
         [[ "${{ needs.test-arch-linux.result }}" != "success" ]] && ((info_failures++))
 

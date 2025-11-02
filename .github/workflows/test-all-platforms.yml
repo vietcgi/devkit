@@ -503,9 +503,9 @@ jobs:
       - test-macos-13
       - test-ubuntu-24
       - test-ubuntu-22
-      - test-debian-12
       - test-debian-13
-      - test-fedora-40
+      - test-debian-12
+      - test-fedora-43
       - test-arch-linux
     runs-on: ubuntu-latest
     if: always()
@@ -523,9 +523,9 @@ jobs:
         echo "  Ubuntu 22.04 (Jammy): ${{ needs.test-ubuntu-22.result }}"
         echo ""
         echo "Container Tests (Informational):"
-        echo "  Debian 12 (Bookworm): ${{ needs.test-debian-12.result }}"
         echo "  Debian 13 (Trixie):   ${{ needs.test-debian-13.result }}"
-        echo "  Fedora 40:            ${{ needs.test-fedora-40.result }}"
+        echo "  Debian 12 (Bookworm): ${{ needs.test-debian-12.result }}"
+        echo "  Fedora 43:            ${{ needs.test-fedora-43.result }}"
         echo "  Arch Linux:           ${{ needs.test-arch-linux.result }}"
         echo ""
 
@@ -541,9 +541,9 @@ jobs:
         [[ "${{ needs.test-ubuntu-22.result }}" != "success" ]] && ((critical_failures++))
 
         # Informational tests (containers - may have transient failures)
-        [[ "${{ needs.test-debian-12.result }}" != "success" ]] && ((info_failures++))
         [[ "${{ needs.test-debian-13.result }}" != "success" ]] && ((info_failures++))
-        [[ "${{ needs.test-fedora-40.result }}" != "success" ]] && ((info_failures++))
+        [[ "${{ needs.test-debian-12.result }}" != "success" ]] && ((info_failures++))
+        [[ "${{ needs.test-fedora-43.result }}" != "success" ]] && ((info_failures++))
         [[ "${{ needs.test-arch-linux.result }}" != "success" ]] && ((info_failures++))
 
         critical_total=5
@@ -570,11 +570,11 @@ jobs:
   # Fedora/Arch Tests (Now Fully Supported!)
   # ===========================================================================
 
-  test-fedora-40:
-    name: Fedora 40 - Docker
+  test-fedora-43:
+    name: Fedora 43 - Docker
     runs-on: ubuntu-latest
     container:
-      image: fedora:40
+      image: fedora:43
       options: --user root
     timeout-minutes: 45
 
@@ -635,7 +635,7 @@ jobs:
       if: failure()
       uses: actions/upload-artifact@v4
       with:
-        name: fedora-40-logs
+        name: fedora-43-logs
         path: /tmp/*.log
 
   test-arch-linux:

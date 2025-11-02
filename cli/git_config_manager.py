@@ -89,7 +89,7 @@ class GitConfigManager(ValidatorBase):
             self.print_status(f"Config validation error: {e}", "ERROR")
             return False
 
-        if result and result.returncode != 0:
+        if result and result.returncode:
             self.print_status(f"Git config validation failed: {result.stderr}", "ERROR")
             return False
 
@@ -116,7 +116,7 @@ class GitConfigManager(ValidatorBase):
             return {}
 
         config = {}
-        if result.returncode == 0:
+        if not result.returncode:
             for line in result.stdout.split("\0"):
                 if "=" in line:
                     key, value = line.split("=", 1)
@@ -161,7 +161,7 @@ class GitConfigManager(ValidatorBase):
             self.print_status(f"Error detecting changes: {e}", "ERROR")
             return {}
 
-        if result.returncode == 0:
+        if not result.returncode:
             for line in result.stdout.split("\0"):
                 if "=" in line:
                     key, value = line.split("=", 1)
@@ -202,7 +202,7 @@ class GitConfigManager(ValidatorBase):
             self.print_status(f"Reload error: {e}", "ERROR")
             return False
 
-        if result.returncode == 0:
+        if not result.returncode:
             self.print_status("Git configuration reloaded", "SUCCESS")
             self.logger.info("Git configuration reloaded successfully")
             return True
@@ -343,7 +343,7 @@ class GitConfigManager(ValidatorBase):
             self.print_status(f"Credential helper error: {e}", "ERROR")
             return False
 
-        if result.returncode == 0 and result.stdout.strip():
+        if not result.returncode and result.stdout.strip():
             helper = result.stdout.strip()
             self.print_status(f"Credential helper: {helper}", "INFO")
         else:

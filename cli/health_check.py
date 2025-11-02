@@ -98,7 +98,7 @@ class DependencyCheck(HealthCheck):
         except (subprocess.TimeoutExpired, FileNotFoundError):
             return False
 
-        return result.returncode == 0
+        return not result.returncode
 
     def run(self) -> tuple[str, str, dict[str, Any]]:
         """Check if all dependencies are available."""
@@ -118,7 +118,7 @@ class DependencyCheck(HealthCheck):
                 self.logger.debug("Failed to check %s: %s", tool, e)
                 missing.append(tool)
             else:
-                if result.returncode == 0:
+                if not result.returncode:
                     installed.append(tool)
                 else:
                     missing.append(tool)

@@ -112,7 +112,7 @@ class CodeQualityValidator(ValidatorBase):
             self.print_status(f"Coverage check error: {e}", "ERROR")
             return False, [str(e)], 0
 
-        if cov_result.returncode == 0:
+        if not cov_result.returncode:
             # Extract coverage percentage
             for line in cov_result.stdout.split("\n"):
                 if "TOTAL" in line:
@@ -211,7 +211,7 @@ class CodeQualityValidator(ValidatorBase):
         if issues:
             self.print_status(f"Found {len(issues)} complexity issues", "WARNING")
             return (
-                len([i for i in issues if "HIGH" in i]) == 0,
+                not [i for i in issues if "HIGH" in i],
                 issues,
                 avg_complexity,
             )
@@ -242,7 +242,7 @@ class CodeQualityValidator(ValidatorBase):
             self.print_status(f"Test error: {e}", "ERROR")
             return False, [str(e)], 0
 
-        if result.returncode == 0:
+        if not result.returncode:
             # Count passed tests
             passed = len(re.findall(r"PASSED", result.stdout))
             self.print_status(f"All tests passed ({passed} tests)", "SUCCESS")

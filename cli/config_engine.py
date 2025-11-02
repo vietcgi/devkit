@@ -578,7 +578,7 @@ class ConfigurationEngine:
         self._validate_logging(errors)
         self._validate_performance(errors)
 
-        return len(errors) == 0, errors
+        return not errors, errors
 
     def export(self, format_type: str = "yaml") -> str:
         """Export configuration in specified format.

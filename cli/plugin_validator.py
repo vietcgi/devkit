@@ -126,7 +126,7 @@ class PluginManifest:
                             f"got {type(version_spec).__name__}",
                         )
 
-        return len(errors) == 0, errors
+        return not errors, errors
 
     def verify_integrity(self) -> tuple[bool, str]:
         """Verify plugin manifest integrity using SHA256 checksum.
@@ -242,7 +242,7 @@ class PluginValidator:
             return False, f"Missing {init_file} (required entry point)"
 
         # Verify __init__.py is not empty
-        if init_file.stat().st_size == 0:
+        if not init_file.stat().st_size:
             return False, f"{init_file} is empty"
 
         # Verify plugin class exists in __init__.py

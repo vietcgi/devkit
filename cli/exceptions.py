@@ -141,7 +141,8 @@ class ConfigError(DevkitError):
             message="Configuration file has invalid YAML syntax",
             cause=f"YAML parsing error: {error}",
             solutions=[
-                "Validate YAML: python3 -c \"import yaml; yaml.safe_load(open('~/.devkit/config.yaml'))\"",
+                'Validate YAML: python3 -c "import yaml; '
+                "yaml.safe_load(open('~/.devkit/config.yaml'))\"",
                 "Use online validator: https://www.yamllint.com",
                 "Check indentation (must be 2 spaces, not tabs)",
                 "Check for special characters needing quotes",
@@ -192,7 +193,11 @@ class PluginError(DevkitError):
                 f"Check plugin directory: ls -la ~/.devkit/plugins/{plugin}/",
                 "Verify manifest.json exists and is valid JSON",
                 "Verify __init__.py exists and contains Plugin class",
-                f"Run validator: python3 -c \"from cli.plugin_validator import validate_plugin_manifest; validate_plugin_manifest('{plugin}')\"",
+                (
+                    f'Run validator: python3 -c "from cli.plugin_validator import '
+                    f"validate_plugin_manifest; "
+                    f"validate_plugin_manifest('{plugin}')\""
+                ),
                 "See PLUGIN_DEVELOPMENT.md for plugin requirements",
             ],
             documentation="See docs/PLUGINS.md for plugin system",
@@ -206,7 +211,10 @@ class PluginError(DevkitError):
             cause="manifest.json is required for all plugins",
             solutions=[
                 f"Create manifest: ~/.devkit/plugins/{plugin}/manifest.json",
-                'Use template: { "name": "plugin-name", "version": "1.0.0", "author": "Your Name", "description": "Plugin description" }',
+                (
+                    '{ "name": "plugin-name", "version": "1.0.0", '
+                    '"author": "Your Name", "description": "Plugin description" }'
+                ),
                 "See docs/PLUGINS.md for complete manifest structure",
             ],
             documentation="See docs/PLUGINS.md > Manifest",

@@ -366,7 +366,7 @@ class MutationTester:
             backup_path.unlink()
 
         # Determine if mutation was killed
-        if result.returncode != 0:
+        if result.returncode:
             return MutationResult(
                 mutation=mutation,
                 test_result="killed",

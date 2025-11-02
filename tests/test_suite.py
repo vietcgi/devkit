@@ -10,14 +10,15 @@ Tests all components of devkit including:
 - Integration tests
 """
 
-import os
-import sys
-import subprocess
 import logging
-from pathlib import Path
-from typing import List, Optional
+import os
+import subprocess
+import sys
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
+from typing import List, Optional
+
 import yaml
 
 

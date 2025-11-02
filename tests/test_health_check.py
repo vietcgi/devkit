@@ -21,13 +21,13 @@ from unittest.mock import MagicMock, patch
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from cli.health_check import (  # noqa: E402
-    HealthStatus,
+    ConfigurationCheck,
     DependencyCheck,
     DiskSpaceCheck,
-    ConfigurationCheck,
+    HealthMonitor,
+    HealthStatus,
     LogCheck,
     SystemCheck,
-    HealthMonitor,
     create_default_monitor,
 )
 
@@ -433,6 +433,7 @@ class TestHealthCheckBaseMethods(unittest.TestCase):
     def setUp(self):
         """Set up test health check."""
         from cli.health_check import HealthCheck
+
         self.check = HealthCheck("TestCheck", "Test description")
 
     def test_health_check_init(self):

@@ -7,23 +7,23 @@ Validates:
 - Error handling in refactored classes
 """
 
+import json
 import os
 import sys
-import unittest
 import tempfile
-import json
-from pathlib import Path
+import unittest
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from cli.audit import (  # noqa: E402
-    AuditSigningService,
-    AuditLogStorage,
-    AuditLogger,
-    AuditReporter,
     AuditAction,
+    AuditLogger,
+    AuditLogStorage,
+    AuditReporter,
+    AuditSigningService,
     HMACKeyError,
 )
 
@@ -41,6 +41,7 @@ class TestAuditSigningService(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_service_creation(self):
@@ -167,6 +168,7 @@ class TestAuditLogStorage(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_storage_creation(self):
@@ -313,6 +315,7 @@ class TestAuditLoggerIntegration(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_logger_with_signing_service(self):
@@ -380,6 +383,7 @@ class TestAuditLoggerAdditional(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_log_install_started(self):
@@ -435,7 +439,9 @@ class TestAuditLoggerAdditional(unittest.TestCase):
     def test_log_permission_changed(self):
         """Test logging permission changed action."""
         logger = AuditLogger(self.log_dir)
-        entry = logger.log_permission_changed(path="/path/to/file", old_perms="0644", new_perms="0600")
+        entry = logger.log_permission_changed(
+            path="/path/to/file", old_perms="0644", new_perms="0600"
+        )
 
         self.assertEqual(entry["action"], "permission_changed")
         self.assertIn("path", entry["details"])
@@ -464,6 +470,7 @@ class TestAuditReporterAdvanced(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_generate_activity_report(self):
@@ -503,6 +510,7 @@ class TestAuditSigningServiceErrors(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_sign_entry_without_hmac_key(self):
@@ -596,6 +604,7 @@ class TestAuditStorageErrors(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_write_entry_with_non_serializable_data(self):
@@ -695,6 +704,7 @@ class TestAuditLoggerAdditionalMethods(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_log_config_changed(self):
@@ -889,12 +899,14 @@ class TestAuditLoggerAdditionalMethods(unittest.TestCase):
 
         # Write old entry directly
         old_time = (datetime.now(tz=UTC) - timedelta(days=2)).isoformat()
-        logger.storage.write_entry({
-            "timestamp": old_time,
-            "action": "old_action",
-            "status": "success",
-            "details": {},
-        })
+        logger.storage.write_entry(
+            {
+                "timestamp": old_time,
+                "action": "old_action",
+                "status": "success",
+                "details": {},
+            }
+        )
 
         # Write recent entry
         logger.log_install_started()
@@ -911,12 +923,14 @@ class TestAuditLoggerAdditionalMethods(unittest.TestCase):
         logger.log_install_started()
 
         # Write entry with invalid timestamp
-        logger.storage.write_entry({
-            "timestamp": "invalid-timestamp",
-            "action": "test",
-            "status": "success",
-            "details": {},
-        })
+        logger.storage.write_entry(
+            {
+                "timestamp": "invalid-timestamp",
+                "action": "test",
+                "status": "success",
+                "details": {},
+            }
+        )
 
         # Should not raise, just skip invalid entries
         summary = logger.get_audit_summary(hours=24)
@@ -934,6 +948,7 @@ class TestAuditReporterErrors(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_generate_activity_report_with_invalid_timestamp(self):
@@ -944,12 +959,14 @@ class TestAuditReporterErrors(unittest.TestCase):
         logger.log_install_started()
 
         # Write entry with invalid timestamp
-        logger.storage.write_entry({
-            "timestamp": "invalid",
-            "action": "test",
-            "status": "success",
-            "details": {},
-        })
+        logger.storage.write_entry(
+            {
+                "timestamp": "invalid",
+                "action": "test",
+                "status": "success",
+                "details": {},
+            }
+        )
 
         # Should not raise
         report = reporter.generate_activity_report(days=30)
@@ -973,13 +990,15 @@ class TestAuditReporterErrors(unittest.TestCase):
 
         # Write old entry
         old_time = (datetime.now(tz=UTC) - timedelta(days=60)).isoformat()
-        logger.storage.write_entry({
-            "timestamp": old_time,
-            "action": "old_action",
-            "status": "success",
-            "user": "user1",
-            "details": {},
-        })
+        logger.storage.write_entry(
+            {
+                "timestamp": old_time,
+                "action": "old_action",
+                "status": "success",
+                "user": "user1",
+                "details": {},
+            }
+        )
 
         # Write recent entry
         logger.log_install_started()

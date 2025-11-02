@@ -13,18 +13,18 @@ import ast
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
 # Mock sys.argv to prevent argparse issues during import
 sys.argv = ["pytest"]
 
 from cli.mutation_test import (  # noqa: E402
-    MutationType,
     Mutation,
-    MutationResult,
-    MutationReport,
     MutationDetector,
+    MutationReport,
+    MutationResult,
     MutationTester,
+    MutationType,
 )
 
 
@@ -273,9 +273,7 @@ class TestMutationReport:
             description="Changed == to !=",
         )
 
-        report = MutationReport(
-            results=[MutationResult(mutation=mutation, test_result="survived")]
-        )
+        report = MutationReport(results=[MutationResult(mutation=mutation, test_result="survived")])
         report.update()
 
         result_dict = report.to_dict()
@@ -526,9 +524,7 @@ def is_valid(x):
 
             # Filter for comparison mutations in this source
             comp_mutations = [
-                m
-                for m in mutations
-                if m.mutation_type == MutationType.COMPARISON_OPERATOR
+                m for m in mutations if m.mutation_type == MutationType.COMPARISON_OPERATOR
             ]
             if comp_mutations:
                 assert any(expected_mutation in m.mutated_code for m in comp_mutations)
@@ -545,9 +541,7 @@ class TestMutationDetectorLogicalOperators:
 
         # Should detect and -> or mutation
         logical_mutations = [
-            m
-            for m in mutations
-            if m.mutation_type == MutationType.LOGICAL_OPERATOR
+            m for m in mutations if m.mutation_type == MutationType.LOGICAL_OPERATOR
         ]
         assert len(logical_mutations) > 0
         assert any("or" in m.mutated_code for m in logical_mutations)
@@ -560,9 +554,7 @@ class TestMutationDetectorLogicalOperators:
 
         # Should detect or -> and mutation
         logical_mutations = [
-            m
-            for m in mutations
-            if m.mutation_type == MutationType.LOGICAL_OPERATOR
+            m for m in mutations if m.mutation_type == MutationType.LOGICAL_OPERATOR
         ]
         assert len(logical_mutations) > 0
         assert any("and" in m.mutated_code for m in logical_mutations)
@@ -660,6 +652,7 @@ class TestMutationTesterExecution:
             # Mock run_command to raise TimeoutExpired
             with patch("cli.mutation_test.run_command") as mock_run:
                 import subprocess
+
                 mock_run.side_effect = subprocess.TimeoutExpired("pytest", 30)
                 result = tester._test_mutation(mutation)
 
@@ -812,6 +805,7 @@ class TestMutationReporting:
 
             # Should contain valid JSON
             import json
+
             data = json.loads(output_path.read_text())
             assert data["total_mutations"] == 1
             assert data["killed_mutations"] == 1

@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / "cli"))
 
-from plugin_validator import PluginValidator, PluginManifest, validate_plugin_manifest  # noqa: E402
+from plugin_validator import PluginManifest, PluginValidator, validate_plugin_manifest  # noqa: E402
 
 
 class TestPluginManifestValidation(unittest.TestCase):
@@ -168,9 +168,7 @@ class TestPluginManifestValidation(unittest.TestCase):
 
     def test_invalid_requires_field(self):
         """Test that invalid requires field is rejected."""
-        manifest_path = self.create_manifest(
-            requires="3.0.0"  # Should be dict, not string
-        )
+        manifest_path = self.create_manifest(requires="3.0.0")  # Should be dict, not string
         manifest = PluginManifest(manifest_path)
         is_valid, errors = manifest.validate()
 

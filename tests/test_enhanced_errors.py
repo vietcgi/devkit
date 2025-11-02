@@ -16,12 +16,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from cli.exceptions import (  # noqa: E402
-    DevkitError,
     BootstrapError,
     ConfigError,
+    DependencyError,
+    DevkitError,
     PluginError,
     SecurityError,
-    DependencyError,
     VerificationError,
 )
 

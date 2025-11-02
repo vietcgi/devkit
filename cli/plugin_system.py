@@ -169,7 +169,11 @@ class PluginLoader:
         self.logger.info("Discovered %d plugins", len(discovered))
         return discovered
 
-    def load_plugin(self, plugin_path: str, module_name: str) -> PluginInterface | None:  # pylint: disable=too-many-return-statements
+    def load_plugin(
+        self,
+        plugin_path: str,
+        module_name: str,
+    ) -> PluginInterface | None:  # pylint: disable=too-many-return-statements
         """Load a single plugin module with security validation.
 
         SECURITY: Before loading, validates:

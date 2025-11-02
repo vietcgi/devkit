@@ -11,16 +11,17 @@ Tests git configuration management functionality including:
 """
 
 import logging
-import pytest
 import subprocess
 import sys
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 # Mock sys.argv to prevent argparse issues during import
 sys.argv = ["pytest"]
 
-from cli.git_config_manager import GitConfigManager, Colors
+from cli.git_config_manager import Colors, GitConfigManager
 
 
 @pytest.fixture
@@ -103,31 +104,24 @@ class TestGitConfigManager:
             result = manager.validate_git_config_syntax()
             assert result is True
 
-    def test_validate_git_config_syntax_no_gitconfig(
-        self, manager: GitConfigManager
-    ) -> None:
+    def test_validate_git_config_syntax_no_gitconfig(self, manager: GitConfigManager) -> None:
         """Test git config validation when no gitconfig exists."""
         # When gitconfig doesn't exist, validation returns True
         result = manager.validate_git_config_syntax()
         assert result is True
 
     @patch("subprocess.run")
-    def test_get_current_config(
-        self, mock_run: Mock, manager: GitConfigManager
-    ) -> None:
+    def test_get_current_config(self, mock_run: Mock, manager: GitConfigManager) -> None:
         """Test getting current git configuration."""
         mock_run.return_value = Mock(
-            returncode=0,
-            stdout="user.name=John Doe\0user.email=john@example.com\0"
+            returncode=0, stdout="user.name=John Doe\0user.email=john@example.com\0"
         )
         config = manager.get_current_config()
         assert "user.name" in config
         assert config["user.name"] == "John Doe"
 
     @patch("subprocess.run")
-    def test_get_current_config_empty(
-        self, mock_run: Mock, manager: GitConfigManager
-    ) -> None:
+    def test_get_current_config_empty(self, mock_run: Mock, manager: GitConfigManager) -> None:
         """Test getting config when none exists."""
         mock_run.return_value = Mock(returncode=1, stdout="")
         config = manager.get_current_config()
@@ -142,10 +136,7 @@ class TestGitConfigManager:
         gitconfig = temp_home / ".gitconfig"
         gitconfig.write_text("[user]\n    name = Jane Doe\n")
 
-        mock_run.return_value = Mock(
-            returncode=0,
-            stdout="user.name=Jane Doe\0"
-        )
+        mock_run.return_value = Mock(returncode=0, stdout="user.name=Jane Doe\0")
         changes = manager.detect_config_changes()
         assert isinstance(changes, dict)
 
@@ -159,22 +150,16 @@ class TestGitConfigManager:
         assert changes == {}
 
     @patch("subprocess.run")
-    def test_reload_git_config_success(
-        self, mock_run: Mock, manager: GitConfigManager
-    ) -> None:
+    def test_reload_git_config_success(self, mock_run: Mock, manager: GitConfigManager) -> None:
         """Test reloading git configuration."""
         mock_run.return_value = Mock(returncode=0, stderr="")
         result = manager.reload_git_config()
         assert result is True
 
     @patch("subprocess.run")
-    def test_reload_git_config_failure(
-        self, mock_run: Mock, manager: GitConfigManager
-    ) -> None:
+    def test_reload_git_config_failure(self, mock_run: Mock, manager: GitConfigManager) -> None:
         """Test git config reload failure."""
-        mock_run.return_value = Mock(
-            returncode=1, stderr="fatal: error"
-        )
+        mock_run.return_value = Mock(returncode=1, stderr="fatal: error")
         result = manager.reload_git_config()
         assert result is False
 
@@ -196,16 +181,12 @@ class TestGitConfigManager:
         # Should succeed if at least one hook is found and executable
         assert isinstance(result, bool)
 
-    def test_create_backup_no_gitconfig(
-        self, manager: GitConfigManager
-    ) -> None:
+    def test_create_backup_no_gitconfig(self, manager: GitConfigManager) -> None:
         """Test backup creation when no gitconfig exists."""
         result = manager.create_backup()
         assert result is None
 
-    def test_create_backup_with_gitconfig(
-        self, temp_home: Path
-    ) -> None:
+    def test_create_backup_with_gitconfig(self, temp_home: Path) -> None:
         """Test backup creation with existing gitconfig."""
         gitconfig = temp_home / ".gitconfig"
         gitconfig.write_text("[user]\n    name = Test User\n")
@@ -219,10 +200,7 @@ class TestGitConfigManager:
     @patch.object(GitConfigManager, "verify_hooks")
     @patch("cli.git_config_manager.subprocess.run")
     def test_reload_hooks_success(
-        self,
-        mock_run: Mock,
-        mock_verify: Mock,
-        manager: GitConfigManager
+        self, mock_run: Mock, mock_verify: Mock, manager: GitConfigManager
     ) -> None:
         """Test hook reloading."""
         mock_verify.return_value = True
@@ -231,9 +209,7 @@ class TestGitConfigManager:
         assert result is True
 
     @patch.object(GitConfigManager, "verify_hooks")
-    def test_reload_hooks_failure(
-        self, mock_verify: Mock, manager: GitConfigManager
-    ) -> None:
+    def test_reload_hooks_failure(self, mock_verify: Mock, manager: GitConfigManager) -> None:
         """Test hook reload when verification fails."""
         mock_verify.return_value = False
         result = manager.reload_hooks()
@@ -244,9 +220,7 @@ class TestGitConfigManager:
         self, mock_run: Mock, manager: GitConfigManager
     ) -> None:
         """Test credential helper reload."""
-        mock_run.return_value = Mock(
-            returncode=0, stdout="osxkeychain"
-        )
+        mock_run.return_value = Mock(returncode=0, stdout="osxkeychain")
         result = manager.reload_credential_helpers()
         assert result is True
 
@@ -262,9 +236,7 @@ class TestGitConfigManager:
         assert "hooks_status" in report
         assert "directories" in report
 
-    def test_display_report(
-        self, manager: GitConfigManager
-    ) -> None:
+    def test_display_report(self, manager: GitConfigManager) -> None:
         """Test report display."""
         report = {
             "timestamp": "2024-01-01T00:00:00",
@@ -308,7 +280,7 @@ class TestGitConfigManager:
         mock_changes: Mock,
         mock_backup: Mock,
         mock_validate: Mock,
-        manager: GitConfigManager
+        manager: GitConfigManager,
     ) -> None:
         """Test complete reload."""
         mock_validate.return_value = True
@@ -333,18 +305,13 @@ class TestGitConfigManager:
     @patch.object(GitConfigManager, "detect_config_changes")
     @patch.object(GitConfigManager, "verify_hooks")
     def test_reload_all_dry_run(
-        self,
-        mock_verify: Mock,
-        mock_changes: Mock,
-        mock_validate: Mock,
-        manager: GitConfigManager
+        self, mock_verify: Mock, mock_changes: Mock, mock_validate: Mock, manager: GitConfigManager
     ) -> None:
         """Test dry run mode."""
         mock_validate.return_value = True
-        with patch.object(
-            manager, "generate_report"
-        ) as mock_gen, patch.object(
-            manager, "display_report"
+        with (
+            patch.object(manager, "generate_report") as mock_gen,
+            patch.object(manager, "display_report"),
         ):
             mock_gen.return_value = {}
             result = manager.reload_all(dry_run=True)
@@ -366,9 +333,7 @@ class TestGitConfigManager:
 
     def test_reload_component_credentials(self, manager: GitConfigManager) -> None:
         """Test reloading credentials component."""
-        with patch.object(
-            manager, "reload_credential_helpers"
-        ) as mock_reload:
+        with patch.object(manager, "reload_credential_helpers") as mock_reload:
             mock_reload.return_value = True
             result = manager.reload_component("credentials")
             mock_reload.assert_called_once()
@@ -409,6 +374,7 @@ class TestGitConfigManagerErrorHandling:
     def test_verify_hooks_no_hooks_dir(self, manager: GitConfigManager) -> None:
         """Test verifying hooks when hooks directory is missing."""
         import shutil
+
         hooks_dir = manager.git_hooks_dir
         if hooks_dir.exists():
             shutil.rmtree(hooks_dir)
@@ -427,6 +393,7 @@ class TestGitConfigManagerErrorHandling:
     def test_reload_hooks_missing_dir(self, manager: GitConfigManager) -> None:
         """Test reloading hooks with missing directory."""
         import shutil
+
         hooks_dir = manager.git_hooks_dir
         if hooks_dir.exists():
             shutil.rmtree(hooks_dir)
@@ -467,9 +434,7 @@ class TestGitConfigManagerErrorHandling:
 
     def test_reload_component_credentials(self, manager: GitConfigManager) -> None:
         """Test reloading credentials component."""
-        with patch.object(
-            manager, "reload_credential_helpers", return_value=True
-        ) as mock_reload:
+        with patch.object(manager, "reload_credential_helpers", return_value=True) as mock_reload:
             result = manager.reload_component("credentials")
             assert result is True
             mock_reload.assert_called_once()
@@ -563,11 +528,14 @@ class TestConfigChangeDetection:
 
     def test_detect_config_changes_with_changes(self, manager: GitConfigManager) -> None:
         """Test detecting actual config changes."""
+
         # Mock run_command to return current and new configs
         def mock_run(cmd, timeout=None):
             if "--list" in cmd and "--null" in cmd:
                 # Return different config depending on whether it's current or from file
-                return Mock(returncode=0, stdout="user.name=John\nuser.email=john@example.com\0", stderr="")
+                return Mock(
+                    returncode=0, stdout="user.name=John\nuser.email=john@example.com\0", stderr=""
+                )
             return Mock(returncode=0, stdout="", stderr="")
 
         with patch("cli.git_config_manager.run_command") as mock_run_cmd:

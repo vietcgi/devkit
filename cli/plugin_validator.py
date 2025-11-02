@@ -212,7 +212,10 @@ class PluginValidator:
         self.plugins_dir = plugins_dir
         self.logger = logger or self._setup_logger()
 
-    def validate_plugin(self, plugin_name: str) -> tuple[bool, str]:  # pylint: disable=too-many-return-statements
+    def validate_plugin(
+        self,
+        plugin_name: str,
+    ) -> tuple[bool, str]:  # pylint: disable=too-many-return-statements
         """Validate plugin before loading.
 
         Checks:

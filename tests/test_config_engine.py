@@ -9,19 +9,20 @@ Focus on improving coverage of:
 - save() method
 """
 
-import sys
-import os
-import tempfile
-from pathlib import Path
-import unittest
-from unittest.mock import patch, MagicMock
-import yaml
 import json
+import os
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import yaml
 
 # Mock sys.argv to prevent argparse issues
 sys.argv = ["pytest"]
 
-from cli.config_engine import ConfigurationEngine, ConfigEnvironment, RateLimiter  # noqa: E402
+from cli.config_engine import ConfigEnvironment, ConfigurationEngine, RateLimiter  # noqa: E402
 
 
 class TestRateLimiter(unittest.TestCase):
@@ -124,6 +125,7 @@ class TestConfigurationEngineLoadFile(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_load_file_with_valid_yaml(self):
@@ -192,6 +194,7 @@ class TestConfigurationEngineEnvironmentOverrides(unittest.TestCase):
         os.environ.clear()
         os.environ.update(self.original_environ)
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_load_environment_overrides_simple_value(self):
@@ -253,6 +256,7 @@ class TestConfigurationEngineValidation(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_validate_correct_environment(self):
@@ -323,6 +327,7 @@ class TestConfigurationEngineExport(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_export_yaml(self):
@@ -368,6 +373,7 @@ class TestConfigurationEngineSave(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_save_creates_file(self):
@@ -411,6 +417,7 @@ class TestConfigurationEngineSetAndGet(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_get_simple_value(self):
@@ -466,10 +473,7 @@ class TestConfigurationEngineSetAndGet(unittest.TestCase):
 
     def test_set_with_rate_limiting_enabled_blocks_excess(self):
         """Test that set blocks operations exceeding rate limit."""
-        engine = ConfigurationEngine(
-            project_root=self.temp_dir,
-            enable_rate_limiting=True
-        )
+        engine = ConfigurationEngine(project_root=self.temp_dir, enable_rate_limiting=True)
         # Configure rate limiter for testing (5 ops per 60 seconds)
         for _ in range(5):
             engine.set("key", "value")
@@ -491,6 +495,7 @@ class TestConfigurationEngineDefaults(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_load_defaults_creates_global_section(self):
@@ -559,6 +564,7 @@ class TestConfigurationEngineDeepMerge(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_deep_merge_overwrites_simple_values(self):
@@ -603,6 +609,7 @@ class TestConfigurationEngineGetters(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_list_loaded_files(self):
@@ -648,6 +655,7 @@ class TestConfigurationEngineSecurityFile(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_validate_and_secure_creates_file(self):
@@ -694,6 +702,7 @@ class TestConfigurationEngineLoadAll(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_load_all_with_defaults_only(self):
@@ -733,6 +742,7 @@ class TestConfigurationEngineTimestamp(unittest.TestCase):
         self.assertIsInstance(timestamp, str)
         # Should be able to parse as ISO format
         from datetime import datetime
+
         datetime.fromisoformat(timestamp)
 
 
@@ -741,10 +751,13 @@ class TestConfigSecurityErrorPaths:
 
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.stat")
-    def test_validate_config_file_stat_error(self, mock_stat: MagicMock, mock_exists: MagicMock) -> None:
+    def test_validate_config_file_stat_error(
+        self, mock_stat: MagicMock, mock_exists: MagicMock
+    ) -> None:
         """Test when stat() raises OSError on existing file."""
         from pathlib import Path
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock, patch
+
         from cli.config_engine import ConfigurationEngine
 
         engine = ConfigurationEngine()
@@ -762,12 +775,15 @@ class TestConfigSecurityErrorPaths:
     @patch("os.getuid")
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.stat")
-    def test_validate_config_different_owner(self, mock_stat: MagicMock, mock_exists: MagicMock, mock_uid: MagicMock) -> None:
+    def test_validate_config_different_owner(
+        self, mock_stat: MagicMock, mock_exists: MagicMock, mock_uid: MagicMock
+    ) -> None:
         """Test when config file is owned by different user."""
+        import stat as stat_module
         from pathlib import Path
         from unittest.mock import MagicMock, patch
-        from cli.config_engine import ConfigurationEngine, ConfigPermissionError
-        import stat as stat_module
+
+        from cli.config_engine import ConfigPermissionError, ConfigurationEngine
 
         engine = ConfigurationEngine()
         mock_exists.return_value = True
@@ -792,12 +808,15 @@ class TestConfigSecurityErrorPaths:
     @patch("pathlib.Path.chmod")
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.stat")
-    def test_validate_config_chmod_fails(self, mock_stat: MagicMock, mock_exists: MagicMock, mock_chmod: MagicMock) -> None:
+    def test_validate_config_chmod_fails(
+        self, mock_stat: MagicMock, mock_exists: MagicMock, mock_chmod: MagicMock
+    ) -> None:
         """Test when chmod fails to fix permissions."""
+        import stat as stat_module
         from pathlib import Path
         from unittest.mock import MagicMock, patch
-        from cli.config_engine import ConfigurationEngine, ConfigPermissionError
-        import stat as stat_module
+
+        from cli.config_engine import ConfigPermissionError, ConfigurationEngine
 
         engine = ConfigurationEngine()
         mock_exists.return_value = True
@@ -825,8 +844,9 @@ class TestRateLimiterExtended:
 
     def test_cleanup_old_identifiers(self) -> None:
         """Test cleanup_old_identifiers removes empty entries."""
-        from cli.config_engine import RateLimiter
         from collections import deque
+
+        from cli.config_engine import RateLimiter
 
         limiter = RateLimiter()
 
@@ -844,9 +864,10 @@ class TestRateLimiterExtended:
 
     def test_cleanup_preserves_non_empty(self) -> None:
         """Test cleanup preserves identifiers with operations."""
-        from cli.config_engine import RateLimiter
         from collections import deque
-        from datetime import datetime, UTC
+        from datetime import UTC, datetime
+
+        from cli.config_engine import RateLimiter
 
         limiter = RateLimiter()
 
@@ -862,8 +883,9 @@ class TestRateLimiterExtended:
 
     def test_get_stats_empty_operations_list(self) -> None:
         """Test get_stats with empty operations list."""
-        from cli.config_engine import RateLimiter
         from collections import deque
+
+        from cli.config_engine import RateLimiter
 
         limiter = RateLimiter()
 
@@ -909,9 +931,10 @@ class TestConfigEngineLoadMethods:
 
     def test_load_all_in_sequence(self) -> None:
         """Test load_all loads defaults and environment."""
-        from cli.config_engine import ConfigurationEngine
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from cli.config_engine import ConfigurationEngine
 
         with tempfile.TemporaryDirectory() as tmpdir:
             engine = ConfigurationEngine()
@@ -924,8 +947,9 @@ class TestConfigEngineLoadMethods:
 
     def test_load_file_nonexistent(self) -> None:
         """Test load_file with nonexistent file."""
-        from cli.config_engine import ConfigurationEngine
         from pathlib import Path
+
+        from cli.config_engine import ConfigurationEngine
 
         engine = ConfigurationEngine()
         result = engine.load_file(Path("/nonexistent/file.yaml"))
@@ -936,8 +960,9 @@ class TestConfigEngineLoadMethods:
     @patch("builtins.open")
     def test_load_file_json_decode_error(self, mock_open: MagicMock) -> None:
         """Test load_file with invalid YAML/JSON."""
-        from cli.config_engine import ConfigurationEngine, ConfigError
         from pathlib import Path
+
+        from cli.config_engine import ConfigError, ConfigurationEngine
 
         engine = ConfigurationEngine()
         mock_open.side_effect = yaml.YAMLError("Invalid YAML")
@@ -992,8 +1017,9 @@ class TestConfigEngineLoadMethods:
     @patch("builtins.open", side_effect=PermissionError("Permission denied"))
     def test_load_file_permission_error(self, mock_open: MagicMock) -> None:
         """Test load_file with permission error."""
-        from cli.config_engine import ConfigurationEngine, ConfigError
         from pathlib import Path
+
+        from cli.config_engine import ConfigError, ConfigurationEngine
 
         engine = ConfigurationEngine()
 
@@ -1007,8 +1033,9 @@ class TestConfigEngineLoadMethods:
     @patch("builtins.open", side_effect=OSError("IO error"))
     def test_load_file_oserror(self, mock_open: MagicMock) -> None:
         """Test load_file with OSError."""
-        from cli.config_engine import ConfigurationEngine, ConfigError
         from pathlib import Path
+
+        from cli.config_engine import ConfigError, ConfigurationEngine
 
         engine = ConfigurationEngine()
 
@@ -1025,8 +1052,9 @@ class TestRateLimiterWindowCleanup:
 
     def test_cleanup_multiple_empty_identifiers(self) -> None:
         """Test cleanup removes multiple empty identifiers."""
-        from cli.config_engine import RateLimiter
         from collections import deque
+
+        from cli.config_engine import RateLimiter
 
         limiter = RateLimiter()
 
@@ -1042,9 +1070,10 @@ class TestRateLimiterWindowCleanup:
 
     def test_rate_limiter_mixed_operations(self) -> None:
         """Test rate limiter with mix of expired and valid operations."""
-        from cli.config_engine import RateLimiter
         from collections import deque
-        from datetime import datetime, timedelta, UTC
+        from datetime import UTC, datetime, timedelta
+
+        from cli.config_engine import RateLimiter
 
         limiter = RateLimiter(max_operations=3, window_seconds=10)
 
@@ -1066,10 +1095,12 @@ class TestConfigEngineLoadAllWithPlatformAndGroup:
 
     def test_load_all_with_platform_config(self) -> None:
         """Test load_all loads platform-specific config."""
-        from cli.config_engine import ConfigurationEngine
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
         import yaml
+
+        from cli.config_engine import ConfigurationEngine
 
         with tempfile.TemporaryDirectory() as tmpdir:
             tmppath = Path(tmpdir)
@@ -1078,7 +1109,7 @@ class TestConfigEngineLoadAllWithPlatformAndGroup:
             (tmppath / "config" / "platforms").mkdir(parents=True, exist_ok=True)
             platform_config = {
                 "platform_setting": "platform_value",
-                "nested": {"platform": "config"}
+                "nested": {"platform": "config"},
             }
             with open(tmppath / "config" / "platforms" / "macos.yaml", "w") as f:
                 yaml.dump(platform_config, f)
@@ -1091,10 +1122,12 @@ class TestConfigEngineLoadAllWithPlatformAndGroup:
 
     def test_load_all_with_group_config(self) -> None:
         """Test load_all loads group config."""
-        from cli.config_engine import ConfigurationEngine
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
         import yaml
+
+        from cli.config_engine import ConfigurationEngine
 
         with tempfile.TemporaryDirectory() as tmpdir:
             tmppath = Path(tmpdir)
@@ -1103,7 +1136,7 @@ class TestConfigEngineLoadAllWithPlatformAndGroup:
             (tmppath / "config" / "groups").mkdir(parents=True, exist_ok=True)
             group_config = {
                 "group_setting": "group_value",
-                "roles": {"enabled": ["role1", "role2"]}
+                "roles": {"enabled": ["role1", "role2"]},
             }
             with open(tmppath / "config" / "groups" / "development.yaml", "w") as f:
                 yaml.dump(group_config, f)
@@ -1116,10 +1149,12 @@ class TestConfigEngineLoadAllWithPlatformAndGroup:
 
     def test_load_all_with_default_local_config(self) -> None:
         """Test load_all uses default local config if available."""
-        from cli.config_engine import ConfigurationEngine
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
         import yaml
+
+        from cli.config_engine import ConfigurationEngine
 
         with tempfile.TemporaryDirectory() as tmpdir:
             tmppath = Path(tmpdir)
@@ -1136,6 +1171,7 @@ class TestConfigEngineLoadAllWithPlatformAndGroup:
                 engine = ConfigurationEngine(project_root=tmppath)
                 # Mock load_file to return test local config
                 original_load_file = engine.load_file
+
                 def mock_load_file(path, section=None):
                     if "config_test_temp.yaml" in str(path):
                         return local_config
@@ -1156,8 +1192,9 @@ class TestConfigEngineSetNestedValues:
 
     def test_set_nested_creates_intermediate_dicts(self) -> None:
         """Test set creates intermediate dicts for missing keys."""
-        from cli.config_engine import ConfigurationEngine
         import tempfile
+
+        from cli.config_engine import ConfigurationEngine
 
         with tempfile.TemporaryDirectory() as tmpdir:
             engine = ConfigurationEngine(project_root=tmpdir)
@@ -1170,8 +1207,9 @@ class TestConfigEngineSetNestedValues:
 
     def test_set_nested_with_existing_parent(self) -> None:
         """Test set with existing parent dict."""
-        from cli.config_engine import ConfigurationEngine
         import tempfile
+
+        from cli.config_engine import ConfigurationEngine
 
         with tempfile.TemporaryDirectory() as tmpdir:
             engine = ConfigurationEngine(project_root=tmpdir)
@@ -1190,9 +1228,10 @@ class TestEnvironmentOverridesNoPrefix:
 
     def test_environment_overrides_empty_when_no_mac_setup_vars(self) -> None:
         """Test empty overrides when no MAC_SETUP variables."""
-        from cli.config_engine import ConfigurationEngine
-        import tempfile
         import os
+        import tempfile
+
+        from cli.config_engine import ConfigurationEngine
 
         original_environ = dict(os.environ)
         try:
@@ -1217,8 +1256,9 @@ class TestConfigEngineMain:
 
     def test_main_validate_flag(self) -> None:
         """Test main with --validate flag."""
-        from cli.config_engine import main
         import sys
+
+        from cli.config_engine import main
 
         original_argv = sys.argv
         try:
@@ -1233,8 +1273,9 @@ class TestConfigEngineMain:
 
     def test_main_export_json_flag(self) -> None:
         """Test main with --export json flag."""
-        from cli.config_engine import main
         import sys
+
+        from cli.config_engine import main
 
         original_argv = sys.argv
         try:
@@ -1247,8 +1288,9 @@ class TestConfigEngineMain:
 
     def test_main_export_yaml_flag(self) -> None:
         """Test main with --export yaml flag."""
-        from cli.config_engine import main
         import sys
+
+        from cli.config_engine import main
 
         original_argv = sys.argv
         try:
@@ -1261,8 +1303,9 @@ class TestConfigEngineMain:
 
     def test_main_get_flag(self) -> None:
         """Test main with --get flag."""
-        from cli.config_engine import main
         import sys
+
+        from cli.config_engine import main
 
         original_argv = sys.argv
         try:
@@ -1275,10 +1318,11 @@ class TestConfigEngineMain:
 
     def test_main_set_flag(self) -> None:
         """Test main with --set flag."""
-        from cli.config_engine import main
         import sys
         import tempfile
         from pathlib import Path
+
+        from cli.config_engine import main
 
         original_argv = sys.argv
         try:
@@ -1292,8 +1336,9 @@ class TestConfigEngineMain:
 
     def test_main_list_files_flag(self) -> None:
         """Test main with --list-files flag."""
-        from cli.config_engine import main
         import sys
+
+        from cli.config_engine import main
 
         original_argv = sys.argv
         try:
@@ -1306,8 +1351,9 @@ class TestConfigEngineMain:
 
     def test_main_list_roles_flag(self) -> None:
         """Test main with --list-roles flag."""
-        from cli.config_engine import main
         import sys
+
+        from cli.config_engine import main
 
         original_argv = sys.argv
         try:
@@ -1320,8 +1366,9 @@ class TestConfigEngineMain:
 
     def test_main_default_behavior(self) -> None:
         """Test main with no flags (default validate)."""
-        from cli.config_engine import main
         import sys
+
+        from cli.config_engine import main
 
         original_argv = sys.argv
         try:
@@ -1370,9 +1417,10 @@ class TestLoadFileErrorHandling:
 
     def test_load_file_with_permission_error_raises_config_error(self) -> None:
         """Test load_file raises ConfigError on PermissionError."""
-        from cli.config_engine import ConfigurationEngine, ConfigError
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from cli.config_engine import ConfigError, ConfigurationEngine
 
         with tempfile.TemporaryDirectory() as tmpdir:
             engine = ConfigurationEngine(project_root=tmpdir)
@@ -1381,6 +1429,7 @@ class TestLoadFileErrorHandling:
 
             # Mock Path.open to raise PermissionError
             from unittest.mock import patch
+
             with patch.object(Path, "open", side_effect=PermissionError("Permission denied")):
                 try:
                     engine.load_file(config_file)
@@ -1390,9 +1439,10 @@ class TestLoadFileErrorHandling:
 
     def test_load_file_with_oserror_raises_config_error(self) -> None:
         """Test load_file raises ConfigError on OSError."""
-        from cli.config_engine import ConfigurationEngine, ConfigError
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from cli.config_engine import ConfigError, ConfigurationEngine
 
         with tempfile.TemporaryDirectory() as tmpdir:
             engine = ConfigurationEngine(project_root=tmpdir)
@@ -1401,6 +1451,7 @@ class TestLoadFileErrorHandling:
 
             # Mock Path.open to raise OSError
             from unittest.mock import patch
+
             with patch.object(Path, "open", side_effect=OSError("IO error")):
                 try:
                     engine.load_file(config_file)
@@ -1414,9 +1465,10 @@ class TestBranchCoverage:
 
     def test_validate_secure_file_no_chmod_needed(self) -> None:
         """Test validate when file already has secure permissions."""
-        from cli.config_engine import ConfigurationEngine
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from cli.config_engine import ConfigurationEngine
 
         with tempfile.TemporaryDirectory() as tmpdir:
             config_file = Path(tmpdir) / "config.yaml"
@@ -1443,9 +1495,10 @@ class TestBranchCoverage:
 
     def test_load_all_without_local_config(self) -> None:
         """Test load_all when local config doesn't exist."""
-        from cli.config_engine import ConfigurationEngine
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from cli.config_engine import ConfigurationEngine
 
         with tempfile.TemporaryDirectory() as tmpdir:
             engine = ConfigurationEngine(project_root=tmpdir)
@@ -1457,8 +1510,9 @@ class TestBranchCoverage:
 
     def test_get_role_config_with_non_dict_role(self) -> None:
         """Test get_role_config when role config is not a dict."""
-        from cli.config_engine import ConfigurationEngine
         import tempfile
+
+        from cli.config_engine import ConfigurationEngine
 
         with tempfile.TemporaryDirectory() as tmpdir:
             engine = ConfigurationEngine(project_root=tmpdir)
@@ -1473,8 +1527,9 @@ class TestBranchCoverage:
 
     def test_get_role_config_with_non_dict_config_value(self) -> None:
         """Test get_role_config when config value inside role is not a dict."""
-        from cli.config_engine import ConfigurationEngine
         import tempfile
+
+        from cli.config_engine import ConfigurationEngine
 
         with tempfile.TemporaryDirectory() as tmpdir:
             engine = ConfigurationEngine(project_root=tmpdir)
@@ -1489,8 +1544,9 @@ class TestBranchCoverage:
 
     def test_main_with_set_that_fails(self) -> None:
         """Test main with --set when rate limiting causes failure."""
-        from cli.config_engine import main
         import sys
+
+        from cli.config_engine import main
 
         original_argv = sys.argv
         original_stdin = sys.stdin
@@ -1507,8 +1563,9 @@ class TestBranchCoverage:
 
     def test_main_validate_fails(self) -> None:
         """Test main validation when config is invalid."""
-        from cli.config_engine import main
         import sys
+
+        from cli.config_engine import main
 
         original_argv = sys.argv
         try:

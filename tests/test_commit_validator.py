@@ -11,13 +11,14 @@ Tests code quality validation functionality including:
 - Dependency checking
 """
 
-import logging
 import json
-import pytest
+import logging
 import subprocess
 import sys
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 # Mock sys.argv to prevent argparse issues during import
 sys.argv = ["pytest"]
@@ -96,9 +97,7 @@ class TestCodeQualityValidator:
         assert "Error message" in caplog.text
 
     @patch("subprocess.run")
-    def test_check_code_style_pass(
-        self, mock_run: Mock, validator: CodeQualityValidator
-    ) -> None:
+    def test_check_code_style_pass(self, mock_run: Mock, validator: CodeQualityValidator) -> None:
         """Test code style check when passing."""
         mock_run.return_value = Mock(returncode=0, stdout="")
         passed, issues, score = validator.check_code_style(["test.py"])
@@ -107,9 +106,7 @@ class TestCodeQualityValidator:
         assert score == 100
 
     @patch("subprocess.run")
-    def test_check_code_style_fail(
-        self, mock_run: Mock, validator: CodeQualityValidator
-    ) -> None:
+    def test_check_code_style_fail(self, mock_run: Mock, validator: CodeQualityValidator) -> None:
         """Test code style check when failing."""
         mock_run.return_value = Mock(
             returncode=1, stdout="test.py:1:0: C0111: Missing docstring\nC: test.py missing"
@@ -155,9 +152,7 @@ class TestCodeQualityValidator:
         assert passed is False
 
     @patch("subprocess.run")
-    def test_check_security_pass(
-        self, mock_run: Mock, validator: CodeQualityValidator
-    ) -> None:
+    def test_check_security_pass(self, mock_run: Mock, validator: CodeQualityValidator) -> None:
         """Test security check when passing."""
         mock_run.return_value = Mock(returncode=0, stdout="")
         passed, issues, score = validator.check_security(["test.py"])
@@ -165,9 +160,7 @@ class TestCodeQualityValidator:
         assert score == 100
 
     @patch("subprocess.run")
-    def test_check_security_fail(
-        self, mock_run: Mock, validator: CodeQualityValidator
-    ) -> None:
+    def test_check_security_fail(self, mock_run: Mock, validator: CodeQualityValidator) -> None:
         """Test security check when finding issues."""
         mock_run.return_value = Mock(
             returncode=1,
@@ -178,24 +171,16 @@ class TestCodeQualityValidator:
         assert len(issues) > 0
 
     @patch("subprocess.run")
-    def test_check_complexity_pass(
-        self, mock_run: Mock, validator: CodeQualityValidator
-    ) -> None:
+    def test_check_complexity_pass(self, mock_run: Mock, validator: CodeQualityValidator) -> None:
         """Test complexity check when acceptable."""
-        mock_run.return_value = Mock(
-            returncode=0, stdout="test.py - A"
-        )
+        mock_run.return_value = Mock(returncode=0, stdout="test.py - A")
         passed, issues, complexity = validator.check_complexity(["test.py"])
         assert passed is True
 
     @patch("subprocess.run")
-    def test_check_complexity_high(
-        self, mock_run: Mock, validator: CodeQualityValidator
-    ) -> None:
+    def test_check_complexity_high(self, mock_run: Mock, validator: CodeQualityValidator) -> None:
         """Test complexity check when too high."""
-        mock_run.return_value = Mock(
-            returncode=0, stdout="test.py - F (very high)"
-        )
+        mock_run.return_value = Mock(returncode=0, stdout="test.py - F (very high)")
         passed, issues, complexity = validator.check_complexity(["test.py"])
         assert passed is False
 
@@ -211,9 +196,7 @@ class TestCodeQualityValidator:
         assert passed is True
         assert score == 100
 
-    def test_check_documentation_missing_docstring(
-        self, temp_files: list[str]
-    ) -> None:
+    def test_check_documentation_missing_docstring(self, temp_files: list[str]) -> None:
         """Test documentation check with missing docstrings."""
         validator = CodeQualityValidator()
         test_file = Path(temp_files[0])
@@ -222,9 +205,7 @@ class TestCodeQualityValidator:
         assert passed is False
 
     @patch("subprocess.run")
-    def test_check_dependencies_pass(
-        self, mock_run: Mock, validator: CodeQualityValidator
-    ) -> None:
+    def test_check_dependencies_pass(self, mock_run: Mock, validator: CodeQualityValidator) -> None:
         """Test dependency check when no vulnerabilities."""
         mock_run.return_value = Mock(returncode=0, stdout="")
         with patch("pathlib.Path.exists", return_value=True):
@@ -236,15 +217,11 @@ class TestCodeQualityValidator:
     def test_get_staged_files(self, validator: CodeQualityValidator) -> None:
         """Test getting staged files from git."""
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = Mock(
-                returncode=0, stdout="file1.py\nfile2.py"
-            )
+            mock_run.return_value = Mock(returncode=0, stdout="file1.py\nfile2.py")
             files = validator.get_staged_files()
             assert isinstance(files, list)
 
-    def test_generate_quality_report(
-        self, validator: CodeQualityValidator
-    ) -> None:
+    def test_generate_quality_report(self, validator: CodeQualityValidator) -> None:
         """Test quality report generation."""
         checks = {
             "code_style": {"passed": True, "score": 100},
@@ -257,9 +234,7 @@ class TestCodeQualityValidator:
         assert "overall_quality_score" in report
         assert report["pass_all"] is True
 
-    def test_generate_quality_report_with_failures(
-        self, validator: CodeQualityValidator
-    ) -> None:
+    def test_generate_quality_report_with_failures(self, validator: CodeQualityValidator) -> None:
         """Test quality report with failing checks."""
         checks = {
             "code_style": {"passed": False, "score": 50},
@@ -328,9 +303,7 @@ class TestCodeQualityValidator:
         result = validator.run_all_checks()
         assert result.get("status") == "no_files"
 
-    def test_display_summary(
-        self, validator: CodeQualityValidator, caplog
-    ) -> None:
+    def test_display_summary(self, validator: CodeQualityValidator, caplog) -> None:
         """Test summary display."""
         report = {
             "checks": {
@@ -345,9 +318,7 @@ class TestCodeQualityValidator:
         # The method should complete without error
         assert report["overall_quality_score"] == 50.0
 
-    def test_save_quality_report(
-        self, validator: CodeQualityValidator
-    ) -> None:
+    def test_save_quality_report(self, validator: CodeQualityValidator) -> None:
         """Test saving quality report."""
         report = {
             "timestamp": "2024-01-01T00:00:00",
@@ -537,9 +508,7 @@ class TestCodeQualityValidatorErrorPaths:
         assert len(issues) == 1
         assert "Moderate" in issues[0]
 
-    def test_check_documentation_non_python_files(
-        self, validator: CodeQualityValidator
-    ) -> None:
+    def test_check_documentation_non_python_files(self, validator: CodeQualityValidator) -> None:
         """Test documentation check skips non-Python files."""
         passed, issues, score = validator.check_documentation(["readme.md"])
         assert passed is True
@@ -549,6 +518,7 @@ class TestCodeQualityValidatorErrorPaths:
         self, validator: CodeQualityValidator, monkeypatch
     ) -> None:
         """Test documentation check handles file read errors."""
+
         def mock_read_text(*args, **kwargs):
             raise OSError("Permission denied")
 

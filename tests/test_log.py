@@ -20,7 +20,7 @@ from unittest import mock
 
 import pytest
 
-from cli.log import JSONFormatter, ColoredFormatter, get_logger, log_context, setup_logging
+from cli.log import ColoredFormatter, JSONFormatter, get_logger, log_context, setup_logging
 
 
 class TestJSONFormatter:
@@ -49,7 +49,7 @@ class TestJSONFormatter:
         assert "timestamp" in data
         # ISO format with timezone
         assert "T" in data["timestamp"]
-        assert ("+00:00" in data["timestamp"] or "Z" in data["timestamp"])
+        assert "+00:00" in data["timestamp"] or "Z" in data["timestamp"]
 
     def test_json_formatter_with_exception(self) -> None:
         """Test JSON formatter includes exception information."""
@@ -288,9 +288,7 @@ class TestSetupLogging:
             )
 
             file_handlers = [
-                h
-                for h in logger.handlers
-                if isinstance(h, log.handlers.RotatingFileHandler)
+                h for h in logger.handlers if isinstance(h, log.handlers.RotatingFileHandler)
             ]
             assert len(file_handlers) >= 1, f"Found handlers: {logger.handlers}"
             assert "test_file_handler.log" in file_handlers[0].baseFilename
@@ -322,15 +320,15 @@ class TestSetupLogging:
         )
 
         file_handlers = [
-            h
-            for h in logger.handlers
-            if isinstance(h, log.handlers.RotatingFileHandler)
+            h for h in logger.handlers if isinstance(h, log.handlers.RotatingFileHandler)
         ]
         assert len(file_handlers) >= 1, f"No file handlers found: {logger.handlers}"
         default_path = Path.home() / ".devkit" / "logs"
         # Check that the log file is in the default directory
         log_file_path = Path(file_handlers[0].baseFilename)
-        assert default_path == log_file_path.parent, f"Expected {default_path}, got {log_file_path.parent}"
+        assert (
+            default_path == log_file_path.parent
+        ), f"Expected {default_path}, got {log_file_path.parent}"
 
     def test_setup_logging_avoids_duplicate_handlers(self) -> None:
         """Test that calling setup_logging twice doesn't add duplicate handlers."""
@@ -358,9 +356,7 @@ class TestSetupLogging:
             )
 
             file_handlers = [
-                h
-                for h in logger.handlers
-                if isinstance(h, log.handlers.RotatingFileHandler)
+                h for h in logger.handlers if isinstance(h, log.handlers.RotatingFileHandler)
             ]
             assert len(file_handlers) >= 1, f"No rotation handlers: {logger.handlers}"
             handler = file_handlers[0]
@@ -499,7 +495,9 @@ class TestLoggingIntegration:
 
             # Console has colored formatter, file has JSON formatter
             console_handler = [h for h in logger.handlers if isinstance(h, log.StreamHandler)][0]
-            file_handler = [h for h in logger.handlers if isinstance(h, log.handlers.RotatingFileHandler)][0]
+            file_handler = [
+                h for h in logger.handlers if isinstance(h, log.handlers.RotatingFileHandler)
+            ][0]
 
             assert isinstance(console_handler.formatter, ColoredFormatter)
             assert isinstance(file_handler.formatter, JSONFormatter)

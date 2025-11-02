@@ -17,15 +17,16 @@
 # Goal: Validate system works under extreme conditions and recovers gracefully
 ################################################################################
 
-import os
-import sys
-import subprocess
-import tempfile
-import shutil
 import json
-import yaml
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
 import time
 from pathlib import Path
+
+import yaml
 
 # Color codes
 RED = "\033[0;31m"

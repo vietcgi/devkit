@@ -9,17 +9,18 @@ Tests interactive setup wizard functionality including:
 - Validation
 """
 
-import pytest
+import shutil
 import sys
 import tempfile
-from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
-import shutil
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 # Mock sys.argv to prevent argparse issues during import
 sys.argv = ["pytest"]
 
-from cli.setup_wizard import ProgressBar, Colors, SetupWizard
+from cli.setup_wizard import Colors, ProgressBar, SetupWizard
 
 
 class TestColors:
@@ -84,9 +85,7 @@ class TestProgressBar:
         assert bar.total == 10000
 
     @patch("builtins.print")
-    def test_progress_bar_update(
-        self, mock_print: Mock
-    ) -> None:
+    def test_progress_bar_update(self, mock_print: Mock) -> None:
         """Test updating progress bar."""
         bar = ProgressBar(total=100)
         # Test updating
@@ -95,9 +94,7 @@ class TestProgressBar:
             assert bar.current >= 0
 
     @patch("time.time")
-    def test_progress_bar_elapsed_time(
-        self, mock_time: Mock
-    ) -> None:
+    def test_progress_bar_elapsed_time(self, mock_time: Mock) -> None:
         """Test elapsed time calculation."""
         mock_time.return_value = 100.0
         bar = ProgressBar(total=100, description="Test")
@@ -151,9 +148,7 @@ class TestProgressBar:
             assert bar.description == "Updated"
 
     @patch("builtins.print")
-    def test_progress_bar_display(
-        self, mock_print: Mock
-    ) -> None:
+    def test_progress_bar_display(self, mock_print: Mock) -> None:
         """Test progress bar display."""
         bar = ProgressBar(total=100, description="Loading")
         if hasattr(bar, "display"):
@@ -186,9 +181,7 @@ class TestSetupWizardIntegration:
         assert bar1.description != bar2.description
 
     @patch("builtins.print")
-    def test_progress_workflow(
-        self, mock_print: Mock
-    ) -> None:
+    def test_progress_workflow(self, mock_print: Mock) -> None:
         """Test complete progress workflow."""
         bar = ProgressBar(total=10, description="Setup")
         bar.current = 0
@@ -317,9 +310,7 @@ class TestSetupWizard:
 
     @patch("builtins.input", side_effect=["invalid", "1,2"])
     @patch("builtins.print")
-    def test_ask_enabled_roles_invalid_then_valid(
-        self, mock_print: Mock, mock_input: Mock
-    ) -> None:
+    def test_ask_enabled_roles_invalid_then_valid(self, mock_print: Mock, mock_input: Mock) -> None:
         """Test invalid then valid role selection."""
         self.wizard._ask_enabled_roles()
         assert len(self.wizard.config["enabled_roles"]) == 2
@@ -362,9 +353,7 @@ class TestSetupWizard:
 
     @patch("builtins.input", side_effect=["y", "n", "n"])
     @patch("builtins.print")
-    def test_ask_editors_partial_selection(
-        self, mock_print: Mock, mock_input: Mock
-    ) -> None:
+    def test_ask_editors_partial_selection(self, mock_print: Mock, mock_input: Mock) -> None:
         """Test partial editor selection."""
         self.wizard._ask_editors()
         assert "neovim" in self.wizard.config["editors"]
@@ -522,7 +511,9 @@ class TestSetupWizard:
         bar.finish()
         assert bar.current == bar.total
 
-    @patch("builtins.input", side_effect=["1", "1", "1", "n", "n", "n", "y", "n", "y", "n", "y", "y"])
+    @patch(
+        "builtins.input", side_effect=["1", "1", "1", "n", "n", "n", "y", "n", "y", "n", "y", "y"]
+    )
     @patch("builtins.print")
     def test_wizard_run_complete_sequence(self, mock_print: Mock, mock_input: Mock) -> None:
         """Test running the complete wizard with all 8 steps."""
@@ -536,7 +527,10 @@ class TestSetupWizard:
         assert "backup_enabled" in result
         assert "verify_after_setup" in result
 
-    @patch("builtins.input", side_effect=["1", "", "1", "n", "n", "n", "y", "n", "y", "y", "/backup", "y", "y"])
+    @patch(
+        "builtins.input",
+        side_effect=["1", "", "1", "n", "n", "n", "y", "n", "y", "y", "/backup", "y", "y"],
+    )
     @patch("builtins.print")
     def test_wizard_run_with_defaults_and_custom(self, mock_print: Mock, mock_input: Mock) -> None:
         """Test wizard run with mix of defaults and custom values."""
@@ -545,7 +539,10 @@ class TestSetupWizard:
         assert result["shell"] == "zsh"
         assert result["backup_location"] == "/backup"
 
-    @patch("builtins.input", side_effect=["3", "1,3,5,7", "2", "y", "n", "n", "y", "y", "n", "n", "y", "y"])
+    @patch(
+        "builtins.input",
+        side_effect=["3", "1,3,5,7", "2", "y", "n", "n", "y", "y", "n", "n", "y", "y"],
+    )
     @patch("builtins.print")
     def test_wizard_run_all_options(self, mock_print: Mock, mock_input: Mock) -> None:
         """Test wizard with various option combinations."""
@@ -554,7 +551,10 @@ class TestSetupWizard:
         assert len(result["enabled_roles"]) == 4
         assert result["shell"] == "fish"
 
-    @patch("builtins.input", side_effect=["1", "invalid", "1,2", "2", "n", "n", "n", "y", "n", "y", "n", "y", "y"])
+    @patch(
+        "builtins.input",
+        side_effect=["1", "invalid", "1,2", "2", "n", "n", "n", "y", "n", "y", "n", "y", "y"],
+    )
     @patch("builtins.print")
     def test_wizard_run_with_invalid_role_count(self, mock_print: Mock, mock_input: Mock) -> None:
         """Test wizard with invalid role count then valid."""
@@ -563,9 +563,14 @@ class TestSetupWizard:
         assert "enabled_roles" in result
         assert len(result["enabled_roles"]) == 2
 
-    @patch("builtins.input", side_effect=["1", "1", "4", "1", "n", "n", "n", "y", "n", "y", "n", "y", "y"])
+    @patch(
+        "builtins.input",
+        side_effect=["1", "1", "4", "1", "n", "n", "n", "y", "n", "y", "n", "y", "y"],
+    )
     @patch("builtins.print")
-    def test_wizard_run_with_invalid_shell_then_valid(self, mock_print: Mock, mock_input: Mock) -> None:
+    def test_wizard_run_with_invalid_shell_then_valid(
+        self, mock_print: Mock, mock_input: Mock
+    ) -> None:
         """Test wizard with invalid shell selection then valid."""
         # This tests the branch coverage for line 201->199
         result = self.wizard.run()
@@ -641,7 +646,9 @@ class TestSetupWizardMain:
     @patch("cli.setup_wizard.logging.basicConfig")
     @patch("cli.setup_wizard.SetupWizard.run")
     @patch("cli.setup_wizard.SetupWizard.save_config")
-    def test_main_logging_configured(self, mock_save: Mock, mock_run: Mock, mock_logging: Mock) -> None:
+    def test_main_logging_configured(
+        self, mock_save: Mock, mock_run: Mock, mock_logging: Mock
+    ) -> None:
         """Test that main function configures logging."""
         from cli.setup_wizard import main
 

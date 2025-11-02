@@ -20,9 +20,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from cli.performance import (  # noqa: E402
     CacheManager,
-    PerformanceMonitor,
     InstallationOptimizer,
     ParallelInstaller,
+    PerformanceMonitor,
 )
 
 
@@ -358,9 +358,10 @@ class TestCacheManagerErrorHandling:
     @patch("pathlib.Path.open")
     def test_cache_set_write_error(self, mock_open: MagicMock) -> None:
         """Test cache set with write error."""
-        from unittest.mock import MagicMock, patch
         import tempfile
         from pathlib import Path
+        from unittest.mock import MagicMock, patch
+
         from cli.performance import CacheManager
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -374,9 +375,10 @@ class TestCacheManagerErrorHandling:
     @patch("pathlib.Path.open")
     def test_cache_get_read_error(self, mock_open: MagicMock) -> None:
         """Test cache get with read error."""
-        from unittest.mock import MagicMock, patch
         import tempfile
         from pathlib import Path
+        from unittest.mock import MagicMock, patch
+
         from cli.performance import CacheManager
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -389,9 +391,10 @@ class TestCacheManagerErrorHandling:
     @patch("pathlib.Path.unlink")
     def test_cache_invalidate_error(self, mock_unlink: MagicMock) -> None:
         """Test cache invalidate with error."""
-        from unittest.mock import MagicMock, patch
         import tempfile
         from pathlib import Path
+        from unittest.mock import MagicMock, patch
+
         from cli.performance import CacheManager
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -409,9 +412,10 @@ class TestCacheManagerErrorHandling:
     @patch("pathlib.Path.glob")
     def test_cache_clear_error(self, mock_glob: MagicMock) -> None:
         """Test cache clear with error."""
-        from unittest.mock import MagicMock, patch
         import tempfile
         from pathlib import Path
+        from unittest.mock import MagicMock, patch
+
         from cli.performance import CacheManager
 
         with tempfile.TemporaryDirectory() as tmpdir:

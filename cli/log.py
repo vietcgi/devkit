@@ -26,10 +26,12 @@ class JSONFormatter(log.Formatter):
     def format(self, record: log.LogRecord) -> str:
         """Format a log record as JSON."""
         log_data: dict[str, Any] = {
-            "timestamp": datetime.fromtimestamp(
-                record.created,
-                tz=UTC,
-            ).isoformat(),
+            "timestamp": (
+                datetime.fromtimestamp(
+                    record.created,
+                    tz=UTC,
+                ).isoformat()
+            ),
             "level": record.levelname,
             "module": record.name,
             "message": record.getMessage(),

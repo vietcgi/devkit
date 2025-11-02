@@ -8,21 +8,21 @@ Focus on improving coverage for:
 - Error handling and validation
 """
 
+import json
 import sys
 import tempfile
-import json
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
 import unittest
+from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
 
 # Mock sys.argv
 sys.argv = ["pytest"]
 
 from cli.plugin_system import (  # noqa: E402
-    PluginLoader,
-    PluginInterface,
-    HookInterface,
     HookContext,
+    HookInterface,
+    PluginInterface,
+    PluginLoader,
 )
 
 
@@ -80,6 +80,7 @@ class TestPluginLoader(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_plugin_loader_initialization(self):
@@ -126,8 +127,10 @@ class TestPluginLoader(unittest.TestCase):
     def test_add_plugin_path_with_tilde(self):
         """Test adding plugin path with tilde expansion."""
         # Create a path with tilde (though it won't exist)
-        with patch("pathlib.Path.exists", return_value=True), \
-             patch("pathlib.Path.is_dir", return_value=True):
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.is_dir", return_value=True),
+        ):
             self.loader.add_plugin_path("~/test_plugins")
             # Should have attempted to add
 
@@ -386,6 +389,7 @@ class TestLoadAll(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_load_all_no_plugins(self):
@@ -513,6 +517,7 @@ class TestPluginLoadingErrorPaths(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_load_plugin_import_error(self):
@@ -546,7 +551,8 @@ class TestPluginLoadingErrorPaths(unittest.TestCase):
     def test_load_plugin_validation_fails(self):
         """Test loading plugin when validation fails."""
         plugin_file = Path(self.temp_dir) / "invalid_plugin.py"
-        plugin_file.write_text("""
+        plugin_file.write_text(
+            """
 from cli.plugin_system import PluginInterface, HookInterface
 
 class TestPlugin(PluginInterface):
@@ -565,7 +571,8 @@ class TestPlugin(PluginInterface):
 
     def validate(self):
         return False, ["Invalid plugin"]
-""")
+"""
+        )
 
         result = self.loader.load_plugin(str(plugin_file), "invalid_plugin")
 
@@ -594,7 +601,8 @@ class TestPlugin(PluginInterface):
     def test_load_plugin_successful(self):
         """Test successfully loading a valid plugin."""
         plugin_file = Path(self.temp_dir) / "valid_plugin.py"
-        plugin_file.write_text("""
+        plugin_file.write_text(
+            """
 from cli.plugin_system import PluginInterface
 
 class ValidPlugin(PluginInterface):
@@ -613,7 +621,8 @@ class ValidPlugin(PluginInterface):
 
     def validate(self):
         return True, []
-""")
+"""
+        )
 
         with patch("cli.plugin_system.PluginValidator") as mock_validator_class:
             mock_validator = Mock()
@@ -629,11 +638,13 @@ class ValidPlugin(PluginInterface):
     def test_load_plugin_no_plugin_interface_found(self):
         """Test loading plugin when no PluginInterface found in module."""
         plugin_file = Path(self.temp_dir) / "no_interface_plugin.py"
-        plugin_file.write_text("""
+        plugin_file.write_text(
+            """
 # Plugin file with no PluginInterface class
 class NotAPlugin:
     pass
-""")
+"""
+        )
 
         with patch("cli.plugin_system.PluginValidator") as mock_validator_class:
             mock_validator = Mock()
@@ -657,6 +668,7 @@ class TestPluginLoaderAdvanced(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_add_plugin_path(self):
@@ -876,6 +888,7 @@ class TestPluginLoaderIntegration(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_loader_initialization(self):
@@ -898,9 +911,10 @@ class TestPluginHookHandling:
 
     def test_add_plugin_path(self) -> None:
         """Test adding custom plugin paths."""
-        from cli.plugin_system import PluginLoader
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from cli.plugin_system import PluginLoader
 
         loader = PluginLoader()
         initial_count = len(loader.plugin_paths)
@@ -911,7 +925,7 @@ class TestPluginHookHandling:
 
     def test_execute_hooks_empty(self) -> None:
         """Test executing hooks when none exist."""
-        from cli.plugin_system import PluginLoader, HookContext
+        from cli.plugin_system import HookContext, PluginLoader
 
         loader = PluginLoader()
         ctx = HookContext(stage="test")
@@ -971,8 +985,9 @@ class TestPluginLoaderErrorHandling:
     @patch("cli.plugin_system.PluginValidator")
     def test_load_plugin_validation_fails(self, mock_validator: MagicMock) -> None:
         """Test load_plugin when validation fails."""
-        from cli.plugin_system import PluginLoader
         from pathlib import Path
+
+        from cli.plugin_system import PluginLoader
 
         loader = PluginLoader()
 
@@ -989,8 +1004,9 @@ class TestPluginLoaderErrorHandling:
     @patch("cli.plugin_system.PluginValidator")
     def test_load_plugin_spec_fails(self, mock_validator: MagicMock, mock_spec: MagicMock) -> None:
         """Test load_plugin when spec creation fails."""
-        from cli.plugin_system import PluginLoader
         from pathlib import Path
+
+        from cli.plugin_system import PluginLoader
 
         loader = PluginLoader()
 
@@ -1008,10 +1024,13 @@ class TestPluginLoaderErrorHandling:
 
     @patch("importlib.util.spec_from_file_location")
     @patch("cli.plugin_system.PluginValidator")
-    def test_load_plugin_spec_loader_none(self, mock_validator: MagicMock, mock_spec: MagicMock) -> None:
+    def test_load_plugin_spec_loader_none(
+        self, mock_validator: MagicMock, mock_spec: MagicMock
+    ) -> None:
         """Test load_plugin when spec.loader is None."""
-        from cli.plugin_system import PluginLoader
         from pathlib import Path
+
+        from cli.plugin_system import PluginLoader
 
         loader = PluginLoader()
 
@@ -1031,11 +1050,14 @@ class TestPluginLoaderErrorHandling:
 
     @patch("cli.plugin_system.PluginManifest")
     @patch("cli.plugin_system.PluginValidator")
-    def test_load_plugin_manifest_integrity_fails(self, mock_validator: MagicMock, mock_manifest: MagicMock) -> None:
+    def test_load_plugin_manifest_integrity_fails(
+        self, mock_validator: MagicMock, mock_manifest: MagicMock
+    ) -> None:
         """Test load_plugin when manifest integrity check fails."""
-        from cli.plugin_system import PluginLoader
         from pathlib import Path
         from unittest.mock import patch as mock_patch
+
+        from cli.plugin_system import PluginLoader
 
         loader = PluginLoader()
 
@@ -1054,7 +1076,9 @@ class TestPluginLoaderErrorHandling:
             mock_path = MagicMock()
             mock_path_cls.return_value = mock_path
             mock_path.parent = MagicMock()
-            mock_path.__truediv__ = MagicMock(return_value=MagicMock(exists=MagicMock(return_value=True)))
+            mock_path.__truediv__ = MagicMock(
+                return_value=MagicMock(exists=MagicMock(return_value=True))
+            )
 
             result = loader.load_plugin(str(Path("/fake/plugin")), "bad_manifest")
 
@@ -1066,10 +1090,11 @@ class TestDiscoverPluginsPackages:
 
     def test_discover_plugins_package_format(self) -> None:
         """Test discovering Python package-format plugins."""
-        from cli.plugin_system import PluginLoader
-        from pathlib import Path
-        import tempfile
         import os
+        import tempfile
+        from pathlib import Path
+
+        from cli.plugin_system import PluginLoader
 
         with tempfile.TemporaryDirectory() as tmpdir:
             tmppath = Path(tmpdir)
@@ -1092,8 +1117,9 @@ class TestPluginValidationFailure:
 
     def test_load_plugin_instance_validation_fails_simple(self) -> None:
         """Test when plugin instance validation fails."""
-        from cli.plugin_system import PluginLoader
         from pathlib import Path
+
+        from cli.plugin_system import PluginLoader
 
         # This test documents the validation failure path exists
         loader = PluginLoader()
@@ -1110,10 +1136,13 @@ class TestManifestVerificationException:
 
     @patch("cli.plugin_system.PluginManifest")
     @patch("cli.plugin_system.PluginValidator")
-    def test_load_plugin_manifest_exception(self, mock_validator: MagicMock, mock_manifest: MagicMock) -> None:
+    def test_load_plugin_manifest_exception(
+        self, mock_validator: MagicMock, mock_manifest: MagicMock
+    ) -> None:
         """Test when manifest verification raises exception."""
-        from cli.plugin_system import PluginLoader
         from pathlib import Path
+
+        from cli.plugin_system import PluginLoader
 
         loader = PluginLoader()
 
@@ -1143,8 +1172,9 @@ class TestHookRegistration:
 
     def test_load_all_registers_hooks(self) -> None:
         """Test that load_all registers hooks from loaded plugins."""
-        from cli.plugin_system import PluginLoader, PluginInterface, HookInterface
         from pathlib import Path
+
+        from cli.plugin_system import HookInterface, PluginInterface, PluginLoader
 
         loader = PluginLoader()
 
@@ -1176,8 +1206,9 @@ class TestMainFunction:
 
     def test_main_list_plugins(self) -> None:
         """Test main with --list flag."""
-        from cli.plugin_system import main
         import sys
+
+        from cli.plugin_system import main
 
         original_argv = sys.argv
         try:
@@ -1190,8 +1221,9 @@ class TestMainFunction:
 
     def test_main_show_info(self) -> None:
         """Test main with --info flag."""
-        from cli.plugin_system import main
         import sys
+
+        from cli.plugin_system import main
 
         original_argv = sys.argv
         try:
@@ -1204,8 +1236,9 @@ class TestMainFunction:
 
     def test_main_validate_plugins(self) -> None:
         """Test main with --validate flag."""
-        from cli.plugin_system import main
         import sys
+
+        from cli.plugin_system import main
 
         original_argv = sys.argv
         try:
@@ -1218,9 +1251,10 @@ class TestMainFunction:
 
     def test_main_add_plugin_path(self) -> None:
         """Test main with --plugin-path flag."""
-        from cli.plugin_system import main
         import sys
         import tempfile
+
+        from cli.plugin_system import main
 
         original_argv = sys.argv
         try:
@@ -1234,8 +1268,9 @@ class TestMainFunction:
 
     def test_main_default_behavior(self) -> None:
         """Test main with no flags (default behavior)."""
-        from cli.plugin_system import main
         import sys
+
+        from cli.plugin_system import main
 
         original_argv = sys.argv
         try:

@@ -35,6 +35,7 @@ class TestPluginManifestValidation(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_manifest_valid(self):
@@ -205,6 +206,7 @@ class TestPluginValidator(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_validator_creation(self):
@@ -347,13 +349,15 @@ class TestPluginValidator(unittest.TestCase):
 
         init_path = plugin_dir / "__init__.py"
         with open(init_path, "w") as f:
-            f.write("""
+            f.write(
+                """
 class Plugin:
     def initialize(self): pass
     def get_roles(self): return {}
     def get_hooks(self): return {}
     def validate(self): return (True, [])
-""")
+"""
+            )
 
         result = PluginValidator._verify_plugin_class(plugin_dir)
 

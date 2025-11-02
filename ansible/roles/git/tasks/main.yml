@@ -269,21 +269,8 @@
       when: git_enable_precommit | default(true)
       tags: [git, precommit, install, verify]
 
-    - name: Install pre-commit via pipx or pip3 (if not already installed)
-      ansible.builtin.shell: |
-        # Try pipx first (preferred - isolated environment)
-        if command -v pipx &>/dev/null; then
-          pipx install pre-commit 2>&1
-        # Fallback to pip3 if pipx not available
-        elif command -v pip3 &>/dev/null; then
-          pip3 install --user --break-system-packages pre-commit 2>&1 || \
-          pip3 install --user pre-commit 2>&1
-        else
-          echo "ERROR: Neither pipx nor pip3 found"
-          exit 1
-        fi
-      args:
-        executable: /bin/bash
+    - name: Install pre-commit via pipx (if not already installed)
+      ansible.builtin.command: pipx install pre-commit
       environment:
         PATH: "{{ git_home_dir }}/.local/bin:{{ homebrew_prefix | default('/usr/local') }}/bin:/usr/local/bin:/usr/bin:/bin:/sbin:/usr/sbin:{{ ansible_env.PATH }}" # yamllint disable-line rule:line-length
         HOME: "{{ git_home_dir }}"
@@ -291,11 +278,7 @@
       when:
         - git_enable_precommit | default(true)
         - git_precommit_check.rc != 0
-      changed_when: |
-        'installed' in git_precommit_install.stdout or
-        'Installed' in git_precommit_install.stdout or
-        'Successfully installed' in git_precommit_install.stdout
-      failed_when: false
+      changed_when: "'installed' in git_precommit_install.stdout or 'Installed' in git_precommit_install.stdout"
       tags: [git, precommit, install]
 
     - name: Verify pre-commit installation
@@ -305,7 +288,6 @@
         HOME: "{{ git_home_dir }}"
       register: git_precommit_version
       changed_when: false
-      failed_when: false
       when: git_enable_precommit | default(true)
       tags: [git, precommit, verify]
 
@@ -338,52 +320,13 @@
 
     - name: Initialize pre-commit hooks in repository
       ansible.builtin.shell: |
-        set +e
         cd {{ git_repo_root | default(lookup('env', 'PWD')) }}
-
-        # Verify we're in a git repository
-        if ! git rev-parse --git-dir &>/dev/null; then
-          echo "WARNING: Not in a git repository at $(pwd), skipping pre-commit init"
-          exit 0
-        fi
-
-        # Ensure git user is configured for pre-commit hooks
-        if ! git config --global user.email &>/dev/null; then
-          git config --global user.email "ci@devkit.local"
-        fi
-        if ! git config --global user.name &>/dev/null; then
-          git config --global user.name "DevKit CI"
-        fi
-
-        # Check if pre-commit is available
-        if ! command -v pre-commit &>/dev/null; then
-          echo "WARNING: pre-commit not found in PATH, skipping hook installation"
-          exit 0
-        fi
-
-        # Check if .pre-commit-config.yaml exists
-        if [ ! -f ".pre-commit-config.yaml" ]; then
-          echo "WARNING: .pre-commit-config.yaml not found, skipping hook installation"
-          exit 0
-        fi
-
-        # Try to install pre-commit hooks
-        if ! pre-commit install 2>&1; then
-          echo "WARNING: pre-commit install failed, but continuing setup"
-          if [ -f "$HOME/.cache/pre-commit/pre-commit.log" ]; then
-            echo "Pre-commit log:"
-            tail -20 "$HOME/.cache/pre-commit/pre-commit.log" || true
-          fi
-          exit 0
-        fi
-      args:
-        executable: /bin/bash
+        pre-commit install
       environment:
         PATH: "{{ git_home_dir }}/.local/bin:{{ homebrew_prefix | default('/usr/local') }}/bin:/usr/local/bin:/usr/bin:/bin:/sbin:/usr/sbin:{{ ansible_env.PATH }}" # yamllint disable-line rule:line-length
         HOME: "{{ git_home_dir }}"
       register: git_precommit_init
       changed_when: false
-      failed_when: false
       when: git_enable_precommit | default(true)
       tags: [git, precommit, init]
 

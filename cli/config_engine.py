@@ -126,7 +126,6 @@ class RateLimiter:
             }
 
         operations = self.operations[identifier]
-        datetime.now(tz=UTC)
 
         next_reset = None
         if operations:
@@ -366,8 +365,8 @@ class ConfigurationEngine:
             return [v.strip() for v in value.split(",")]
         return value
 
-    @staticmethod
-    def _set_nested_value(  # type: ignore[misc]
+    @staticmethod  # type: ignore[misc]
+    def set_nested_value(
         target: dict[str, Any],
         key_parts: list[str],
         value: str | bool | list[str],
@@ -407,7 +406,7 @@ class ConfigurationEngine:
             # Handle nested keys using double underscore: MAC_SETUP_LOGGING__LEVEL
             if "__" in config_key:
                 key_parts = config_key.split("__")
-                self._set_nested_value(overrides, key_parts, parsed_value)
+                self.__class__.set_nested_value(overrides, key_parts, parsed_value)
             else:
                 overrides[config_key] = parsed_value
 

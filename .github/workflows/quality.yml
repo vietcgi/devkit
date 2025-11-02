@@ -32,11 +32,10 @@ jobs:
       run: isort --check-only cli/ tests/ || true
 
     - name: Lint with Ruff
-      run: |
-        ruff check cli/ tests/ || true
+      run: ruff check cli/ tests/ || true
 
     - name: Lint with pylint
-      run: |
+      run: >
         pylint cli/ tests/ --max-line-length=100 || true
 
     - name: Run pytest with coverage
@@ -90,7 +89,7 @@ jobs:
     - name: Run shfmt (shell formatting check)
       run: |
         apt-get install -y shfmt
-        shfmt -d bootstrap.sh bootstrap-ansible.sh verify-setup.sh update.sh cli/config.sh || true
+        shfmt -d bootstrap.sh bootstrap-ansible.sh verify-setup.sh update.sh cli/config.sh
 
   # YAML quality
   yaml-quality:

@@ -414,11 +414,11 @@ class CodeQualityValidator(ValidatorBase):
         checks["dependencies"] = {"passed": passed, "score": score, "issues": issues}
 
         # Generate report
-        report = self.generate_quality_report(checks)
+        report = self.__class__.generate_quality_report(checks)
         self.save_quality_report(report)
 
         # Display summary
-        self.display_summary(report)
+        self.__class__.display_summary(report)
 
         return report
 

@@ -70,6 +70,7 @@ class GitConfigManager(ValidatorBase):
         """
         self.print_status("Validating git config syntax...")
 
+        result = None
         try:
             # Check global config
             if self.git_global_config.exists():
@@ -88,7 +89,7 @@ class GitConfigManager(ValidatorBase):
             self.print_status(f"Config validation error: {e}", "ERROR")
             return False
 
-        if self.git_global_config.exists() and result.returncode != 0:
+        if result and result.returncode != 0:
             self.print_status(f"Git config validation failed: {result.stderr}", "ERROR")
             return False
 
@@ -386,14 +387,17 @@ class GitConfigManager(ValidatorBase):
         Args:
             report: Report dictionary from generate_report()
         """
-        for key in report["config_status"]:
-            key.replace("_", " ").title()
+        # Process config status
+        for _ in report["config_status"]:
+            pass
 
-        for hook in report["hooks_status"]:
-            hook.replace("_", " ").title()
+        # Process hooks status
+        for _ in report["hooks_status"]:
+            pass
 
-        for key in report["directories"]:
-            key.replace("_", " ").title()
+        # Process directories
+        for _ in report["directories"]:
+            pass
 
     def reload_all(self, *, dry_run: bool = False) -> bool:
         """Perform complete git configuration reload.
@@ -432,7 +436,7 @@ class GitConfigManager(ValidatorBase):
 
         # Generate and display report
         report = self.generate_report()
-        self.display_report(report)
+        self.__class__.display_report(report)
 
         if success:
             self.print_status("Git configuration reload completed successfully", "SUCCESS")

@@ -24,9 +24,9 @@
     - always
     - homebrew
   - name: Install Homebrew
-    ansible.builtin.shell: '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-      '
+    ansible.builtin.shell: >
+      /bin/bash -c "$(curl -fsSL
+      https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     register: homebrew_install
     when: not homebrew_check.stat.exists
     changed_when: homebrew_install.rc == 0
@@ -72,10 +72,9 @@
     - homebrew
     - packages
   - name: Install packages from Brewfile
-    ansible.builtin.shell: '{{ homebrew_prefix }}/bin/brew bundle install --file={{
-      brewfile_path }} || true
-
-      '
+    ansible.builtin.shell: |
+      {{ homebrew_prefix }}/bin/brew bundle install --file={{ brewfile_path }} ||
+      true
     args:
       chdir: '{{ playbook_dir }}'
     environment:
@@ -85,8 +84,9 @@
     - ansible_os_family == "Darwin"
     - brewfile_check.stat.exists
     - install_gui_apps | default(true) or install_dev_tools | default(true)
-    changed_when: '''Installing'' in brew_bundle_result.stdout or ''Upgrading'' in
-      brew_bundle_result.stdout'
+    changed_when: |
+      'Installing' in brew_bundle_result.stdout or
+      'Upgrading' in brew_bundle_result.stdout
     failed_when: false
     tags:
     - homebrew
@@ -254,8 +254,9 @@
     - mise
   - name: Set mise binary path
     ansible.builtin.set_fact:
-      mise_bin: '{{ homebrew_prefix ~ ''/bin/mise'' if ansible_os_family == ''Darwin''
-        else home ~ ''/.local/bin/mise'' }}'
+      mise_bin: |
+        {{ homebrew_prefix ~ '/bin/mise' if ansible_os_family == 'Darwin'
+        else home ~ '/.local/bin/mise' }}
     tags:
     - always
     - mise
@@ -275,7 +276,8 @@
     - mise_binary_check.stat.exists
     - mise_toml_check.stat.exists
     - install_dev_tools | default(true)
-    changed_when: mise_trust_result.rc == 0 and 'trusted' in mise_trust_result.stdout
+    changed_when: |
+      mise_trust_result.rc == 0 and 'trusted' in mise_trust_result.stdout
     failed_when: false
     tags:
     - mise
@@ -306,7 +308,9 @@
     - always
     - shell
   - name: Install Oh My Zsh
-    ansible.builtin.shell: sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    ansible.builtin.shell: >
+      sh -c "$(curl -fsSL
+      https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
       "" --unattended
     register: ohmyzsh_install
     when:
@@ -357,8 +361,9 @@
     - always
     - shell
   - name: Install fzf key bindings and completion
-    ansible.builtin.shell: '{{ homebrew_prefix }}/opt/fzf/install --key-bindings --completion
-      --no-update-rc'
+    ansible.builtin.shell: |
+      {{ homebrew_prefix }}/opt/fzf/install --key-bindings --completion
+      --no-update-rc
     args:
       creates: '{{ home }}/.fzf.zsh'
     when:

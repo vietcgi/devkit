@@ -41,7 +41,7 @@ logger = setup_logger(__name__, level=logging.INFO)
     help="Configuration directory path",
 )
 @click.pass_context
-def cli(ctx: click.Context, verbose: bool, config: Optional[str]) -> None:  # type: ignore
+def cli(ctx: click.Context, verbose: bool, config: Optional[str]) -> None:  # pylint: disable=redefined-outer-name
     """Devkit - Development Environment Setup and Management.
 
     Fast, cross-platform development environment configuration.
@@ -55,17 +55,17 @@ def cli(ctx: click.Context, verbose: bool, config: Optional[str]) -> None:  # ty
 
 
 @cli.group()
-def config() -> None:  # type: ignore
+def config() -> None:
     """Configuration management commands."""
 
 
 @config.command(name="load")
 @click.argument("config_file", type=click.Path(exists=True))
 @click.pass_context
-def config_load(ctx: click.Context, config_file: str) -> None:  # type: ignore
+def config_load(ctx: click.Context, config_file: str) -> None:
     """Load and display configuration from file."""
     try:
-        from cli.config_engine import ConfigurationEngine
+        from cli.config_engine import ConfigurationEngine  # noqa: PLC0415
 
         engine = ConfigurationEngine(ctx.obj["config"])
         success = engine.load_file(config_file)
@@ -89,10 +89,10 @@ def config_load(ctx: click.Context, config_file: str) -> None:  # type: ignore
 @config.command(name="validate")
 @click.argument("config_file", type=click.Path(exists=True))
 @click.pass_context
-def config_validate(ctx: click.Context, config_file: str) -> None:  # type: ignore
+def config_validate(ctx: click.Context, config_file: str) -> None:
     """Validate configuration file."""
     try:
-        from cli.config_engine import ConfigurationEngine
+        from cli.config_engine import ConfigurationEngine  # noqa: PLC0415
 
         engine = ConfigurationEngine(ctx.obj["config"])
         engine.load_file(config_file)
@@ -122,16 +122,18 @@ def config_validate(ctx: click.Context, config_file: str) -> None:  # type: igno
     default="text",
     help="Output format",
 )
-def config_diff(  # type: ignore
+def config_diff(
     config1: str,
     config2: str,
-    format: str,  # pylint: disable=redefined-builtin
+    format: str,  # noqa: A002 pylint: disable=redefined-builtin
 ) -> None:
     """Compare two configuration files."""
     try:
-        import yaml  # pylint: disable=import-outside-toplevel
+        import yaml  # noqa: PLC0415 pylint: disable=import-outside-toplevel
 
-        from cli.config_engine import ConfigDiff  # pylint: disable=import-outside-toplevel
+        from cli.config_engine import (  # noqa: PLC0415 pylint: disable=import-outside-toplevel
+            ConfigDiff,
+        )
 
         with Path(config1).open(encoding="utf-8") as f:
             cfg1 = yaml.safe_load(f) or {}
@@ -152,16 +154,16 @@ def config_diff(  # type: ignore
 
 
 @cli.group()
-def plugin() -> None:  # type: ignore
+def plugin() -> None:
     """Plugin management commands."""
 
 
 @plugin.command(name="discover")
 @click.argument("plugin_path", type=click.Path(exists=True), default="./plugins")
-def plugin_discover(plugin_path: str) -> None:  # type: ignore
+def plugin_discover(plugin_path: str) -> None:
     """Discover available plugins."""
     try:
-        from cli.plugin_system import PluginLoader
+        from cli.plugin_system import PluginLoader  # noqa: PLC0415
 
         loader = PluginLoader(logger=logger)
         loader.add_plugin_path(Path(plugin_path))
@@ -181,10 +183,10 @@ def plugin_discover(plugin_path: str) -> None:  # type: ignore
 
 @plugin.command(name="load")
 @click.argument("plugin_path", type=click.Path(exists=True), default="./plugins")
-def plugin_load(plugin_path: str) -> None:  # type: ignore
+def plugin_load(plugin_path: str) -> None:
     """Load all plugins from directory."""
     try:
-        from cli.plugin_system import PluginLoader
+        from cli.plugin_system import PluginLoader  # noqa: PLC0415
 
         loader = PluginLoader(logger=logger)
         loaded_count = loader.load_all([Path(plugin_path)])
@@ -200,10 +202,10 @@ def plugin_load(plugin_path: str) -> None:  # type: ignore
 
 @plugin.command(name="validate")
 @click.argument("plugin_path", type=click.Path(exists=True), default="./plugins")
-def plugin_validate(plugin_path: str) -> None:  # type: ignore
+def plugin_validate(plugin_path: str) -> None:
     """Validate all plugins in directory."""
     try:
-        from cli.plugin_validator import PluginValidator
+        from cli.plugin_validator import PluginValidator  # noqa: PLC0415
 
         validator = PluginValidator(Path(plugin_path), logger=logger)
         results = validator.validate_all_plugins()
@@ -226,16 +228,16 @@ def plugin_validate(plugin_path: str) -> None:  # type: ignore
 
 
 @cli.group()
-def git() -> None:  # type: ignore
+def git() -> None:
     """Git integration commands."""
 
 
 @git.command(name="branch")
 @click.argument("repo_path", type=click.Path(exists=True), default=".")
-def git_branch(repo_path: str) -> None:  # type: ignore
+def git_branch(repo_path: str) -> None:
     """Get current git branch."""
     try:
-        from cli.git_config_manager import GitConfigManager
+        from cli.git_config_manager import GitConfigManager  # noqa: PLC0415
 
         manager = GitConfigManager(str(Path(repo_path).expanduser()))
         current_branch = manager.get_current_branch()
@@ -249,10 +251,10 @@ def git_branch(repo_path: str) -> None:  # type: ignore
 
 @git.command(name="status")
 @click.argument("repo_path", type=click.Path(exists=True), default=".")
-def git_status(repo_path: str) -> None:  # type: ignore
+def git_status(repo_path: str) -> None:
     """Check git repository status."""
     try:
-        from cli.git_config_manager import GitConfigManager
+        from cli.git_config_manager import GitConfigManager  # noqa: PLC0415
 
         manager = GitConfigManager(str(Path(repo_path).expanduser()))
         is_dirty = manager.is_dirty()
@@ -275,11 +277,11 @@ def git_status(repo_path: str) -> None:  # type: ignore
 @git.command(name="info")
 @click.argument("repo_path", type=click.Path(exists=True), default=".")
 @click.argument("commit_ref", default="HEAD")
-def git_info(repo_path: str, commit_ref: str) -> None:  # type: ignore
+def git_info(repo_path: str, commit_ref: str) -> None:
     """Get commit information."""
     try:
-        from cli.git_config_manager import (
-            GitConfigManager,  # pylint: disable=import-outside-toplevel
+        from cli.git_config_manager import (  # noqa: PLC0415 pylint: disable=import-outside-toplevel
+            GitConfigManager,
         )
 
         manager = GitConfigManager(str(Path(repo_path).expanduser()))
@@ -298,17 +300,16 @@ def git_info(repo_path: str, commit_ref: str) -> None:  # type: ignore
 
 
 @cli.group()
-def validate() -> None:  # type: ignore
+def validate() -> None:
     """Validation commands."""
 
 
 @validate.command(name="commit")
 @click.argument("commit_file", type=click.Path(exists=True))
-def validate_commit(commit_file: str) -> None:  # type: ignore
+def validate_commit(commit_file: str) -> None:
     """Validate commit message from file."""
     try:
-        with open(commit_file, encoding="utf-8") as f:
-            message = f.read().strip()
+        message = Path(commit_file).read_text(encoding="utf-8").strip()
 
         click.echo(click.style("✓ Commit message validation:", bold=True))
         click.echo(f"  Message: {message[:50]}...")
@@ -319,11 +320,11 @@ def validate_commit(commit_file: str) -> None:  # type: ignore
 
 
 @cli.command()
-def health() -> None:  # type: ignore
+def health() -> None:
     """Perform system health check."""
     try:
-        from cli.health_check import (
-            create_default_monitor,  # pylint: disable=import-outside-toplevel
+        from cli.health_check import (  # noqa: PLC0415 pylint: disable=import-outside-toplevel
+            create_default_monitor,
         )
 
         monitor = create_default_monitor()
@@ -347,7 +348,7 @@ def health() -> None:  # type: ignore
 
 
 @cli.command()
-def version() -> None:  # type: ignore
+def version() -> None:
     """Show version information."""
     click.echo("devkit version 3.1.0")
     click.echo("Python development environment setup and management tool")

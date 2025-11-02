@@ -93,6 +93,7 @@ repos:
       - id: mypy
         name: "Type check with mypy (STRICT)"
         additional_dependencies:
+          - click>=8.0
           - types-PyYAML>=6.0.12
           - types-requests>=2.31.0
           - types-setuptools>=68.0.0
@@ -123,6 +124,9 @@ repos:
     hooks:
       - id: pylint
         name: "Comprehensive linting (pylint)"
+        additional_dependencies:
+          - click>=8.0
+          - PyYAML>=6.0
         args:
           - --disable=too-many-arguments,too-many-branches,too-many-locals,too-many-statements
           - --max-line-length=100

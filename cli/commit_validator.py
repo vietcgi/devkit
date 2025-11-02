@@ -382,7 +382,7 @@ class CodeQualityValidator(ValidatorBase):
         """Display quality check summary."""
         for check_result in report["checks"].values():
             if isinstance(check_result, dict):
-                _status = "✓ PASS" if check_result.get("passed", False) else "✗ FAIL"
+                _status = " PASS" if check_result.get("passed", False) else " FAIL"
                 _color = Colors.GREEN if check_result.get("passed") else Colors.RED
                 _score = check_result.get("score", 0)
 

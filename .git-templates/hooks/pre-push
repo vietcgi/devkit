@@ -1,0 +1,31 @@
+#!/bin/bash
+# Pre-push hook: Run pre-commit on ALL files before pushing
+# This prevents pushing code that fails CI
+#
+# Pre-commit runs:
+# - Local commit hook: Checks staged files only
+# - CI workflow: Checks ALL files (pre-commit run --all-files)
+#
+# This hook ensures local pre-push checks match CI checks
+
+set -e
+
+echo "🔍 Running pre-commit on ALL files before push..."
+echo ""
+
+if ! pre-commit run --all-files; then
+    echo ""
+    echo "❌ Pre-commit checks FAILED"
+    echo ""
+    echo "Fix the errors above and try again:"
+    echo "  pre-commit run --all-files --fix  (auto-fix issues)"
+    echo "  pre-commit run --all-files        (re-check)"
+    echo ""
+    echo "To bypass this hook (NOT recommended):"
+    echo "  git push --no-verify"
+    echo ""
+    exit 1
+fi
+
+echo ""
+echo "✅ All pre-commit checks passed! Proceeding with push..."

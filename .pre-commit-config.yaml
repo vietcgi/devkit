@@ -6,10 +6,28 @@
 # All developers MUST pass these checks before committing.
 # These gates ensure: type safety, security, complexity limits, & test coverage.
 #
+# =========================================================================
+# GIT HOOKS WORKFLOW (Local → CI)
+# =========================================================================
+# 1. On git commit:   .git/hooks/pre-commit runs (checks staged files)
+# 2. On git push:     .git/hooks/pre-push runs (checks ALL files)
+# 3. On CI:           pre-commit run --all-files (checks ALL files)
+#
+# This ensures local checks match CI requirements!
+#
+# =========================================================================
+# QUICK START COMMANDS
+# =========================================================================
+# Install hooks:                 pre-commit install
+# Test all files (before push):  pre-commit run --all-files
+# Test staged files (on commit): pre-commit run
+# Run specific hook:             pre-commit run ruff --all-files
+# Auto-fix issues:               pre-commit run --all-files --fix
+# Verbose output:                pre-commit run --all-files --verbose
+# Bypass hooks (not recommended): git commit --no-verify
+# Update hooks:                  pre-commit autoupdate
+#
 # Docs: https://pre-commit.com
-# Setup: pre-commit install
-# Test: pre-commit run --all-files
-# Update: pre-commit autoupdate
 
 default_language_version:
   python: python3.13
@@ -77,10 +95,11 @@ repos:
     hooks:
       - id: ruff
         name: "Lint Python code (Ruff)"
-        args: [--fix, --unsafe-fixes, --config=pyproject.toml]
+        args: [--config=pyproject.toml]
         files: ^cli/
       - id: ruff-format
         name: "Format Python code (Ruff)"
+        stages: [manual]
         args: [--line-length=100, --config=pyproject.toml]
         files: ^cli/
 

@@ -1,17 +1,25 @@
 {
-  "timestamp": "2025-10-31T23:28:46.135558+00:00",
-  "total_mutations": 318,
-  "killed_mutations": 317,
-  "survived_mutations": 1,
-  "mutation_score": 99.69,
+  "timestamp": "2025-11-02T20:59:01.035206+00:00",
+  "total_mutations": 271,
+  "killed_mutations": 269,
+  "survived_mutations": 2,
+  "mutation_score": 99.26,
   "survived_mutations_details": [
     {
-      "file": "/Users/kevin/devkit/cli/audit.py",
-      "line": 92,
-      "type": "comparison_operator",
-      "original": "if len(key) == 32:  # Validate key length",
-      "mutated": "if len(key) != 32:  # Validate key length",
-      "description": "Changed '==' to '!=' on line 92"
+      "file": "/Users/kevin/devkit/cli/log.py",
+      "line": 86,
+      "type": "boolean_literal",
+      "original": "json_output: bool = False,",
+      "mutated": "json_output: bool = True,",
+      "description": "Changed False to True on line 86"
+    },
+    {
+      "file": "/Users/kevin/devkit/cli/commit_validator.py",
+      "line": 97,
+      "type": "boolean_literal",
+      "original": "return True, [], 100",
+      "mutated": "return False, [], 100",
+      "description": "Changed True to False on line 97"
     }
   ]
 }

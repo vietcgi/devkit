@@ -343,6 +343,18 @@
       when: git_enable_precommit | default(true)
       tags: [git, precommit, verify]
 
+# Pre-push Hook Setup (runs pre-commit --all-files before push to match CI)
+- name: Create pre-push hook (checks all files before pushing)
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/.git-templates/hooks/pre-push"
+    dest: "{{ git_hooks_dir }}/pre-push"
+    mode: '0755'
+    owner: "{{ git_current_user }}"
+    group: "{{ ansible_user_gid | default(omit) }}"
+  notify: reload git hooks
+  when: git_enable_precommit | default(true)
+  tags: [git, hooks, precommit]
+
 # Git Aliases
 - name: Configure git aliases
   community.general.git_config:

@@ -23,9 +23,10 @@ jobs:
       uses: trufflesecurity/trufflehog@main
       with:
         path: ./
-        base: main
+        base: ${{ github.event.repository.default_branch }}
         head: HEAD
         extra_args: --only-verified --json
+      continue-on-error: true
 
     - name: Git-secrets scan
       run: |

@@ -140,9 +140,9 @@
     - packages
   - name: Install essential Linux packages (Arch Linux)
     ansible.builtin.shell: |
-      pacman -S --noconfirm --needed git curl wget vim neovim tmux zsh \
+      pacman -Syu --noconfirm git curl wget vim neovim tmux zsh \
         fzf ripgrep bat tree htop jq base-devel python-pip python-pipx nodejs \
-        npm go postgresql sqlite direnv shellcheck
+        npm go postgresql sqlite direnv shellcheck --needed
     args:
       executable: /bin/bash
     changed_when: false
@@ -419,7 +419,7 @@
   - name: Create vim symlinks to neovim (override system vim)
     ansible.builtin.file:
       src: |
-        {{ '/usr/bin/nvim' if ansible_os_family in ['Debian', 'RedHat', 'Archlinux'] else
+        {{ '/usr/bin/nvim' if ansible_os_family == 'Debian' else
         homebrew_prefix ~ '/bin/nvim' }}
       dest: /usr/local/bin/{{ item }}
       state: link

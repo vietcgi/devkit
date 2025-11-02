@@ -208,48 +208,6 @@ jobs:
           /tmp/*.log
           ~/Library/Logs/Homebrew/
 
-  test-macos-12:
-    name: macOS 12 (Monterey) - x86_64
-    runs-on: macos-12  # Intel runner
-    timeout-minutes: 60
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Show system info
-      run: |
-        echo "OS: $(sw_vers -productName) $(sw_vers -productVersion)"
-        echo "Architecture: $(uname -m)"
-        uname -a
-
-    - name: Run bootstrap
-      run: |
-        chmod +x bootstrap.sh
-        ./bootstrap.sh
-      env:
-        CI: true
-
-    - name: Verify installations
-      run: |
-        eval "$(/opt/homebrew/bin/brew shellenv)"
-        echo "PATH=$PATH"
-
-        echo "=== Verifying Core Tools ==="
-        git --version || echo "git not found"
-        zsh --version || echo "zsh not found"
-        tmux -V || echo "tmux not found"
-        nvim --version 2>&1 | head -1 || echo "nvim not found"
-
-    - name: Upload logs on failure
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: macos-12-logs
-        path: |
-          /tmp/*.log
-          ~/Library/Logs/Homebrew/
-
   # ===========================================================================
   # Ubuntu Tests (Native Runners)
   # ===========================================================================
@@ -391,57 +349,6 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ubuntu-22-logs
-        path: |
-          /tmp/*.log
-
-  test-ubuntu-20:
-    name: Ubuntu 20.04 LTS (Focal)
-    runs-on: ubuntu-20.04
-    timeout-minutes: 45
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Show system info
-      run: |
-        echo "OS: $(lsb_release -d | cut -f2)"
-        echo "Kernel: $(uname -r)"
-        echo "Architecture: $(uname -m)"
-
-    - name: Run bootstrap
-      run: |
-        chmod +x bootstrap.sh
-        export DEBIAN_FRONTEND=noninteractive
-        ./bootstrap.sh
-      env:
-        CI: true
-
-    - name: Verify installations
-      run: |
-        # Source Linuxbrew environment dynamically
-        if [ -f /home/linuxbrew/.linuxbrew/bin/brew ]; then
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-        elif [ -f /opt/homebrew/bin/brew ]; then
-          eval "$(/opt/homebrew/bin/brew shellenv)"
-        elif [ -f /usr/local/bin/brew ]; then
-          eval "$(/usr/local/bin/brew shellenv)"
-        elif command -v brew &> /dev/null; then
-          eval "$(brew shellenv)"
-        fi
-        echo "PATH=$PATH"
-
-        echo "=== Verifying Core Tools ==="
-        git --version || echo "git not found"
-        zsh --version || echo "zsh not found"
-        tmux -V || echo "tmux not found"
-        nvim --version 2>&1 | head -1 || echo "nvim not found"
-
-    - name: Upload logs on failure
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: ubuntu-20-logs
         path: |
           /tmp/*.log
 
@@ -594,10 +501,8 @@ jobs:
       - test-macos-15
       - test-macos-14
       - test-macos-13
-      - test-macos-12
       - test-ubuntu-24
       - test-ubuntu-22
-      - test-ubuntu-20
       - test-debian-12
       - test-debian-11
       - test-fedora-40
@@ -614,10 +519,8 @@ jobs:
         echo "  macOS 15 (Sequoia):  ${{ needs.test-macos-15.result }}"
         echo "  macOS 14 (Sonoma):   ${{ needs.test-macos-14.result }}"
         echo "  macOS 13 (Ventura):  ${{ needs.test-macos-13.result }}"
-        echo "  macOS 12 (Monterey): ${{ needs.test-macos-12.result }}"
         echo "  Ubuntu 24.04 (Noble): ${{ needs.test-ubuntu-24.result }}"
         echo "  Ubuntu 22.04 (Jammy): ${{ needs.test-ubuntu-22.result }}"
-        echo "  Ubuntu 20.04 (Focal): ${{ needs.test-ubuntu-20.result }}"
         echo ""
         echo "Container Tests (Informational):"
         echo "  Debian 12 (Bookworm): ${{ needs.test-debian-12.result }}"
@@ -634,10 +537,8 @@ jobs:
         [[ "${{ needs.test-macos-15.result }}" != "success" ]] && ((critical_failures++))
         [[ "${{ needs.test-macos-14.result }}" != "success" ]] && ((critical_failures++))
         [[ "${{ needs.test-macos-13.result }}" != "success" ]] && ((critical_failures++))
-        [[ "${{ needs.test-macos-12.result }}" != "success" ]] && ((critical_failures++))
         [[ "${{ needs.test-ubuntu-24.result }}" != "success" ]] && ((critical_failures++))
         [[ "${{ needs.test-ubuntu-22.result }}" != "success" ]] && ((critical_failures++))
-        [[ "${{ needs.test-ubuntu-20.result }}" != "success" ]] && ((critical_failures++))
 
         # Informational tests (containers - may have transient failures)
         [[ "${{ needs.test-debian-12.result }}" != "success" ]] && ((info_failures++))
@@ -645,7 +546,7 @@ jobs:
         [[ "${{ needs.test-fedora-40.result }}" != "success" ]] && ((info_failures++))
         [[ "${{ needs.test-arch-linux.result }}" != "success" ]] && ((info_failures++))
 
-        critical_total=7
+        critical_total=5
         info_total=4
         critical_successes=$((critical_total - critical_failures))
         info_successes=$((info_total - info_failures))

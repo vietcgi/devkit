@@ -582,7 +582,10 @@ install_ansible() {
             # Try user installation first (preferred, doesn't need sudo)
             if retry pip3 install --user ansible; then
                 log_success "Ansible installed via pip3 (user)"
-            # If user installation fails, try system-wide
+            # If user installation fails, try system-wide without externally-managed-environment restrictions
+            elif retry pip3 install --break-system-packages ansible; then
+                log_success "Ansible installed via pip3 (system with --break-system-packages)"
+            # Fallback: try without the flag for older systems
             elif retry pip3 install ansible; then
                 log_success "Ansible installed via pip3 (system)"
             else

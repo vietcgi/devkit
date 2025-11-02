@@ -431,7 +431,7 @@ class SimplePlugin(PluginInterface):
 def _display_plugin_list(loader: "PluginLoader") -> None:  # pylint: disable=unused-argument
     """Display list of loaded plugins."""
     plugins = loader.list_plugins()
-    print(f"\n{"Loaded Plugins":^50}")  # noqa: T201
+    print(f'\n{"Loaded Plugins":^50}')  # noqa: T201
     print("=" * 50)  # noqa: T201
     if plugins:
         for plugin in plugins:

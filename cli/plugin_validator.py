@@ -92,7 +92,7 @@ class PluginManifest:
         # Validate version format (semantic versioning)
         if "version" in self.data and not self._is_valid_semver(self.data["version"]):
             errors.append(
-                f"Invalid version format: {self.data["version"]}. Must be semantic version (X.Y.Z)",
+                f'Invalid version format: {self.data["version"]}. Must be semantic version (X.Y.Z)',
             )
 
         # Validate optional fields if present

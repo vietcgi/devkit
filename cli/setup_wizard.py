@@ -43,7 +43,7 @@ class ProgressBar:
         """Display the progress bar."""
         percentage = (self.current / self.total) * 100
         filled = int(50 * self.current // self.total)
-        progress_bar = f"{"█" * filled}{"░" * (50 - filled)}"
+        progress_bar = f'{"█" * filled}{"░" * (50 - filled)}'
 
         elapsed = time.time() - self.start_time
         rate = self.current / elapsed if elapsed > 0 else 0

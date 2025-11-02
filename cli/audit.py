@@ -171,7 +171,7 @@ class AuditLogStorage:
         """
         self.log_dir = log_dir
         self.log_dir.mkdir(parents=True, exist_ok=True)
-        self.log_file = log_dir / f"audit-{datetime.now(tz=timezone.utc).strftime("%Y%m%d")}.jsonl"
+        self.log_file = log_dir / f'audit-{datetime.now(tz=timezone.utc).strftime("%Y%m%d")}.jsonl'
         self.logger = logging.getLogger(__name__)
         self._ensure_secure_permissions()
 

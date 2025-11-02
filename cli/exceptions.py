@@ -310,7 +310,7 @@ class SecurityError(DevkitError):
             message=f"File has insecure permissions: {path}",
             cause=f"Permissions are {current}, should be {expected}",
             solutions=[
-                f"Fix permissions: chmod {expected.replace("0", "")} {path}",
+                f'Fix permissions: chmod {expected.replace("0", "")} {path}',
                 f"Verify: ls -la {path}",
                 "Consider using secure_config() to auto-fix permissions",
             ],

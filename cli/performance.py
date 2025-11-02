@@ -260,7 +260,7 @@ class InstallationOptimizer:
         stats = self.cache.get_cache_stats()
         if stats["entries"] > 100:
             suggestions.append(
-                f"Clear cache ({stats["entries"]} entries, {stats["size_mb"]}MB): "
+                f'Clear cache ({stats["entries"]} entries, {stats["size_mb"]}MB): '
                 "devkit cache clear",
             )
 

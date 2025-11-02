@@ -789,10 +789,10 @@ class ConfigDiff:
         summary = diff["summary"]
         lines.extend((
             "\nSummary:",
-            f"  Added:     {summary["added"]}",
-            f"  Removed:   {summary["removed"]}",
-            f"  Modified:  {summary["modified"]}",
-            f"  Unchanged: {summary["unchanged"]}",
+            f'  Added:     {summary["added"]}',
+            f'  Removed:   {summary["removed"]}',
+            f'  Modified:  {summary["modified"]}',
+            f'  Unchanged: {summary["unchanged"]}',
         ))
 
         # Added keys

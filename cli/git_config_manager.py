@@ -387,17 +387,8 @@ class GitConfigManager(ValidatorBase):
         Args:
             report: Report dictionary from generate_report()
         """
-        # Process config status
-        for _ in report["config_status"]:
-            pass
-
-        # Process hooks status
-        for _ in report["hooks_status"]:
-            pass
-
-        # Process directories
-        for _ in report["directories"]:
-            pass
+        # This method is reserved for future formatting implementation
+        # Currently a stub to prevent runtime errors
 
     def reload_all(self, *, dry_run: bool = False) -> bool:
         """Perform complete git configuration reload.

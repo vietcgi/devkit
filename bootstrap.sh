@@ -764,6 +764,11 @@ run_ansible_setup() {
         return 1
     fi
 
+    # Set UTF-8 locale for Ansible (required on some Linux containers)
+    # This fixes "Ansible requires the locale encoding to be UTF-8" errors
+    export LC_ALL=C.UTF-8
+    export LANG=C.UTF-8
+
     if ! ansible-playbook -i inventory.yml setup.yml \
         --extra-vars="setup_environment=${ENVIRONMENT:-development}" \
         --extra-vars="enabled_roles=${SELECTED_ROLES:-core,shell,editors,languages,development}"; then

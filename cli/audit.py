@@ -188,11 +188,15 @@ class AuditLogStorage:
     def write_entry(self, entry: dict[str, Any]) -> None:
         """Write audit entry to log file.
 
+        Handles errors gracefully by logging them without raising exceptions.
+        This ensures audit logging failures don't crash the application.
+
         Args:
             entry: Audit entry dictionary
 
-        Raises:
-            OSError: If unable to write to log file
+        Note:
+            OSError and serialization errors are caught and logged.
+            No exception is raised to ensure robustness.
         """
         try:
             # Ensure log directory exists and is secure

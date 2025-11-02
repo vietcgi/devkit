@@ -68,18 +68,16 @@
   tags: [git, config]
 
 # Git Hooks Setup
-# NOTE: Custom hooks disabled when pre-commit framework is enabled
-# Pre-commit handles all hooks via .pre-commit-config.yaml
-# If needed to create custom hooks, set git_enable_precommit: false
+# Deploy custom hooks that include pre-commit run --all-files
+# These hooks are used via core.hooksPath and work alongside pre-commit framework
 - name: Create pre-commit hook
-  ansible.builtin.template:
-    src: hooks/pre-commit.sh.j2
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/.git-templates/hooks/pre-commit"
     dest: "{{ git_hooks_dir }}/pre-commit"
     mode: '0755'
     owner: "{{ git_current_user }}"
     group: "{{ ansible_user_gid | default(omit) }}"
   notify: reload git hooks
-  when: not git_enable_precommit | default(true)
   tags: [git, hooks]
 
 - name: Create commit-msg hook
@@ -138,7 +136,6 @@
     name: core.hooksPath
     value: "{{ git_hooks_dir }}"
     scope: global
-  when: not git_enable_precommit | default(true)
   changed_when: false
   notify: reload git config
   tags: [git, config]
@@ -305,16 +302,11 @@
         - git_repo_root is defined
       tags: [git, precommit, config]
 
-    - name: Unset core.hooksPath if set (pre-commit requirement)
-      ansible.builtin.shell: |
-        set -o pipefail
-        if git config --global core.hooksPath > /dev/null 2>&1; then
-          git config --global --unset core.hooksPath
-          echo "unset"
-        else
-          echo "not-set"
-        fi
-      register: git_hooks_path_status
+    - name: Ensure core.hooksPath is set for custom hooks (pre-commit framework compatible)
+      community.general.git_config:
+        name: core.hooksPath
+        value: "{{ git_hooks_dir }}"
+        scope: global
       changed_when: false
       when: git_enable_precommit | default(true)
       tags: [git, precommit, config]

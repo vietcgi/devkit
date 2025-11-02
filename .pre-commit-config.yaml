@@ -182,13 +182,15 @@ repos:
     hooks:
       - id: radon-cc
         name: "Check cyclomatic complexity (Radon)"
-        entry: bash -c 'radon cc -x B --no-assert cli/'
-        language: system
+        entry: radon cc -x B --no-assert cli/
+        language: python
+        additional_dependencies: [radon]
         pass_filenames: false
         stages: [commit]
       - id: radon-mi
         name: "Check maintainability index (Radon)"
-        entry: bash -c 'radon mi -n B cli/'
-        language: system
+        entry: radon mi -n B cli/
+        language: python
+        additional_dependencies: [radon]
         pass_filenames: false
         stages: [commit]

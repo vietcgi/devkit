@@ -231,7 +231,7 @@ jobs:
 
     - name: Install mypy and dependencies
       run: |
-        pip install mypy types-PyYAML types-requests types-setuptools
+        pip install mypy click types-PyYAML types-requests types-setuptools
 
     - name: Run mypy type checking (strict mode)
       run: |

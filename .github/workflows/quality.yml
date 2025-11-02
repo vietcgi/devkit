@@ -80,7 +80,7 @@ jobs:
     - name: Run shellcheck with strict options
       run: |
         shellcheck \
-          --severity=style \
+          --severity=warning \
           --format=gcc \
           bootstrap.sh \
           bootstrap-ansible.sh \

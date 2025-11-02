@@ -262,7 +262,7 @@
     - name: Check if pre-commit is already installed
       ansible.builtin.command: which pre-commit
       environment:
-        PATH: "{{ git_home_dir }}/.local/bin:{{ homebrew_prefix }}/bin:/usr/local/bin:/usr/bin:/bin:/sbin:/usr/sbin:{{ ansible_env.PATH }}" # yamllint disable-line rule:line-length
+        PATH: "{{ git_home_dir }}/.local/bin:{{ homebrew_prefix }}/bin:/usr/local/bin:/usr/bin:/bin:/sbin:/usr/sbin"
       register: git_precommit_check
       failed_when: false
       changed_when: false
@@ -272,7 +272,7 @@
     - name: Install pre-commit via pipx (if not already installed)
       ansible.builtin.command: pipx install pre-commit
       environment:
-        PATH: "{{ git_home_dir }}/.local/bin:{{ homebrew_prefix }}/bin:/usr/local/bin:/usr/bin:/bin:/sbin:/usr/sbin:{{ ansible_env.PATH }}" # yamllint disable-line rule:line-length
+        PATH: "{{ git_home_dir }}/.local/bin:{{ homebrew_prefix }}/bin:/usr/local/bin:/usr/bin:/bin:/sbin:/usr/sbin"
         HOME: "{{ git_home_dir }}"
       register: git_precommit_install
       when:
@@ -284,7 +284,7 @@
     - name: Verify pre-commit installation
       ansible.builtin.command: pre-commit --version
       environment:
-        PATH: "{{ git_home_dir }}/.local/bin:{{ homebrew_prefix }}/bin:/usr/local/bin:/usr/bin:/bin:/sbin:/usr/sbin:{{ ansible_env.PATH }}" # yamllint disable-line rule:line-length
+        PATH: "{{ git_home_dir }}/.local/bin:{{ homebrew_prefix }}/bin:/usr/local/bin:/usr/bin:/bin:/sbin:/usr/sbin"
         HOME: "{{ git_home_dir }}"
       register: git_precommit_version
       changed_when: false
@@ -320,10 +320,10 @@
 
     - name: Initialize pre-commit hooks in repository
       ansible.builtin.shell: |
+        export PATH="{{ git_home_dir }}/.local/bin:{{ homebrew_prefix }}/bin:/usr/local/bin:/usr/bin:/bin:/sbin:/usr/sbin"
         cd {{ git_repo_root | default(lookup('env', 'PWD')) }}
-        pre-commit install
+        {{ git_home_dir }}/.local/bin/pre-commit install
       environment:
-        PATH: "{{ git_home_dir }}/.local/bin:{{ homebrew_prefix }}/bin:/usr/local/bin:/usr/bin:/bin:/sbin:/usr/sbin:{{ ansible_env.PATH }}" # yamllint disable-line rule:line-length
         HOME: "{{ git_home_dir }}"
       register: git_precommit_init
       changed_when: false

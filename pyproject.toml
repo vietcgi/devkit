@@ -4,14 +4,29 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "devkit"
-version = "1.0.0"
-description = "Enterprise-grade system configuration management"
+version = "3.1.0"
+description = "Development Environment Automation - Enterprise-grade system configuration management"
 authors = [
-    {name = "Kevin", email = "kevin@example.com"}
+    {name = "Devkit Contributors", email = "maintainer@example.com"}
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.9"
 license = {text = "Apache-2.0"}
 readme = "README.md"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Utilities",
+]
 
 dependencies = [
     "PyYAML>=6.0",
@@ -22,10 +37,19 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/vietcgi/devkit"
 Repository = "https://github.com/vietcgi/devkit"
-Issues = "https://github.com/vietcgi/devkit/issues"
+"Bug Tracker" = "https://github.com/vietcgi/devkit/issues"
+Documentation = "https://github.com/vietcgi/devkit"
+"Source Code" = "https://github.com/vietcgi/devkit"
 
 [project.scripts]
 devkit = "cli.main:main"
+
+[tool.setuptools]
+packages = ["cli"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+cli = ["py.typed"]
 
 [project.optional-dependencies]
 dev = [

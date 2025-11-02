@@ -194,7 +194,7 @@ repos:
         files: ^(setup\.yml|ansible/)
         types: [yaml]
         additional_dependencies:
-          - "ansible-core>=2.12,<2.16"
+          - "ansible>=9.0.0,<10.0.0"
 
   # =========================================================================
   # TIER 12: COMPLEXITY ANALYSIS (radon)

@@ -772,11 +772,11 @@ run_ansible_setup() {
     fi
 
     # Debian 11 Docker containers don't have UTF-8 locale configured
-    # This fixes "Ansible requires the locale encoding to be UTF-8; Detected None" on Debian 11 only
+    # Set PYTHONIOENCODING to UTF-8 to tell Python/Ansible to use UTF-8 encoding
+    # This avoids locale unavailability issues while still providing UTF-8 support
     if [[ "${DISTRO:-}" == "debian" ]] && [[ "${DISTRO_VERSION:-}" == "11" ]]; then
-        log_info "Debian 11 detected: setting UTF-8 locale for Ansible"
-        export LC_ALL=C.UTF-8
-        export LANG=C.UTF-8
+        log_info "Debian 11 detected: setting Python encoding to UTF-8 for Ansible"
+        export PYTHONIOENCODING=utf-8
     fi
 
     if ! ansible-playbook -i inventory.yml setup.yml \

@@ -68,10 +68,9 @@
   tags: [git, config]
 
 # Git Hooks Setup
-# NOTE: Custom hooks disabled when pre-commit framework is enabled
-# Pre-commit handles all hooks via .pre-commit-config.yaml
-# If needed to create custom hooks, set git_enable_precommit: false
-- name: Create pre-commit hook
+# NOTE: The pre-commit hook template includes comprehensive quality gates
+# AND calls the pre-commit framework (if installed), so it works in both modes
+- name: Create pre-commit hook template
   ansible.builtin.copy:
     src: "{{ playbook_dir }}/.git-templates/hooks/pre-commit"
     dest: "{{ git_hooks_dir }}/pre-commit"
@@ -79,10 +78,9 @@
     owner: "{{ git_current_user }}"
     group: "{{ ansible_user_gid | default(omit) }}"
   notify: reload git hooks
-  when: not git_enable_precommit | default(true)
   tags: [git, hooks]
 
-- name: Create commit-msg hook
+- name: Create commit-msg hook template
   ansible.builtin.template:
     src: hooks/commit-msg.sh.j2
     dest: "{{ git_hooks_dir }}/commit-msg"
@@ -90,27 +88,26 @@
     owner: "{{ git_current_user }}"
     group: "{{ ansible_user_gid | default(omit) }}"
   notify: reload git hooks
-  when: not git_enable_precommit | default(true)
   tags: [git, hooks]
 
-- name: Create post-commit hook
+- name: Create post-commit hook template
   ansible.builtin.template:
     src: hooks/post-commit.sh.j2
     dest: "{{ git_hooks_dir }}/post-commit"
     mode: '0755'
     owner: "{{ git_current_user }}"
     group: "{{ ansible_user_gid | default(omit) }}"
-  when: not git_enable_precommit | default(true)
+  notify: reload git hooks
   tags: [git, hooks]
 
-- name: Create prepare-commit-msg hook
+- name: Create prepare-commit-msg hook template
   ansible.builtin.template:
     src: hooks/prepare-commit-msg.sh.j2
     dest: "{{ git_hooks_dir }}/prepare-commit-msg"
     mode: '0755'
     owner: "{{ git_current_user }}"
     group: "{{ ansible_user_gid | default(omit) }}"
-  when: not git_enable_precommit | default(true)
+  notify: reload git hooks
   tags: [git, hooks]
 
 # Git Ignore Configuration

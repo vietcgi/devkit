@@ -276,23 +276,9 @@
     - dotfiles
     - configuration
     - always
-  - name: Check if dotfiles directory exists
-    ansible.builtin.stat:
-      path: "{{ playbook_dir }}/dotfiles"
-    register: dotfiles_dir_check
-    tags:
-    - dotfiles
-    - configuration
-    - always
+  # NOTE: dotfiles role moved to run AFTER Oh My Zsh installation
+  # to prevent .zshrc from being overwritten by Oh My Zsh installer
 
-  - name: Include dotfiles role
-    ansible.builtin.include_role:
-      name: dotfiles
-    when: dotfiles_dir_check.stat.exists
-    tags:
-    - dotfiles
-    - configuration
-    - always
   - name: Include git role
     ansible.builtin.include_role:
       name: git
@@ -475,7 +461,31 @@
     until: dircolors_result is succeeded
     tags:
     - shell
-  # NOTE: .inputrc and .direnvrc deployed by dotfiles role
+
+  # ============================================================================
+  # Deploy dotfiles AFTER Oh My Zsh installation
+  # This ensures .zshrc with p10k configuration is not overwritten
+  # ============================================================================
+
+  - name: Check if dotfiles directory exists
+    ansible.builtin.stat:
+      path: "{{ playbook_dir }}/dotfiles"
+    register: dotfiles_dir_check
+    tags:
+    - dotfiles
+    - configuration
+    - always
+
+  - name: Include dotfiles role
+    ansible.builtin.include_role:
+      name: dotfiles
+    when: dotfiles_dir_check.stat.exists
+    tags:
+    - dotfiles
+    - configuration
+    - always
+
+  # NOTE: .inputrc and .direnvrc deployed by dotfiles role above
   # These duplicate tasks removed to avoid overwriting permissions
 
   - name: Enable direnv in zsh

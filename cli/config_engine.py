@@ -787,13 +787,15 @@ class ConfigDiff:
 
         # Summary
         summary = diff["summary"]
-        lines.extend((
-            "\nSummary:",
-            f'  Added:     {summary["added"]}',
-            f'  Removed:   {summary["removed"]}',
-            f'  Modified:  {summary["modified"]}',
-            f'  Unchanged: {summary["unchanged"]}',
-        ))
+        lines.extend(
+            (
+                "\nSummary:",
+                f'  Added:     {summary["added"]}',
+                f'  Removed:   {summary["removed"]}',
+                f'  Modified:  {summary["modified"]}',
+                f'  Unchanged: {summary["unchanged"]}',
+            ),
+        )
 
         # Added keys
         if diff["added"]:
@@ -811,11 +813,13 @@ class ConfigDiff:
         if diff["modified"]:
             lines.append(f'\nModified Keys ({len(diff["modified"])}):')
             for key, change in diff["modified"].items():
-                lines.extend((
-                    f"  ~ {key}:",
-                    f'      Old: {change["old"]}',
-                    f'      New: {change["new"]}',
-                ))
+                lines.extend(
+                    (
+                        f"  ~ {key}:",
+                        f'      Old: {change["old"]}',
+                        f'      New: {change["new"]}',
+                    ),
+                )
 
         return "\n".join(lines)
 

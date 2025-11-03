@@ -1,5 +1,4 @@
-"""
-Tests for refactored AuditLogger components.
+"""Tests for refactored AuditLogger components.
 
 Validates:
 - AuditSigningService cryptographic operations
@@ -7,19 +6,19 @@ Validates:
 - Error handling in refactored classes
 """
 
-import json
 import os
 import sys
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
 import pytest
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from cli.audit import (  # noqa: E402
+from cli.audit import (
     AuditAction,
     AuditLogger,
     AuditLogStorage,
@@ -197,7 +196,7 @@ class TestAuditLogStorage(unittest.TestCase):
         # Entry should be written to file
         self.assertTrue(self.storage.log_file.exists())
 
-        with open(self.storage.log_file, "r") as f:
+        with Path(self.storage.log_file).open("r") as f:
             content = f.read()
             self.assertIn("test_action", content)
 
@@ -295,7 +294,7 @@ class TestAuditLogStorage(unittest.TestCase):
         self.storage.write_entry({"action": "valid"})
 
         # Append corrupted entry directly
-        with open(self.storage.log_file, "a") as f:
+        with Path(self.storage.log_file).open("a") as f:
             f.write("{ invalid json }\n")
 
         # Write another valid entry
@@ -449,7 +448,7 @@ class TestAuditLoggerAdditional(unittest.TestCase):
         """Test logging permission changed action."""
         logger = AuditLogger(self.log_dir)
         entry = logger.log_permission_changed(
-            path="/path/to/file", old_perms="0644", new_perms="0600"
+            path="/path/to/file", old_perms="0644", new_perms="0600",
         )
 
         self.assertEqual(entry["action"], "permission_changed")
@@ -655,7 +654,7 @@ class TestAuditStorageErrors(unittest.TestCase):
         storage = AuditLogStorage(self.log_dir)
 
         # Write mixed valid and invalid JSON
-        with open(storage.log_file, "w") as f:
+        with Path(storage.log_file).open("w") as f:
             f.write('{"action": "valid1"}\n')
             f.write("{ invalid json }\n")
             f.write('{"action": "valid2"}\n')
@@ -922,7 +921,7 @@ class TestAuditLoggerAdditionalMethods(unittest.TestCase):
                 "action": "old_action",
                 "status": "success",
                 "details": {},
-            }
+            },
         )
 
         # Write recent entry
@@ -946,7 +945,7 @@ class TestAuditLoggerAdditionalMethods(unittest.TestCase):
                 "action": "test",
                 "status": "success",
                 "details": {},
-            }
+            },
         )
 
         # Should not raise, just skip invalid entries
@@ -984,7 +983,7 @@ class TestAuditReporterErrors(unittest.TestCase):
                 "action": "test",
                 "status": "success",
                 "details": {},
-            }
+            },
         )
 
         # Should not raise
@@ -1016,7 +1015,7 @@ class TestAuditReporterErrors(unittest.TestCase):
                 "status": "success",
                 "user": "user1",
                 "details": {},
-            }
+            },
         )
 
         # Write recent entry
@@ -1098,6 +1097,7 @@ class TestAuditSigningServiceErrorPaths(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_hmac_key_generation_permission_error(self):
@@ -1105,7 +1105,7 @@ class TestAuditSigningServiceErrorPaths(unittest.TestCase):
         from unittest.mock import patch
 
         # Create service with permission error on chmod
-        with patch('pathlib.Path.chmod', side_effect=PermissionError("Permission denied")):
+        with patch("pathlib.Path.chmod", side_effect=PermissionError("Permission denied")):
             service = AuditSigningService(self.log_dir)
             # Should still generate key even if chmod fails
             assert service.hmac_key is not None
@@ -1151,6 +1151,7 @@ class TestAuditLogStorageErrorPaths(unittest.TestCase):
     def tearDown(self):
         """Clean up."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_write_entry_creates_directory_if_missing(self):
@@ -1194,7 +1195,7 @@ class TestAuditLogStorageErrorPaths(unittest.TestCase):
         storage = AuditLogStorage(self.log_dir)
 
         # Mock chmod to raise PermissionError
-        with patch('pathlib.Path.chmod', side_effect=PermissionError("Operation not permitted")):
+        with patch("pathlib.Path.chmod", side_effect=PermissionError("Operation not permitted")):
             # Should not raise, should log warning
             storage._ensure_secure_permissions()
 

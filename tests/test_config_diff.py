@@ -5,13 +5,11 @@ and reports differences in a structured format.
 """
 
 import json
+import sys
 import unittest
 from pathlib import Path
-from tempfile import TemporaryDirectory
-from unittest.mock import MagicMock, patch
-import pytest
 
-import sys
+import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -71,14 +69,8 @@ class TestConfigDiff(unittest.TestCase):
 
     def test_diff_nested_configs(self):
         """Test comparison of nested configurations."""
-        config1 = {
-            "database": {"host": "localhost", "port": 5432},
-            "cache": {"enabled": True}
-        }
-        config2 = {
-            "database": {"host": "localhost", "port": 3306},
-            "cache": {"enabled": False}
-        }
+        config1 = {"database": {"host": "localhost", "port": 5432}, "cache": {"enabled": True}}
+        config2 = {"database": {"host": "localhost", "port": 3306}, "cache": {"enabled": False}}
 
         diff = self.differ.compare(config1, config2)
 
@@ -88,22 +80,8 @@ class TestConfigDiff(unittest.TestCase):
 
     def test_diff_deeply_nested(self):
         """Test comparison of deeply nested structures."""
-        config1 = {
-            "app": {
-                "server": {
-                    "port": 8080,
-                    "ssl": True
-                }
-            }
-        }
-        config2 = {
-            "app": {
-                "server": {
-                    "port": 9000,
-                    "ssl": False
-                }
-            }
-        }
+        config1 = {"app": {"server": {"port": 8080, "ssl": True}}}
+        config2 = {"app": {"server": {"port": 9000, "ssl": False}}}
 
         diff = self.differ.compare(config1, config2)
 
@@ -179,28 +157,8 @@ class TestConfigDiff(unittest.TestCase):
 
     def test_diff_multiple_levels_of_nesting(self):
         """Test deeply nested configuration comparison."""
-        config1 = {
-            "services": {
-                "api": {
-                    "handlers": {
-                        "logging": {
-                            "level": "INFO"
-                        }
-                    }
-                }
-            }
-        }
-        config2 = {
-            "services": {
-                "api": {
-                    "handlers": {
-                        "logging": {
-                            "level": "DEBUG"
-                        }
-                    }
-                }
-            }
-        }
+        config1 = {"services": {"api": {"handlers": {"logging": {"level": "INFO"}}}}}
+        config2 = {"services": {"api": {"handlers": {"logging": {"level": "DEBUG"}}}}}
 
         diff = self.differ.compare(config1, config2)
 
@@ -209,18 +167,8 @@ class TestConfigDiff(unittest.TestCase):
 
     def test_diff_preserves_types(self):
         """Test that diff preserves original types."""
-        config1 = {
-            "count": 42,
-            "enabled": True,
-            "name": "test",
-            "tags": ["a", "b"]
-        }
-        config2 = {
-            "count": 42,
-            "enabled": True,
-            "name": "test",
-            "tags": ["a", "b"]
-        }
+        config1 = {"count": 42, "enabled": True, "name": "test", "tags": ["a", "b"]}
+        config2 = {"count": 42, "enabled": True, "name": "test", "tags": ["a", "b"]}
 
         diff = self.differ.compare(config1, config2)
 

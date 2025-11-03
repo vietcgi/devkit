@@ -16,7 +16,6 @@ Provides unified command-line interface for:
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
 
 import click
 
@@ -41,7 +40,9 @@ logger = setup_logger(__name__, level=logging.INFO)
     help="Configuration directory path",
 )
 @click.pass_context
-def cli(ctx: click.Context, verbose: bool, config: Optional[str]) -> None:  # pylint: disable=redefined-outer-name
+def cli(  # pylint: disable=redefined-outer-name
+    ctx: click.Context, verbose: bool, config: str | None,
+) -> None:
     """Devkit - Development Environment Setup and Management.
 
     Fast, cross-platform development environment configuration.

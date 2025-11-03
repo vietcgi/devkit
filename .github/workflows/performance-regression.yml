@@ -37,6 +37,7 @@ jobs:
             --benchmark-histogram=.benchmarks/histogram || true
 
       - name: Store benchmark result
+        if: hashFiles('.benchmarks/output.json') != ''
         uses: benchmark-action/github-action-benchmark@v1
         with:
           tool: 'pytest'
@@ -45,8 +46,17 @@ jobs:
           auto-push: false
           alert-threshold: '150%'
           comment-on-alert: true
-          comment-always: true
+          comment-always: false
           fail-on-alert: false
+
+      - name: Report benchmark status
+        run: |
+          if [ -f .benchmarks/output.json ]; then
+            echo "✓ Performance benchmarks captured and stored"
+          else
+            echo "ℹ No benchmark tests found (--benchmark-only found no tests)"
+            echo "To enable performance benchmarks, add benchmark tests with @pytest.mark.benchmark"
+          fi
 
       - name: Compare with baseline (if PR)
         if: github.event_name == 'pull_request'

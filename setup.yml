@@ -276,9 +276,19 @@
     - dotfiles
     - configuration
     - always
+  - name: Check if dotfiles directory exists
+    ansible.builtin.stat:
+      path: "{{ playbook_dir }}/dotfiles"
+    register: dotfiles_dir_check
+    tags:
+    - dotfiles
+    - configuration
+    - always
+
   - name: Include dotfiles role
     ansible.builtin.include_role:
       name: dotfiles
+    when: dotfiles_dir_check.stat.exists
     tags:
     - dotfiles
     - configuration
@@ -386,16 +396,15 @@
     - dev-tools
   - name: Check Oh My Zsh installation
     ansible.builtin.stat:
-      path: '{{ home }}/.oh-my-zsh'
+      path: '{{ home }}/.oh-my-zsh/oh-my-zsh.sh'
     register: ohmyzsh_check
     tags:
     - always
     - shell
   - name: Install Oh My Zsh
-    ansible.builtin.shell: >
-      sh -c "$(curl -fsSL
-      https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/
-      tools/install.sh)" "" --unattended
+    ansible.builtin.shell: |
+      curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -o /tmp/install-oh-my-zsh.sh
+      env -u ZSH RUNZSH=no sh /tmp/install-oh-my-zsh.sh --unattended
     register: ohmyzsh_install
     when:
     - not ohmyzsh_check.stat.exists

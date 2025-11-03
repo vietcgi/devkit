@@ -1,0 +1,58 @@
+# Dependabot Configuration
+# Automatically creates pull requests for dependency updates
+
+version: 2
+updates:
+  # Python package updates
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "devkit-team"
+    assignees:
+      - "devkit-team"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "/"
+    labels:
+      - "dependencies"
+      - "python"
+    allow:
+      - dependency-type: "all"
+    ignore:
+      # Ignore pre-release versions
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+    # Auto-merge patch and minor updates
+    auto-merge:
+      enabled: true
+      auto-merge-type: "squash"
+
+  # GitHub Actions updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "devkit-team"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    # Auto-merge action updates
+    auto-merge:
+      enabled: true
+      auto-merge-type: "squash"

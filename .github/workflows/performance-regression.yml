@@ -1,0 +1,74 @@
+name: Performance Regression Detection
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  performance-regression:
+    name: Performance Regression Detection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip setuptools wheel
+          pip install -e ".[dev]"
+          pip install pytest pytest-benchmark
+
+      - name: Run performance benchmarks
+        run: |
+          pytest tests/ \
+            --benchmark-only \
+            --benchmark-json=.benchmarks/output.json \
+            --benchmark-columns=min,max,mean,stddev \
+            --benchmark-histogram=.benchmarks/histogram || true
+
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: 'pytest'
+          output-file-path: .benchmarks/output.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          alert-threshold: '150%'
+          comment-on-alert: true
+          comment-always: true
+          fail-on-alert: false
+
+      - name: Compare with baseline (if PR)
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "Performance comparison for PR #${{ github.event.pull_request.number }}"
+          if [ -f .benchmarks/output.json ]; then
+            echo "Benchmark results:"
+            python -c "
+            import json
+            with open('.benchmarks/output.json') as f:
+              data = json.load(f)
+              benchmarks = data.get('benchmarks', [])
+              print(f'Total benchmarks run: {len(benchmarks)}')
+              for bench in benchmarks:
+                print(f\"  • {bench['name']}: {bench['stats']['mean']:.4f}s ±{bench['stats']['stddev']:.4f}s\")
+            "
+          fi
+
+      - name: Upload benchmark artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-benchmarks
+          path: .benchmarks/
+          if-no-files-found: ignore

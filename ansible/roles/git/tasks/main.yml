@@ -153,25 +153,39 @@
     - "{{ git_home_dir }}/.ssh/id_ecdsa"
   tags: [git, config, ssh]
 
-- name: Configure git to use SSH for GitHub URLs in devkit repo (if SSH keys available)
+- name: Test GitHub SSH connectivity
+  ansible.builtin.shell: |
+    ssh -T -o StrictHostKeyChecking=accept-new -o ConnectTimeout=5 git@github.com 2>&1
+  register: github_ssh_test
+  failed_when: false
+  changed_when: false
+  when:
+    - git_ssh_key_stat.results | selectattr('stat.exists', 'equalto', true) | list | length > 0
+  tags: [git, config, ssh]
+
+- name: Configure git to use SSH for GitHub URLs in devkit repo (if SSH works)
   ansible.builtin.shell: |
     set -o pipefail
     cd {{ git_repo_root }}
     git config --local url."git@github.com:".insteadOf https://github.com/
   when:
     - git_repo_root is defined
-    - git_ssh_key_stat.results | selectattr('stat.exists', 'equalto', true) | list | length > 0
+    - github_ssh_test is defined
+    - github_ssh_test.rc is defined
+    - github_ssh_test.rc == 1
+    - "'successfully authenticated' in github_ssh_test.stderr"
   changed_when: false
   notify: reload git config
   tags: [git, config, ssh]
 
-- name: Remove SSH URL rewrite if no SSH keys found (prevent auth failures)
+- name: Remove SSH URL rewrite if SSH doesn't work with GitHub (prevent auth failures)
   ansible.builtin.shell: |
     cd {{ git_repo_root }}
     git config --local --unset url."git@github.com:".insteadOf 2>/dev/null || true
   when:
     - git_repo_root is defined
-    - git_ssh_key_stat.results | selectattr('stat.exists', 'equalto', true) | list | length == 0
+    - github_ssh_test is defined
+    - (github_ssh_test.rc is not defined or github_ssh_test.rc != 1 or 'successfully authenticated' not in github_ssh_test.stderr)
   changed_when: false
   notify: reload git config
   tags: [git, config, ssh]

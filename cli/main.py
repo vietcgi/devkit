@@ -41,7 +41,9 @@ logger = setup_logger(__name__, level=logging.INFO)
 )
 @click.pass_context
 def cli(  # pylint: disable=redefined-outer-name
-    ctx: click.Context, verbose: bool, config: str | None,
+    ctx: click.Context,
+    verbose: bool,
+    config: str | None,
 ) -> None:
     """Devkit - Development Environment Setup and Management.
 

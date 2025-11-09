@@ -448,7 +448,9 @@ class TestAuditLoggerAdditional(unittest.TestCase):
         """Test logging permission changed action."""
         logger = AuditLogger(self.log_dir)
         entry = logger.log_permission_changed(
-            path="/path/to/file", old_perms="0644", new_perms="0600",
+            path="/path/to/file",
+            old_perms="0644",
+            new_perms="0600",
         )
 
         self.assertEqual(entry["action"], "permission_changed")

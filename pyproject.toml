@@ -137,8 +137,6 @@ ignore = [
     "E501",   # Line too long (handled by formatter)
     "D104",   # Missing docstring in public package
     "D100",   # Missing docstring in public module
-    "ANN101", # Missing type annotation for 'self'
-    "ANN102", # Missing type annotation for 'cls'
     "ANN401", # Dynamically typed expressions (typing.Any) are allowed
     "N802",   # Function name lowercase (AST visitor methods use PascalCase by design)
     "S101",   # Use of assert (ok for tests)

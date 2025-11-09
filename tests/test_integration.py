@@ -16,6 +16,7 @@ import time
 from pathlib import Path
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
+
 import pytest
 
 # Add parent directory to path for imports
@@ -97,7 +98,7 @@ class Plugin(PluginInterface):
 
     def test_multiple_hooks_execution(self):
         """Test executing multiple hooks across plugins."""
-        from cli.plugin_system import HookContext, BuiltinHook
+        from cli.plugin_system import BuiltinHook, HookContext
 
         hook1 = BuiltinHook("hook1")
         hook2 = BuiltinHook("hook2")

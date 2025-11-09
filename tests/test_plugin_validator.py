@@ -14,15 +14,13 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+
 import pytest
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from cli.plugin_validator import (  # noqa: E402
-    PluginManifest,
-    PluginValidator,
-)
+from cli.plugin_validator import PluginManifest, PluginValidator  # noqa: E402
 
 
 @pytest.mark.unit

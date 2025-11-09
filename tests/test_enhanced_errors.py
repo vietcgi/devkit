@@ -11,6 +11,7 @@ Validates that custom exceptions provide:
 import sys
 import unittest
 from pathlib import Path
+
 import pytest
 
 # Add parent directory to path for imports

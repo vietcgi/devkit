@@ -160,14 +160,17 @@ class DiskSpaceCheck(HealthCheck):
     def run(self) -> tuple[str, str, dict[str, Any]]:
         """Check available disk space."""
         try:
-            result = run_command(["df", "-B1G", "/"], timeout=2, check=True)
+            # Use -k for portability (works on both GNU and BSD df)
+            result = run_command(["df", "-k", "/"], timeout=2, check=True)
             lines = result.stdout.strip().split("\n")
             if len(lines) < 2:
                 return (HealthStatus.UNKNOWN, "Could not parse disk space", {})
 
-            # Parse df output
+            # Parse df output: columns are [Filesystem, Size, Used, Available, ...]
+            # Available space is in column 3 (0-indexed), in 1024-byte blocks
             parts = lines[1].split()
-            available_gb = int(parts[3].rstrip("G"))
+            available_kb = int(parts[3])
+            available_gb = available_kb // (1024 * 1024)  # Convert to GB
         except (subprocess.SubprocessError, ValueError, IndexError, OSError) as e:
             return (
                 HealthStatus.UNKNOWN,

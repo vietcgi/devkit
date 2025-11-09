@@ -161,20 +161,19 @@ class DiskSpaceCheck(HealthCheck):
         """Check available disk space."""
         try:
             result = run_command(["df", "-B1G", "/"], timeout=2, check=True)
+            lines = result.stdout.strip().split("\n")
+            if len(lines) < 2:
+                return (HealthStatus.UNKNOWN, "Could not parse disk space", {})
+
+            # Parse df output
+            parts = lines[1].split()
+            available_gb = int(parts[3].rstrip("G"))
         except (subprocess.SubprocessError, ValueError, IndexError, OSError) as e:
             return (
                 HealthStatus.UNKNOWN,
                 f"Failed to check disk space: {e}",
                 {"error": str(e)},
             )
-
-        lines = result.stdout.strip().split("\n")
-        if len(lines) < 2:
-            return (HealthStatus.UNKNOWN, "Could not parse disk space", {})
-
-        # Parse df output
-        parts = lines[1].split()
-        available_gb = int(parts[3].rstrip("G"))
 
         if available_gb >= self.min_gb:
             return (

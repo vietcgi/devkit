@@ -17,7 +17,7 @@ import logging.handlers
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, ClassVar, Optional
+from typing import Any, ClassVar
 
 
 class JSONFormatter(log.Formatter):
@@ -82,7 +82,7 @@ def setup_logging(
     name: str,
     *,
     level: int = log.INFO,
-    log_dir: Optional[Path] = None,
+    log_dir: Path | None = None,
     json_output: bool = False,
     file_output: bool = True,
 ) -> log.Logger:

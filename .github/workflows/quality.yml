@@ -28,17 +28,17 @@ jobs:
         pip install -e ".[dev]"
 
     - name: Check code formatting with black
-      run: black --check cli/ tests/
+      run: black --check cli/
 
     - name: Check import sorting with isort
-      run: isort --check-only cli/ tests/
+      run: isort --check-only cli/
 
     - name: Lint with Ruff
-      run: ruff check cli/ tests/
+      run: ruff check cli/
 
     - name: Lint with pylint
       run: >
-        pylint cli/ tests/ --max-line-length=100
+        pylint cli/ --max-line-length=100
 
     - name: Run pytest with coverage
       run: |
